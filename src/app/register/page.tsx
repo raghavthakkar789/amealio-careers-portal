@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/Input'
 import { toast } from 'react-hot-toast'
 import Link from 'next/link'
 import { validateEmail, validatePhone, calculateAge } from '@/lib/utils'
+import { getSession, signOut } from 'next-auth/react'
+import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -21,7 +23,22 @@ export default function RegisterPage() {
     address: '',
   })
   const [loading, setLoading] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const router = useRouter()
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const session = await getSession()
+      setIsLoggedIn(!!session)
+    }
+    checkSession()
+  }, [])
+
+  const handleLogout = async () => {
+    await signOut({ redirect: false })
+    setIsLoggedIn(false)
+    toast.success('Logged out successfully')
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
@@ -109,12 +126,35 @@ export default function RegisterPage() {
         <div className="bg-bg-800 rounded-2xl shadow-2xl p-8 border border-border">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-text-high mb-2">
-              Create Your Account
+              {isLoggedIn ? 'Already Have Account' : 'Create Your Account'}
             </h1>
             <p className="text-text-mid">
-              Join the amealio team and start your journey with us
+              {isLoggedIn ? 'You already have an account' : 'Join the amealio team and start your journey with us'}
             </p>
           </div>
+
+          {isLoggedIn && (
+            <div className="mb-6 p-4 bg-success-bg border border-success-text rounded-lg">
+              <p className="text-success-text text-center mb-4">
+                You already have an account and are logged in.
+              </p>
+              <div className="flex gap-3 justify-center">
+                <Button
+                  onClick={() => router.push('/dashboard')}
+                  className="btn-primary"
+                >
+                  Go to Dashboard
+                </Button>
+                <Button
+                  onClick={handleLogout}
+                  className="btn-secondary"
+                >
+                  <ArrowRightOnRectangleIcon className="w-4 h-4 mr-2" />
+                  Logout
+                </Button>
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

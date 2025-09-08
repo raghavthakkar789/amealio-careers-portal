@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, use } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
@@ -11,12 +11,13 @@ import { toast } from 'react-hot-toast'
 import { ArrowLeftIcon, DocumentTextIcon, CloudArrowUpIcon } from '@heroicons/react/24/outline'
 
 interface JobApplicationPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export default function JobApplicationPage({ params }: JobApplicationPageProps) {
+  const resolvedParams = use(params)
   const { data: session, status } = useSession()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -35,7 +36,7 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
 
   // Mock job data - replace with actual API call
   const job = {
-    id: params.id,
+    id: resolvedParams.id,
     title: 'Senior Software Engineer',
     department: 'Engineering',
     location: 'Bangalore, India',

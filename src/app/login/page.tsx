@@ -1,19 +1,35 @@
 'use client'
 
-import { useState } from 'react'
-import { signIn, getSession } from 'next-auth/react'
+import { useState, useEffect } from 'react'
+import { signIn, getSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { toast } from 'react-hot-toast'
 import Link from 'next/link'
+import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const router = useRouter()
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const session = await getSession()
+      setIsLoggedIn(!!session)
+    }
+    checkSession()
+  }, [])
+
+  const handleLogout = async () => {
+    await signOut({ redirect: false })
+    setIsLoggedIn(false)
+    toast.success('Logged out successfully')
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -37,6 +53,7 @@ export default function LoginPage() {
         } else {
           router.push('/dashboard')
         }
+        setIsLoggedIn(true)
         toast.success('Login successful!')
       }
     } catch (error) {
@@ -57,12 +74,35 @@ export default function LoginPage() {
         <div className="bg-bg-800 rounded-2xl shadow-2xl p-8 border border-border">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-text-high mb-2">
-              Welcome Back
+              {isLoggedIn ? 'Already Logged In' : 'Welcome Back'}
             </h1>
             <p className="text-text-mid">
-              Sign in to your amealio account
+              {isLoggedIn ? 'You are currently logged in' : 'Sign in to your amealio account'}
             </p>
           </div>
+
+          {isLoggedIn && (
+            <div className="mb-6 p-4 bg-success-bg border border-success-text rounded-lg">
+              <p className="text-success-text text-center mb-4">
+                You are already logged in to your account.
+              </p>
+              <div className="flex gap-3 justify-center">
+                <Button
+                  onClick={() => router.push('/dashboard')}
+                  className="btn-primary"
+                >
+                  Go to Dashboard
+                </Button>
+                <Button
+                  onClick={handleLogout}
+                  className="btn-secondary"
+                >
+                  <ArrowRightOnRectangleIcon className="w-4 h-4 mr-2" />
+                  Logout
+                </Button>
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>

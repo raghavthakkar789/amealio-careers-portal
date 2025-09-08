@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { MapPinIcon, ClockIcon, BriefcaseIcon } from '@heroicons/react/24/outline'
 
 interface JobCardProps {
@@ -22,8 +23,13 @@ interface JobCardProps {
 
 export function JobCard({ job }: JobCardProps) {
   const router = useRouter()
+  const { data: session } = useSession()
 
   const handleApply = () => {
+    if (!session) {
+      router.push('/login')
+      return
+    }
     router.push(`/jobs/${job.id}/apply`)
   }
 

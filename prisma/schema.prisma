@@ -1,0 +1,234 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  APPLICANT
+  HR
+  ADMIN
+}
+
+enum ApplicationStatus {
+  PENDING
+  UNDER_REVIEW
+  INTERVIEW_SCHEDULED
+  INTERVIEW_COMPLETED
+  ACCEPTED
+  REJECTED
+  HIRED
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+}
+
+enum InterviewType {
+  PHONE
+  VIDEO
+  IN_PERSON
+}
+
+enum InterviewStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum Department {
+  ENGINEERING
+  MARKETING
+  SALES
+  HR
+  FINANCE
+  OPERATIONS
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  password      String
+  firstName     String
+  lastName      String
+  role          UserRole @default(APPLICANT)
+  emailVerified DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Applicant specific fields
+  dateOfBirth   DateTime?
+  phoneNumber   String?
+  address       String?
+  
+  // Profile image
+  profileImage  String?
+
+  // Relations
+  applications  Application[]
+  interviews    Interview[]
+  hrReviews     InterviewReview[] @relation("HRReviewer")
+  adminReviews  InterviewReview[] @relation("AdminReviewer")
+  notifications Notification[]
+  hrJobs        Job[] @relation("HRCreator")
+
+  @@map("users")
+}
+
+model Job {
+  id                String           @id @default(cuid())
+  title             String
+  department        Department
+  summary           String?
+  employmentTypes   EmploymentType[]
+  applicationDeadline DateTime?
+  requiredSkills    String[]
+  isActive          Boolean          @default(true)
+  isDraft           Boolean          @default(false)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  // Relations
+  applications      Application[]
+  jobDescription    JobDescription?
+  createdBy         User             @relation("HRCreator", fields: [createdById], references: [id])
+  createdById       String
+
+  @@map("jobs")
+}
+
+model JobDescription {
+  id                String           @id @default(cuid())
+  jobId             String           @unique
+  description       String
+  responsibilities  String[]
+  requirements      String[]
+  benefits          String[]
+  location          String?
+  remoteWork        Boolean          @default(false)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  // Relations
+  job               Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@map("job_descriptions")
+}
+
+model Application {
+  id                String            @id @default(cuid())
+  jobTitle          String
+  employmentType    EmploymentType
+  resumeUrl         String
+  additionalFiles   String[]
+  coverLetter       String?
+  status            ApplicationStatus @default(PENDING)
+  submittedAt       DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  // Relations
+  applicant         User              @relation(fields: [applicantId], references: [id])
+  applicantId       String
+  job               Job               @relation(fields: [jobId], references: [id])
+  jobId             String
+  interviews        Interview[]
+  notifications     Notification[]
+
+  @@map("applications")
+}
+
+model Interview {
+  id                String            @id @default(cuid())
+  scheduledAt       DateTime
+  interviewType     InterviewType
+  meetingLink       String?
+  location          String?
+  status            InterviewStatus   @default(SCHEDULED)
+  notes             String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  // Relations
+  application       Application       @relation(fields: [applicationId], references: [id])
+  applicationId     String
+  candidate         User              @relation(fields: [candidateId], references: [id])
+  candidateId       String
+  reviews           InterviewReview[]
+  notifications     Notification[]
+
+  @@map("interviews")
+}
+
+model InterviewReview {
+  id                String   @id @default(cuid())
+  technicalSkills   Int      // 1-5 rating
+  communication     Int      // 1-5 rating
+  culturalFit       Int      // 1-5 rating
+  overallRating     Int      // 1-5 rating
+  comments          String
+  recommendation    String   // Proceed/Reject/Another Round
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  interview         Interview @relation(fields: [interviewId], references: [id])
+  interviewId       String
+  hrReviewer        User      @relation("HRReviewer", fields: [hrReviewerId], references: [id])
+  hrReviewerId      String
+  adminReviewer     User?     @relation("AdminReviewer", fields: [adminReviewerId], references: [id])
+  adminReviewerId   String?
+
+  @@map("interview_reviews")
+}
+
+model Notification {
+  id                String   @id @default(cuid())
+  title             String
+  message           String
+  type              String   // email, in-app
+  isRead            Boolean  @default(false)
+  createdAt         DateTime @default(now())
+
+  // Relations
+  user              User     @relation(fields: [userId], references: [id])
+  userId            String
+  application       Application? @relation(fields: [applicationId], references: [id])
+  applicationId     String?
+  interview         Interview? @relation(fields: [interviewId], references: [id])
+  interviewId       String?
+
+  @@map("notifications")
+}
+
+model EmailTemplate {
+  id                String   @id @default(cuid())
+  name              String   @unique
+  subject           String
+  body              String
+  variables         String[] // Available template variables
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("email_templates")
+}
+
+model SystemSetting {
+  id                String   @id @default(cuid())
+  key               String   @unique
+  value             String
+  description       String?
+  updatedAt         DateTime @updatedAt
+
+  @@map("system_settings")
+}

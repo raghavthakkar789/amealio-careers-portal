@@ -45,7 +45,8 @@ A comprehensive careers portal for amealio with role-based access, complete CRUD
 
 ## 🚀 Quick Start
 
-### 1. Clone the repository
+###
+ 1. Clone the repository
 ```bash
 git clone <repository-url>
 cd amealio-careers-portal

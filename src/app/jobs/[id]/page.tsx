@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
@@ -19,12 +19,13 @@ import {
 } from '@heroicons/react/24/outline'
 
 interface JobDetailsPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export default function JobDetailsPage({ params }: JobDetailsPageProps) {
+  const resolvedParams = use(params)
   const { data: session, status } = useSession()
   const router = useRouter()
   const [loading, setLoading] = useState(true)
@@ -38,7 +39,7 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
         await new Promise(resolve => setTimeout(resolve, 1000))
         
         const mockJob = {
-          id: params.id,
+          id: resolvedParams.id,
           title: 'Senior Software Engineer',
           department: 'Engineering',
           location: 'Bangalore, India',
@@ -99,7 +100,7 @@ This role offers excellent growth opportunities, competitive compensation, and t
     }
 
     fetchJob()
-  }, [params.id])
+  }, [resolvedParams.id])
 
   if (status === 'loading' || loading) {
     return (

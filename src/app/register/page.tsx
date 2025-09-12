@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { toast } from 'react-hot-toast'
 import Link from 'next/link'
-import { validateEmail, validatePhone, calculateAge } from '@/lib/utils'
+import { validateEmail, validatePhone } from '@/lib/utils'
 import { getSession, signOut } from 'next-auth/react'
 import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
 
@@ -18,9 +18,7 @@ export default function RegisterPage() {
     email: '',
     password: '',
     confirmPassword: '',
-    dateOfBirth: '',
     phoneNumber: '',
-    address: '',
   })
   const [loading, setLoading] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -68,13 +66,6 @@ export default function RegisterPage() {
       return false
     }
 
-    if (formData.dateOfBirth) {
-      const age = calculateAge(new Date(formData.dateOfBirth))
-      if (age < 18) {
-        toast.error('You must be at least 18 years old to register')
-        return false
-      }
-    }
 
     if (formData.phoneNumber && !validatePhone(formData.phoneNumber)) {
       toast.error('Please enter a valid phone number')
@@ -244,50 +235,17 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="dateOfBirth" className="form-label">
-                  Date of Birth *
-                </label>
-                <Input
-                  id="dateOfBirth"
-                  name="dateOfBirth"
-                  type="date"
-                  value={formData.dateOfBirth}
-                  onChange={handleChange}
-                  required
-                  className="input-field"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="phoneNumber" className="form-label">
-                  Phone Number
-                </label>
-                <Input
-                  id="phoneNumber"
-                  name="phoneNumber"
-                  type="tel"
-                  value={formData.phoneNumber}
-                  onChange={handleChange}
-                  placeholder="Enter your phone number"
-                  className="input-field"
-                />
-              </div>
-            </div>
-
             <div>
-              <label htmlFor="address" className="form-label">
-                Address *
+              <label htmlFor="phoneNumber" className="form-label">
+                Phone Number
               </label>
               <Input
-                id="address"
-                name="address"
-                type="text"
-                value={formData.address}
+                id="phoneNumber"
+                name="phoneNumber"
+                type="tel"
+                value={formData.phoneNumber}
                 onChange={handleChange}
-                placeholder="Enter your full address"
-                required
+                placeholder="Enter your phone number"
                 className="input-field"
               />
             </div>

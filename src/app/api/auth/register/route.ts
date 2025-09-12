@@ -11,13 +11,11 @@ export async function POST(request: NextRequest) {
       lastName,
       email,
       password,
-      dateOfBirth,
       phoneNumber,
-      address,
     } = body
 
     // Validation
-    if (!firstName || !lastName || !email || !password || !dateOfBirth || !address) {
+    if (!firstName || !lastName || !email || !password) {
       return NextResponse.json(
         { message: 'Missing required fields' },
         { status: 400 }
@@ -60,9 +58,7 @@ export async function POST(request: NextRequest) {
         lastName,
         email,
         password: hashedPassword,
-        dateOfBirth: new Date(dateOfBirth),
         phoneNumber,
-        address,
         role: 'APPLICANT',
       }
     })

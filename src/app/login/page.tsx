@@ -177,12 +177,36 @@ export default function LoginPage() {
           <div className="mt-8 pt-6 border-t border-border">
             <div className="text-center">
               <p className="text-sm text-text-mid mb-4">
-                Demo Accounts:
+                Demo Accounts (Click to auto-fill):
               </p>
               <div className="space-y-2 text-xs text-text-mid">
-                <p><strong>Admin:</strong> admin@amealio.com / admin123</p>
-                <p><strong>HR:</strong> hr@amealio.com / hr123</p>
-                <p><strong>Applicant:</strong> user@amealio.com / user123</p>
+                <button
+                  onClick={() => {
+                    setEmail('admin@amealio.com')
+                    setPassword('admin123')
+                  }}
+                  className="block w-full p-2 bg-bg-700 hover:bg-bg-600 rounded border border-border transition-colors"
+                >
+                  <strong>Admin:</strong> admin@amealio.com / admin123
+                </button>
+                <button
+                  onClick={() => {
+                    setEmail('hr@amealio.com')
+                    setPassword('hr123')
+                  }}
+                  className="block w-full p-2 bg-bg-700 hover:bg-bg-600 rounded border border-border transition-colors"
+                >
+                  <strong>HR:</strong> hr@amealio.com / hr123
+                </button>
+                <button
+                  onClick={() => {
+                    setEmail('user@amealio.com')
+                    setPassword('user123')
+                  }}
+                  className="block w-full p-2 bg-bg-700 hover:bg-bg-600 rounded border border-border transition-colors"
+                >
+                  <strong>Applicant:</strong> user@amealio.com / user123
+                </button>
               </div>
             </div>
           </div>

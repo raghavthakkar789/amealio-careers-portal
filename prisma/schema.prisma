@@ -70,6 +70,7 @@ model User {
   dateOfBirth   DateTime?
   phoneNumber   String?
   address       String?
+  linkedinProfile String?
   
   // Profile image
   profileImage  String?

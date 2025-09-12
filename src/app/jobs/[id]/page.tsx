@@ -31,76 +31,29 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
   const [loading, setLoading] = useState(true)
   const [job, setJob] = useState<any>(null)
 
-  // Mock job data - replace with actual API call
+  // Fetch job details from API
   useEffect(() => {
     const fetchJob = async () => {
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        
-        const mockJob = {
-          id: resolvedParams.id,
-          title: 'Senior Software Engineer',
-          department: 'Engineering',
-          location: 'Bangalore, India',
-          remoteWork: true,
-          employmentTypes: ['FULL_TIME'],
-          createdAt: '2024-01-15T10:00:00Z',
-          applicationDeadline: '2024-02-15T23:59:59Z',
-          summary: 'Join our engineering team to build scalable web applications that impact millions of users worldwide.',
-          description: `We are looking for a Senior Software Engineer to join our dynamic team. You will be responsible for designing, developing, and maintaining high-quality software solutions that drive our business forward.
-
-As a Senior Software Engineer, you will work closely with product managers, designers, and other engineers to deliver exceptional user experiences. You'll have the opportunity to work on cutting-edge technologies and contribute to architectural decisions that shape our platform's future.
-
-This role offers excellent growth opportunities, competitive compensation, and the chance to work with a talented team in a collaborative environment.`,
-          responsibilities: [
-            'Design and develop scalable web applications using modern technologies',
-            'Collaborate with cross-functional teams to define and implement new features',
-            'Mentor junior developers and conduct code reviews',
-            'Participate in architectural decisions and technical planning',
-            'Write clean, maintainable, and well-tested code',
-            'Optimize application performance and ensure high availability',
-            'Stay up-to-date with industry trends and best practices'
-          ],
-          requirements: [
-            '5+ years of software development experience',
-            'Proficiency in React, Node.js, and TypeScript',
-            'Experience with PostgreSQL and MongoDB databases',
-            'Strong understanding of RESTful APIs and GraphQL',
-            'Experience with cloud platforms (AWS, Azure, or GCP)',
-            'Strong problem-solving and analytical skills',
-            'Excellent communication and collaboration skills',
-            'Bachelor\'s degree in Computer Science or related field (preferred)'
-          ],
-          benefits: [
-            'Competitive salary package with performance bonuses',
-            'Comprehensive health insurance coverage',
-            'Flexible working hours and remote work options',
-            'Professional development and training opportunities',
-            'Stock options and equity participation',
-            'Generous paid time off and holidays',
-            'Modern office space with latest equipment',
-            'Team building activities and company events'
-          ],
-          requiredSkills: ['React', 'Node.js', 'TypeScript', 'PostgreSQL', 'MongoDB', 'AWS', 'Docker', 'Kubernetes'],
-          createdBy: {
-            firstName: 'Sarah',
-            lastName: 'Johnson',
-            email: 'sarah.johnson@amealio.com'
-          }
+        const response = await fetch(`/api/jobs/${resolvedParams.id}`)
+        if (response.ok) {
+          const jobData = await response.json()
+          setJob(jobData)
+        } else {
+          toast.error('Job not found')
+          router.push('/jobs')
         }
-        
-        setJob(mockJob)
       } catch (error) {
         toast.error('Failed to load job details')
         console.error('Error fetching job:', error)
+        router.push('/jobs')
       } finally {
         setLoading(false)
       }
     }
 
     fetchJob()
-  }, [resolvedParams.id])
+  }, [resolvedParams.id, router])
 
   if (status === 'loading' || loading) {
     return (
@@ -329,10 +282,19 @@ This role offers excellent growth opportunities, competitive compensation, and t
                       <UsersIcon className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <p className="text-text-primary font-medium">
-                        {job.createdBy.firstName} {job.createdBy.lastName}
-                      </p>
-                      <p className="text-text-secondary text-sm">{job.createdBy.email}</p>
+                      {job.createdBy ? (
+                        <>
+                          <p className="text-text-primary font-medium">
+                            {job.createdBy.firstName} {job.createdBy.lastName}
+                          </p>
+                          <p className="text-text-secondary text-sm">{job.createdBy.email}</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-text-primary font-medium">HR Team</p>
+                          <p className="text-text-secondary text-sm">hr@amealio.com</p>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

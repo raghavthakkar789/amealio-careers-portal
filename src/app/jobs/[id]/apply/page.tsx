@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, use } from 'react'
+import { useState, use, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
@@ -21,8 +21,10 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
   const { data: session, status } = useSession()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [jobLoading, setJobLoading] = useState(true)
   const [resumeFile, setResumeFile] = useState<File | null>(null)
   const [additionalFiles, setAdditionalFiles] = useState<File[]>([])
+  const [job, setJob] = useState<any>(null)
 
   const [formData, setFormData] = useState({
     coverLetter: '',
@@ -32,40 +34,58 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
     availability: '',
     expectedSalary: '',
     references: '',
+    linkedinProfile: '',
   })
 
-  // Mock job data - replace with actual API call
-  const job = {
-    id: resolvedParams.id,
-    title: 'Senior Software Engineer',
-    department: 'Engineering',
-    location: 'Bangalore, India',
-    remoteWork: true,
-    description: 'We are looking for a Senior Software Engineer to join our dynamic team...',
-    requirements: [
-      '5+ years of software development experience',
-      'Proficiency in React, Node.js, and TypeScript',
-      'Experience with PostgreSQL and MongoDB',
-      'Strong problem-solving skills',
-      'Excellent communication skills'
-    ],
-    responsibilities: [
-      'Design and develop scalable web applications',
-      'Collaborate with cross-functional teams',
-      'Mentor junior developers',
-      'Participate in code reviews',
-      'Contribute to architectural decisions'
-    ],
-    benefits: [
-      'Competitive salary package',
-      'Health insurance coverage',
-      'Flexible working hours',
-      'Remote work options',
-      'Professional development opportunities'
-    ]
-  }
+  // Fetch job details
+  useEffect(() => {
+    const fetchJob = async () => {
+      try {
+        const response = await fetch(`/api/jobs/${resolvedParams.id}`)
+        if (response.ok) {
+          const jobData = await response.json()
+          setJob(jobData)
+        } else {
+          toast.error('Job not found')
+          router.push('/jobs')
+        }
+      } catch (error) {
+        toast.error('Failed to load job details')
+        console.error('Error fetching job:', error)
+        router.push('/jobs')
+      } finally {
+        setJobLoading(false)
+      }
+    }
 
-  if (status === 'loading') {
+    fetchJob()
+  }, [resolvedParams.id, router])
+
+  // Fetch user profile to pre-populate LinkedIn field
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const response = await fetch('/api/user/profile')
+        if (response.ok) {
+          const data = await response.json()
+          if (data.user?.linkedinProfile) {
+            setFormData(prev => ({
+              ...prev,
+              linkedinProfile: data.user.linkedinProfile
+            }))
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error)
+      }
+    }
+
+    if (session) {
+      fetchUserProfile()
+    }
+  }, [session])
+
+  if (status === 'loading' || jobLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <LoadingSpinner size="lg" />
@@ -76,6 +96,19 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
   if (!session) {
     router.push('/login')
     return null
+  }
+
+  if (!job) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-text-primary mb-4">Job Not Found</h2>
+          <Button onClick={() => router.push('/jobs')} className="btn-primary">
+            Back to Jobs
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'resume' | 'additional') => {
@@ -113,6 +146,19 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
       additionalFiles.forEach((file, index) => {
         formDataToSend.append(`additionalFile_${index}`, file)
       })
+
+      // First update user's LinkedIn profile if provided
+      if (formData.linkedinProfile) {
+        await fetch('/api/user/profile', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            linkedinProfile: formData.linkedinProfile,
+          }),
+        })
+      }
 
       const response = await fetch('/api/applications', {
         method: 'POST',
@@ -176,7 +222,7 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
                   <div>
                     <h4 className="font-medium text-text-primary mb-2">Requirements</h4>
                     <ul className="text-text-secondary text-sm space-y-1">
-                      {job.requirements.map((req, index) => (
+                      {job.requirements.map((req: string, index: number) => (
                         <li key={index} className="flex items-start">
                           <span className="text-primary-400 mr-2">•</span>
                           {req}
@@ -188,7 +234,7 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
                   <div>
                     <h4 className="font-medium text-text-primary mb-2">Responsibilities</h4>
                     <ul className="text-text-secondary text-sm space-y-1">
-                      {job.responsibilities.map((resp, index) => (
+                      {job.responsibilities.map((resp: string, index: number) => (
                         <li key={index} className="flex items-start">
                           <span className="text-primary-400 mr-2">•</span>
                           {resp}
@@ -200,7 +246,7 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
                   <div>
                     <h4 className="font-medium text-text-primary mb-2">Benefits</h4>
                     <ul className="text-text-secondary text-sm space-y-1">
-                      {job.benefits.map((benefit, index) => (
+                      {job.benefits.map((benefit: string, index: number) => (
                         <li key={index} className="flex items-start">
                           <span className="text-primary-400 mr-2">•</span>
                           {benefit}
@@ -343,6 +389,21 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
                       placeholder="Expected salary range (optional)"
                       className="input-field"
                     />
+                  </div>
+
+                  {/* LinkedIn Profile */}
+                  <div>
+                    <label className="form-label">LinkedIn Profile</label>
+                    <Input
+                      value={formData.linkedinProfile}
+                      onChange={(e) => setFormData(prev => ({ ...prev, linkedinProfile: e.target.value }))}
+                      placeholder="https://linkedin.com/in/your-profile"
+                      type="url"
+                      className="input-field"
+                    />
+                    <p className="text-xs text-text-mid mt-1">
+                      Share your LinkedIn profile to showcase your professional background
+                    </p>
                   </div>
 
                   {/* References */}

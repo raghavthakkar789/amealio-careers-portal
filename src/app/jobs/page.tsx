@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { useRouter } from 'next/navigation'
-import { ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { useSession } from 'next-auth/react'
+import { ArrowLeftIcon, UserIcon } from '@heroicons/react/24/outline'
 
 interface Job {
   id: string
@@ -27,7 +28,9 @@ export default function JobsPage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedDepartment, setSelectedDepartment] = useState('')
+  const [selectedLocation, setSelectedLocation] = useState('')
   const router = useRouter()
+  const { data: session, status } = useSession()
 
   useEffect(() => {
     // Simulate API call - replace with actual API call
@@ -118,10 +121,12 @@ export default function JobsPage() {
     const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          job.summary?.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesDepartment = !selectedDepartment || job.department === selectedDepartment
-    return matchesSearch && matchesDepartment
+    const matchesLocation = !selectedLocation || job.location?.toLowerCase().includes(selectedLocation.toLowerCase())
+    return matchesSearch && matchesDepartment && matchesLocation
   })
 
   const departments = ['ENGINEERING', 'MARKETING', 'SALES', 'HR', 'FINANCE', 'OPERATIONS']
+  const locations = [...new Set(jobs.map(job => job.location).filter(Boolean))]
 
   if (loading) {
     return (
@@ -165,9 +170,67 @@ export default function JobsPage() {
             </p>
           </div>
 
+          {/* Login Prompt for Non-Authenticated Users */}
+          {status !== 'loading' && !session && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="card mb-8 bg-warning-bg border-warning-text"
+            >
+              <div className="flex items-center justify-center gap-4 p-6">
+                <UserIcon className="w-8 h-8 text-warning-text" />
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold text-warning-text mb-2">
+                    Login Required to Apply
+                  </h3>
+                  <p className="text-warning-text mb-4">
+                    You need to be logged in to apply for positions. Create an account or sign in to get started.
+                  </p>
+                  <div className="flex gap-3 justify-center">
+                    <Button
+                      onClick={() => router.push('/login')}
+                      className="btn-primary"
+                    >
+                      Sign In
+                    </Button>
+                    <Button
+                      onClick={() => router.push('/register')}
+                      className="btn-secondary"
+                    >
+                      Create Account
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Welcome Message for Logged-in Users */}
+          {status !== 'loading' && session && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="card mb-8 bg-success-bg border-success-text"
+            >
+              <div className="flex items-center justify-center gap-4 p-4">
+                <UserIcon className="w-6 h-6 text-success-text" />
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold text-success-text mb-1">
+                    Welcome back, {session.user?.name}!
+                  </h3>
+                  <p className="text-success-text">
+                    You're logged in and ready to apply for positions.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           {/* Search and Filter */}
           <div className="card mb-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
                 <label className="form-label">Search Jobs</label>
                 <Input
@@ -193,11 +256,27 @@ export default function JobsPage() {
                   ))}
                 </select>
               </div>
+              <div>
+                <label className="form-label">Location</label>
+                <select
+                  value={selectedLocation}
+                  onChange={(e) => setSelectedLocation(e.target.value)}
+                  className="input-field"
+                >
+                  <option value="">All Locations</option>
+                  {locations.map(location => (
+                    <option key={location} value={location}>
+                      {location}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div className="flex items-end">
                 <Button
                   onClick={() => {
                     setSearchTerm('')
                     setSelectedDepartment('')
+                    setSelectedLocation('')
                   }}
                   variant="secondary"
                   className="btn-secondary w-full"
@@ -241,6 +320,7 @@ export default function JobsPage() {
                 onClick={() => {
                   setSearchTerm('')
                   setSelectedDepartment('')
+                  setSelectedLocation('')
                 }}
                 className="btn-primary"
               >

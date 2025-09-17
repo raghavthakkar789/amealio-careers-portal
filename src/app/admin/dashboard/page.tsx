@@ -180,7 +180,7 @@ export default function AdminDashboard() {
           name: `${formData.firstName} ${formData.lastName}`,
           email: formData.email,
           department: formData.department,
-          createdAt: new Date().toISOString(),
+          createdAt: new Date().toISOString().split('T')[0], // Use date only to avoid timezone issues
           activeJobs: 0,
           totalHires: 0
         }

@@ -84,7 +84,16 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
     router.push(`/jobs/${job.id}/apply`)
   }
 
-  const isDeadlinePassed = new Date(job.applicationDeadline) < new Date()
+  const [isDeadlinePassed, setIsDeadlinePassed] = useState(false)
+
+  // Calculate deadline status on client side to avoid hydration mismatch
+  useEffect(() => {
+    if (job?.applicationDeadline) {
+      const now = new Date()
+      const deadline = new Date(job.applicationDeadline)
+      setIsDeadlinePassed(deadline < now)
+    }
+  }, [job?.applicationDeadline])
 
   return (
     <div className="min-h-screen bg-background">

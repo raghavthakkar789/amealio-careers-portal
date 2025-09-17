@@ -6,20 +6,26 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatDate(date: Date | string): string {
-  return new Date(date).toLocaleDateString('en-US', {
+  // Ensure consistent formatting between server and client
+  const dateObj = new Date(date)
+  return dateObj.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
+    timeZone: 'UTC' // Use UTC to avoid timezone differences
   })
 }
 
 export function formatDateTime(date: Date | string): string {
-  return new Date(date).toLocaleDateString('en-US', {
+  // Ensure consistent formatting between server and client
+  const dateObj = new Date(date)
+  return dateObj.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    timeZone: 'UTC' // Use UTC to avoid timezone differences
   })
 }
 
@@ -29,7 +35,12 @@ export function truncateText(text: string, maxLength: number): string {
 }
 
 export function generateId(): string {
-  return Math.random().toString(36).substr(2, 9)
+  // Use crypto.randomUUID if available (browser), otherwise fallback to timestamp-based ID
+  if (typeof window !== 'undefined' && window.crypto && window.crypto.randomUUID) {
+    return window.crypto.randomUUID()
+  }
+  // Fallback for SSR - use timestamp + random to ensure uniqueness
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 5)
 }
 
 export function validateEmail(email: string): boolean {

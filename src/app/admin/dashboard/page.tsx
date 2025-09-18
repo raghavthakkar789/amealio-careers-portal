@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
@@ -20,7 +20,17 @@ import {
   EyeIcon,
   PencilIcon,
   TrashIcon,
-  ArrowDownTrayIcon
+  ArrowDownTrayIcon,
+  HomeIcon,
+  ArrowRightOnRectangleIcon,
+  BellIcon,
+  StarIcon,
+  TrendingUpIcon,
+  CalendarIcon,
+  UserGroupIcon,
+  ClipboardDocumentListIcon,
+  ShieldCheckIcon,
+  CogIcon
 } from '@heroicons/react/24/outline'
 
 export default function AdminDashboard() {
@@ -28,6 +38,18 @@ export default function AdminDashboard() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
+
+  const handleLogout = async () => {
+    try {
+      await signOut({ 
+        callbackUrl: '/',
+        redirect: true 
+      })
+      toast.success('Logged out successfully!')
+    } catch (error) {
+      toast.error('Failed to logout. Please try again.')
+    }
+  }
   const [applicants, setApplicants] = useState<any[]>([])
   const [hrUsers, setHrUsers] = useState<any[]>([])
   const [analytics, setAnalytics] = useState({
@@ -198,87 +220,150 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-bg-850">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-bg-850 via-bg-900 to-bg-850">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute top-0 left-0 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl animate-float"></div>
+        <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-300 rounded-full mix-blend-multiply filter blur-xl animate-float animation-delay-2000"></div>
+        <div className="absolute bottom-0 left-0 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl animate-float animation-delay-4000"></div>
+      </div>
+
+      <div className="relative z-10 container mx-auto px-4 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-text-high mb-2">
-              Admin Dashboard
-            </h1>
-            <p className="text-text-mid">
-              Welcome back, {session.user?.name}! Manage the entire hiring process.
-            </p>
+          {/* Enhanced Header */}
+          <div className="text-center mb-12">
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex-1 flex justify-start">
+                <Button
+                  onClick={() => router.push('/')}
+                  variant="secondary"
+                  className="btn-secondary hover-lift"
+                >
+                  <HomeIcon className="w-4 h-4 mr-2" />
+                  Home
+                </Button>
+              </div>
+              <div className="flex-1 text-center">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.8, delay: 0.2 }}
+                  className="mb-4"
+                >
+                  <div className="w-20 h-20 bg-gradient-to-r from-primary to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-large">
+                    <ShieldCheckIcon className="w-10 h-10 text-white" />
+                  </div>
+                  <h1 className="text-5xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent mb-4">
+                    Admin Dashboard
+                  </h1>
+                  <p className="text-xl text-text-mid max-w-2xl mx-auto">
+                    Welcome back, {session.user?.name}! Oversee the entire hiring ecosystem and manage organizational growth.
+                  </p>
+                </motion.div>
+              </div>
+              <div className="flex-1 flex justify-end">
+                <Button
+                  onClick={handleLogout}
+                  variant="secondary"
+                  className="btn-secondary hover-lift"
+                >
+                  <ArrowRightOnRectangleIcon className="w-4 h-4 mr-2" />
+                  Logout
+                </Button>
+              </div>
+            </div>
           </div>
 
-          {/* Navigation Tabs */}
-          <div className="flex gap-2 mb-8 border-b border-border">
+          {/* Enhanced Navigation Tabs */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="flex gap-2 mb-8 border-b border-border"
+          >
             {[
-              { id: 'overview', label: 'Overview', icon: ChartBarIcon },
-              { id: 'applicants', label: 'Applicant Profiles', icon: UsersIcon },
-              { id: 'hr-management', label: 'HR Management', icon: UserPlusIcon },
-              { id: 'analytics', label: 'Analytics', icon: ChartBarIcon }
+              { id: 'overview', label: 'Overview', icon: ChartBarIcon, color: 'from-primary to-purple-600' },
+              { id: 'applicants', label: 'Applicant Profiles', icon: UsersIcon, color: 'from-emerald-500 to-emerald-600' },
+              { id: 'hr-management', label: 'HR Management', icon: UserPlusIcon, color: 'from-amber-500 to-amber-600' },
+              { id: 'analytics', label: 'Analytics', icon: TrendingUpIcon, color: 'from-rose-500 to-rose-600' }
             ].map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
+                className={`flex items-center gap-3 px-6 py-3 border-b-2 transition-all duration-300 rounded-t-lg ${
                   activeTab === tab.id
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-text-mid hover:text-text-high'
+                    ? `border-primary text-primary bg-gradient-to-r ${tab.color} bg-opacity-10`
+                    : 'border-transparent text-text-mid hover:text-text-high hover:bg-bg-800'
                 }`}
               >
-                <tab.icon className="w-4 h-4" />
-                {tab.label}
+                <tab.icon className="w-5 h-5" />
+                <span className="font-medium">{tab.label}</span>
               </button>
             ))}
-          </div>
+          </motion.div>
 
           {/* Overview Tab */}
           {activeTab === 'overview' && (
-            <div className="space-y-8">
-              {/* Quick Stats */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="space-y-8"
+            >
+              {/* Enhanced Quick Stats */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="card">
+                <div className="card hover-lift">
                   <div className="flex items-center">
-                    <DocumentTextIcon className="w-8 h-8 text-primary mr-3" />
+                    <div className="w-12 h-12 bg-gradient-to-r from-primary to-purple-600 rounded-lg flex items-center justify-center mr-4">
+                      <DocumentTextIcon className="w-6 h-6 text-white" />
+                    </div>
                     <div>
-                      <p className="text-2xl font-bold text-text-high">{analytics.totalApplications}</p>
+                      <p className="text-3xl font-bold text-text-high">{analytics.totalApplications}</p>
                       <p className="text-text-mid">Total Applications</p>
+                      <p className="text-xs text-emerald-600">+15% this month</p>
                     </div>
                   </div>
                 </div>
                 
-                <div className="card">
+                <div className="card hover-lift">
                   <div className="flex items-center">
-                    <ClockIcon className="w-8 h-8 text-amber mr-3" />
+                    <div className="w-12 h-12 bg-gradient-to-r from-amber-500 to-amber-600 rounded-lg flex items-center justify-center mr-4">
+                      <ClockIcon className="w-6 h-6 text-white" />
+                    </div>
                     <div>
-                      <p className="text-2xl font-bold text-text-high">{analytics.pendingReviews}</p>
+                      <p className="text-3xl font-bold text-text-high">{analytics.pendingReviews}</p>
                       <p className="text-text-mid">Pending Reviews</p>
+                      <p className="text-xs text-amber-600">Requires attention</p>
                     </div>
                   </div>
                 </div>
                 
-                <div className="card">
+                <div className="card hover-lift">
                   <div className="flex items-center">
-                    <CheckCircleIcon className="w-8 h-8 text-emerald mr-3" />
+                    <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center mr-4">
+                      <CheckCircleIcon className="w-6 h-6 text-white" />
+                    </div>
                     <div>
-                      <p className="text-2xl font-bold text-text-high">{analytics.hired}</p>
+                      <p className="text-3xl font-bold text-text-high">{analytics.hired}</p>
                       <p className="text-text-mid">Hired</p>
+                      <p className="text-xs text-emerald-600">+8 this month</p>
                     </div>
                   </div>
                 </div>
                 
-                <div className="card">
+                <div className="card hover-lift">
                   <div className="flex items-center">
-                    <XCircleIcon className="w-8 h-8 text-rose mr-3" />
+                    <div className="w-12 h-12 bg-gradient-to-r from-rose-500 to-rose-600 rounded-lg flex items-center justify-center mr-4">
+                      <XCircleIcon className="w-6 h-6 text-white" />
+                    </div>
                     <div>
-                      <p className="text-2xl font-bold text-text-high">{analytics.rejected}</p>
+                      <p className="text-3xl font-bold text-text-high">{analytics.rejected}</p>
                       <p className="text-text-mid">Rejected</p>
+                      <p className="text-xs text-rose-600">-5% this month</p>
                     </div>
                   </div>
                 </div>
@@ -309,7 +394,7 @@ export default function AdminDashboard() {
                   ))}
                 </div>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* Applicant Profiles Tab */}

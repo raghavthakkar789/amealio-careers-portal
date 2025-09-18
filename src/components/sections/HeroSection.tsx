@@ -3,9 +3,12 @@
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
+import { UserCircleIcon } from '@heroicons/react/24/outline'
 
 export function HeroSection() {
   const router = useRouter()
+  const { data: session, status } = useSession()
 
   return (
     <section className="relative min-h-screen flex items-center justify-center bg-hero-gradient overflow-hidden">
@@ -57,13 +60,24 @@ export function HeroSection() {
               Browse Open Positions
             </Button>
             
-            <Button
-              onClick={() => router.push('/login')}
-              variant="secondary"
-              className="btn-secondary text-lg px-8 py-4 bg-white/10 text-white border-white/30 hover:bg-white/20 hover:border-white/40 backdrop-blur-sm"
-            >
-              Sign In
-            </Button>
+            {session ? (
+              <Button
+                onClick={() => router.push('/dashboard')}
+                variant="secondary"
+                className="btn-secondary text-lg px-8 py-4 bg-white/10 text-white border-white/30 hover:bg-white/20 hover:border-white/40 backdrop-blur-sm"
+              >
+                <UserCircleIcon className="w-5 h-5 mr-2" />
+                Go to Dashboard
+              </Button>
+            ) : (
+              <Button
+                onClick={() => router.push('/login')}
+                variant="secondary"
+                className="btn-secondary text-lg px-8 py-4 bg-white/10 text-white border-white/30 hover:bg-white/20 hover:border-white/40 backdrop-blur-sm"
+              >
+                Sign In
+              </Button>
+            )}
           </div>
 
           <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">

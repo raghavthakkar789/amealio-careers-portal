@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useSession } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
@@ -13,7 +13,20 @@ import {
   BriefcaseIcon, 
   DocumentTextIcon,
   UsersIcon,
-  ChartBarIcon
+  ChartBarIcon,
+  CalendarIcon,
+  ClockIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  TrendingUpIcon,
+  EyeIcon,
+  ArrowRightOnRectangleIcon,
+  HomeIcon,
+  BellIcon,
+  StarIcon,
+  UserGroupIcon,
+  ClipboardDocumentListIcon,
+  PhoneIcon
 } from '@heroicons/react/24/outline'
 
 export default function HRDashboard() {
@@ -21,6 +34,18 @@ export default function HRDashboard() {
   const router = useRouter()
   const [showCreateJob, setShowCreateJob] = useState(false)
   const [loading, setLoading] = useState(false)
+
+  const handleLogout = async () => {
+    try {
+      await signOut({ 
+        callbackUrl: '/',
+        redirect: true 
+      })
+      toast.success('Logged out successfully!')
+    } catch (error) {
+      toast.error('Failed to logout. Please try again.')
+    }
+  }
 
   // Job creation form state
   const [jobForm, setJobForm] = useState({
@@ -44,7 +69,7 @@ export default function HRDashboard() {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-bg-850">
         <LoadingSpinner size="lg" />
       </div>
     )
@@ -153,88 +178,341 @@ export default function HRDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-bg-850 via-bg-900 to-bg-850">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute top-0 left-0 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl animate-float"></div>
+        <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-300 rounded-full mix-blend-multiply filter blur-xl animate-float animation-delay-2000"></div>
+        <div className="absolute bottom-0 left-0 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl animate-float animation-delay-4000"></div>
+      </div>
+
+      <div className="relative z-10 container mx-auto px-4 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-text-primary mb-2">
-              HR Dashboard
-            </h1>
-            <p className="text-text-secondary">
-              Welcome back, {session.user?.name}! Manage jobs and applications.
-            </p>
-          </div>
-
-          {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="card-dark">
-              <div className="flex items-center">
-                <BriefcaseIcon className="w-8 h-8 text-primary-400 mr-3" />
-                <div>
-                  <p className="text-2xl font-bold text-text-primary">24</p>
-                  <p className="text-text-secondary">Active Jobs</p>
-                </div>
+          {/* Enhanced Header */}
+          <div className="text-center mb-12">
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex-1 flex justify-start">
+                <Button
+                  onClick={() => router.push('/')}
+                  variant="secondary"
+                  className="btn-secondary hover-lift"
+                >
+                  <HomeIcon className="w-4 h-4 mr-2" />
+                  Home
+                </Button>
               </div>
-            </div>
-            
-            <div className="card-dark">
-              <div className="flex items-center">
-                <DocumentTextIcon className="w-8 h-8 text-primary-400 mr-3" />
-                <div>
-                  <p className="text-2xl font-bold text-text-primary">156</p>
-                  <p className="text-text-secondary">Applications</p>
-                </div>
+              <div className="flex-1 text-center">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.8, delay: 0.2 }}
+                  className="mb-4"
+                >
+                  <div className="w-20 h-20 bg-gradient-to-r from-primary to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-large">
+                    <UserGroupIcon className="w-10 h-10 text-white" />
+                  </div>
+                  <h1 className="text-5xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent mb-4">
+                    HR Dashboard
+                  </h1>
+                  <p className="text-xl text-text-mid max-w-2xl mx-auto">
+                    Welcome back, {session.user?.name}! Manage recruitment, track applications, and streamline hiring processes.
+                  </p>
+                </motion.div>
               </div>
-            </div>
-            
-            <div className="card-dark">
-              <div className="flex items-center">
-                <UsersIcon className="w-8 h-8 text-primary-400 mr-3" />
-                <div>
-                  <p className="text-2xl font-bold text-text-primary">12</p>
-                  <p className="text-text-secondary">Interviews</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="card-dark">
-              <div className="flex items-center">
-                <ChartBarIcon className="w-8 h-8 text-primary-400 mr-3" />
-                <div>
-                  <p className="text-2xl font-bold text-text-primary">8</p>
-                  <p className="text-text-secondary">Hired</p>
-                </div>
+              <div className="flex-1 flex justify-end">
+                <Button
+                  onClick={handleLogout}
+                  variant="secondary"
+                  className="btn-secondary hover-lift"
+                >
+                  <ArrowRightOnRectangleIcon className="w-4 h-4 mr-2" />
+                  Logout
+                </Button>
               </div>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-4 mb-8">
-            <Button
-              onClick={() => setShowCreateJob(true)}
-              className="btn-primary"
-            >
-              <PlusIcon className="w-5 h-5 mr-2" />
-              Create New Job
-            </Button>
-            <Button
-              onClick={() => router.push('/hr/applications')}
-              className="btn-secondary"
-            >
-              View Applications
-            </Button>
-            <Button
-              onClick={() => router.push('/hr/interviews')}
-              className="btn-secondary"
-            >
-              Manage Interviews
-            </Button>
-          </div>
+          {/* Enhanced Quick Stats */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
+          >
+            <div className="card hover-lift">
+              <div className="flex items-center">
+                <div className="w-12 h-12 bg-gradient-to-r from-primary to-purple-600 rounded-lg flex items-center justify-center mr-4">
+                  <BriefcaseIcon className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-3xl font-bold text-text-high">24</p>
+                  <p className="text-text-mid">Active Jobs</p>
+                  <p className="text-xs text-emerald-600">+3 this week</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="card hover-lift">
+              <div className="flex items-center">
+                <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center mr-4">
+                  <DocumentTextIcon className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-3xl font-bold text-text-high">156</p>
+                  <p className="text-text-mid">Applications</p>
+                  <p className="text-xs text-emerald-600">+12 today</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="card hover-lift">
+              <div className="flex items-center">
+                <div className="w-12 h-12 bg-gradient-to-r from-amber-500 to-amber-600 rounded-lg flex items-center justify-center mr-4">
+                  <CalendarIcon className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-3xl font-bold text-text-high">12</p>
+                  <p className="text-text-mid">Interviews</p>
+                  <p className="text-xs text-amber-600">5 this week</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="card hover-lift">
+              <div className="flex items-center">
+                <div className="w-12 h-12 bg-gradient-to-r from-rose-500 to-rose-600 rounded-lg flex items-center justify-center mr-4">
+                  <CheckCircleIcon className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-3xl font-bold text-text-high">8</p>
+                  <p className="text-text-mid">Hired</p>
+                  <p className="text-xs text-emerald-600">+2 this month</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Enhanced Action Cards */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12"
+          >
+            <div className="card hover-lift group">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-primary to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <PlusIcon className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-text-high mb-3">
+                  Create Job
+                </h3>
+                <p className="text-text-mid mb-4 text-sm">
+                  Post new positions and attract top talent
+                </p>
+                <Button
+                  onClick={() => setShowCreateJob(true)}
+                  className="btn-primary w-full hover-glow"
+                >
+                  <PlusIcon className="w-4 h-4 mr-2" />
+                  Create Job
+                </Button>
+              </div>
+            </div>
+
+            <div className="card hover-lift group">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <ClipboardDocumentListIcon className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-text-high mb-3">
+                  Applications
+                </h3>
+                <p className="text-text-mid mb-4 text-sm">
+                  Review and manage candidate applications
+                </p>
+                <Button
+                  onClick={() => router.push('/hr/applications')}
+                  className="btn-primary w-full hover-glow"
+                >
+                  <EyeIcon className="w-4 h-4 mr-2" />
+                  View All
+                </Button>
+              </div>
+            </div>
+
+            <div className="card hover-lift group">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-amber-500 to-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <CalendarIcon className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-text-high mb-3">
+                  Interviews
+                </h3>
+                <p className="text-text-mid mb-4 text-sm">
+                  Schedule and manage interview sessions
+                </p>
+                <Button
+                  onClick={() => router.push('/hr/interviews')}
+                  className="btn-primary w-full hover-glow"
+                >
+                  <CalendarIcon className="w-4 h-4 mr-2" />
+                  Manage
+                </Button>
+              </div>
+            </div>
+
+            <div className="card hover-lift group">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-rose-500 to-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <ChartBarIcon className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-text-high mb-3">
+                  Analytics
+                </h3>
+                <p className="text-text-mid mb-4 text-sm">
+                  Track hiring metrics and performance
+                </p>
+                <Button
+                  onClick={() => {}}
+                  className="btn-primary w-full hover-glow"
+                >
+                  <TrendingUpIcon className="w-4 h-4 mr-2" />
+                  View Reports
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Recent Activity & Notifications */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+            className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8"
+          >
+            {/* Recent Applications */}
+            <div className="card">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                    <DocumentTextIcon className="w-5 h-5 text-white" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-text-high">
+                    Recent Applications
+                  </h2>
+                </div>
+                <Button variant="secondary" className="btn-secondary">
+                  <BellIcon className="w-4 h-4 mr-2" />
+                  View All
+                </Button>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-bg-800 to-bg-850 rounded-xl border border-border hover:shadow-medium transition-all duration-300">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-r from-primary to-purple-600 rounded-full flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">JD</span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-text-high">John Doe</h4>
+                      <p className="text-sm text-text-mid">Senior Developer • 2 hours ago</p>
+                    </div>
+                  </div>
+                  <span className="status-badge status-pending">New</span>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-bg-800 to-bg-850 rounded-xl border border-border hover:shadow-medium transition-all duration-300">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">JS</span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-text-high">Jane Smith</h4>
+                      <p className="text-sm text-text-mid">Product Manager • 4 hours ago</p>
+                    </div>
+                  </div>
+                  <span className="status-badge status-review">Review</span>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-bg-800 to-bg-850 rounded-xl border border-border hover:shadow-medium transition-all duration-300">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-r from-amber-500 to-amber-600 rounded-full flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">MJ</span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-text-high">Mike Johnson</h4>
+                      <p className="text-sm text-text-mid">UX Designer • 1 day ago</p>
+                    </div>
+                  </div>
+                  <span className="status-badge status-success">Approved</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Upcoming Interviews */}
+            <div className="card">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-amber-500 to-amber-600 rounded-lg flex items-center justify-center">
+                    <CalendarIcon className="w-5 h-5 text-white" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-text-high">
+                    Upcoming Interviews
+                  </h2>
+                </div>
+                <Button variant="secondary" className="btn-secondary">
+                  <CalendarIcon className="w-4 h-4 mr-2" />
+                  Schedule
+                </Button>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-bg-800 to-bg-850 rounded-xl border border-border hover:shadow-medium transition-all duration-300">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-r from-primary to-purple-600 rounded-lg flex items-center justify-center">
+                      <ClockIcon className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-text-high">Sarah Wilson</h4>
+                      <p className="text-sm text-text-mid">Today • 2:00 PM</p>
+                    </div>
+                  </div>
+                  <span className="status-badge status-review">Video Call</span>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-bg-800 to-bg-850 rounded-xl border border-border hover:shadow-medium transition-all duration-300">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                      <CalendarIcon className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-text-high">Alex Chen</h4>
+                      <p className="text-sm text-text-mid">Tomorrow • 10:00 AM</p>
+                    </div>
+                  </div>
+                  <span className="status-badge status-pending">In Person</span>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-bg-800 to-bg-850 rounded-xl border border-border hover:shadow-medium transition-all duration-300">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-r from-rose-500 to-rose-600 rounded-lg flex items-center justify-center">
+                      <PhoneIcon className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-text-high">David Brown</h4>
+                      <p className="text-sm text-text-mid">Friday • 3:30 PM</p>
+                    </div>
+                  </div>
+                  <span className="status-badge status-review">Phone Call</span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
 
           {/* Create Job Modal */}
           {showCreateJob && (

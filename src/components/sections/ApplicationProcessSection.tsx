@@ -64,16 +64,16 @@ export function ApplicationProcessSection() {
             >
               {/* Connection Line */}
               {index < steps.length - 1 && (
-                <div className="hidden lg:block absolute top-8 left-full w-full h-0.5 bg-primary-200 z-0" />
+                <div className="hidden lg:block absolute top-8 left-full w-full h-0.5 bg-purple-200 z-0" />
               )}
               
               <div className="relative z-10 text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 mb-6 rounded-full bg-primary-600 text-white">
+                <div className="inline-flex items-center justify-center w-16 h-16 mb-6 rounded-full bg-primary text-white hover:bg-primary-hover transition-all duration-300 hover:scale-110">
                   <step.icon className="w-8 h-8" />
                 </div>
                 
-                <div className="absolute -top-2 -right-2 w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                  <span className="text-sm font-bold text-primary-600">
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center border border-purple-200">
+                  <span className="text-sm font-bold text-primary">
                     {step.step}
                   </span>
                 </div>

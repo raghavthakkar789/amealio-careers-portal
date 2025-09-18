@@ -79,7 +79,7 @@ export function CompanyValuesSection() {
               transition={{ duration: 0.6, delay: index * 0.1 }}
               className="text-center group"
             >
-              <div className="inline-flex items-center justify-center w-16 h-16 mb-6 rounded-full bg-gray-100 group-hover:bg-primary-100 transition-colors">
+              <div className="inline-flex items-center justify-center w-16 h-16 mb-6 rounded-full bg-purple-50 group-hover:bg-purple-100 transition-all duration-300 hover:scale-110">
                 <value.icon className={`w-8 h-8 ${value.color}`} />
               </div>
               <h3 className="text-xl font-semibold text-text-primary mb-3">

@@ -107,14 +107,14 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-purple-900 flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-bg-850 flex items-center justify-center px-4 py-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         className="w-full max-w-2xl"
       >
-        <div className="bg-bg-800 rounded-2xl shadow-2xl p-8 border border-border">
+        <div className="bg-bg-800 rounded-2xl shadow-large p-8 border border-border">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-text-high mb-2">
               {isLoggedIn ? 'Already Have Account' : 'Create Your Account'}
@@ -125,8 +125,8 @@ export default function RegisterPage() {
           </div>
 
           {isLoggedIn && (
-            <div className="mb-6 p-4 bg-success-bg border border-success-text rounded-lg">
-              <p className="text-success-text text-center mb-4">
+            <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+              <p className="text-emerald-700 text-center mb-4">
                 You already have an account and are logged in.
               </p>
               <div className="flex gap-3 justify-center">
@@ -254,7 +254,7 @@ export default function RegisterPage() {
               <input
                 type="checkbox"
                 required
-                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                className="rounded border-border text-primary focus:ring-primary/20"
               />
               <span className="ml-2 text-sm text-text-mid">
                 I agree to the{' '}

@@ -117,7 +117,7 @@ export function JobListingsSection() {
 
   if (loading) {
     return (
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-bg-850">
         <div className="container mx-auto px-4">
           <div className="flex justify-center items-center h-64">
             <LoadingSpinner size="lg" />

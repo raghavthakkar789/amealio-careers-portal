@@ -33,8 +33,10 @@ export default function RootLayout({
             toastOptions={{
               duration: 4000,
               style: {
-                background: '#363636',
-                color: '#fff',
+                background: '#FFFFFF',
+                color: '#1E293B',
+                border: '1px solid #E2E8F0',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
               },
             }}
           />

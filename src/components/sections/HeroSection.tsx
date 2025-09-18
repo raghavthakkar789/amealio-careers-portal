@@ -8,12 +8,12 @@ export function HeroSection() {
   const router = useRouter()
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-950 via-primary-900 to-primary-800 overflow-hidden">
+    <section className="relative min-h-screen flex items-center justify-center bg-hero-gradient overflow-hidden">
       {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-0 left-0 w-72 h-72 bg-white rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
-        <div className="absolute top-0 right-0 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
-        <div className="absolute bottom-0 left-0 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute top-0 left-0 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl animate-float"></div>
+        <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-300 rounded-full mix-blend-multiply filter blur-xl animate-float animation-delay-2000"></div>
+        <div className="absolute bottom-0 left-0 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl animate-float animation-delay-4000"></div>
       </div>
 
       <div className="relative z-10 text-center text-white px-4 sm:px-6 lg:px-8">
@@ -24,20 +24,20 @@ export function HeroSection() {
         >
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
             Join the{' '}
-            <span className="text-gradient bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+            <span className="text-gradient-light bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
               amealio
             </span>{' '}
             Team
           </h1>
           
-          <p className="text-xl sm:text-2xl mb-8 max-w-3xl mx-auto text-gray-200">
+          <p className="text-xl sm:text-2xl mb-8 max-w-3xl mx-auto text-purple-100">
             Build the future with us. We're looking for passionate individuals who want to make a difference in the world through innovative technology.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button
               onClick={() => router.push('/jobs')}
-              className="btn-primary text-lg px-8 py-4"
+              className="btn-primary text-lg px-8 py-4 bg-white text-primary hover:bg-purple-50 hover:text-primary-hover shadow-large hover:shadow-xl"
             >
               Browse Open Positions
             </Button>
@@ -45,7 +45,7 @@ export function HeroSection() {
             <Button
               onClick={() => router.push('/login')}
               variant="secondary"
-              className="btn-secondary text-lg px-8 py-4 bg-white/10 text-white border-white/20 hover:bg-white/20"
+              className="btn-secondary text-lg px-8 py-4 bg-white/10 text-white border-white/30 hover:bg-white/20 hover:border-white/40 backdrop-blur-sm"
             >
               Sign In
             </Button>
@@ -58,8 +58,8 @@ export function HeroSection() {
               transition={{ duration: 0.8, delay: 0.2 }}
               className="text-center"
             >
-              <div className="text-3xl font-bold text-purple-300 mb-2">50+</div>
-              <div className="text-gray-300">Open Positions</div>
+              <div className="text-3xl font-bold text-white mb-2">50+</div>
+              <div className="text-purple-200">Open Positions</div>
             </motion.div>
             
             <motion.div
@@ -68,8 +68,8 @@ export function HeroSection() {
               transition={{ duration: 0.8, delay: 0.4 }}
               className="text-center"
             >
-              <div className="text-3xl font-bold text-purple-300 mb-2">6</div>
-              <div className="text-gray-300">Departments</div>
+              <div className="text-3xl font-bold text-white mb-2">6</div>
+              <div className="text-purple-200">Departments</div>
             </motion.div>
             
             <motion.div
@@ -78,8 +78,8 @@ export function HeroSection() {
               transition={{ duration: 0.8, delay: 0.6 }}
               className="text-center"
             >
-              <div className="text-3xl font-bold text-purple-300 mb-2">1000+</div>
-              <div className="text-gray-300">Happy Employees</div>
+              <div className="text-3xl font-bold text-white mb-2">1000+</div>
+              <div className="text-purple-200">Happy Employees</div>
             </motion.div>
           </div>
         </motion.div>
@@ -98,7 +98,7 @@ export function HeroSection() {
         }}
         className="absolute bottom-8 left-1/2 transform -translate-x-1/2 cursor-pointer"
       >
-        <div className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center">
+        <div className="w-6 h-10 border-2 border-white/40 rounded-full flex justify-center hover:border-white/60 transition-colors">
           <motion.div
             animate={{ y: [0, 12, 0] }}
             transition={{ duration: 1.5, repeat: Infinity }}

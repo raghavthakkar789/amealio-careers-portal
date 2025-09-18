@@ -162,10 +162,10 @@ export default function JobsPage() {
           transition={{ duration: 0.6 }}
         >
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-text-primary mb-4">
+            <h1 className="text-4xl font-bold text-text-high mb-4">
               Open Positions
             </h1>
-            <p className="text-xl text-text-secondary">
+            <p className="text-xl text-text-mid">
               Find your next opportunity at amealio
             </p>
           </div>
@@ -176,15 +176,15 @@ export default function JobsPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="card mb-8 bg-warning-bg border-warning-text"
+              className="card mb-8 bg-amber-50 border-amber-200"
             >
               <div className="flex items-center justify-center gap-4 p-6">
-                <UserIcon className="w-8 h-8 text-warning-text" />
+                <UserIcon className="w-8 h-8 text-amber-600" />
                 <div className="text-center">
-                  <h3 className="text-lg font-semibold text-warning-text mb-2">
+                  <h3 className="text-lg font-semibold text-amber-700 mb-2">
                     Login Required to Apply
                   </h3>
-                  <p className="text-warning-text mb-4">
+                  <p className="text-amber-600 mb-4">
                     You need to be logged in to apply for positions. Create an account or sign in to get started.
                   </p>
                   <div className="flex gap-3 justify-center">
@@ -212,15 +212,15 @@ export default function JobsPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="card mb-8 bg-success-bg border-success-text"
+              className="card mb-8 bg-emerald-50 border-emerald-200"
             >
               <div className="flex items-center justify-center gap-4 p-4">
-                <UserIcon className="w-6 h-6 text-success-text" />
+                <UserIcon className="w-6 h-6 text-emerald-600" />
                 <div className="text-center">
-                  <h3 className="text-lg font-semibold text-success-text mb-1">
+                  <h3 className="text-lg font-semibold text-emerald-700 mb-1">
                     Welcome back, {session.user?.name}!
                   </h3>
-                  <p className="text-success-text">
+                  <p className="text-emerald-600">
                     You're logged in and ready to apply for positions.
                   </p>
                 </div>
@@ -289,7 +289,7 @@ export default function JobsPage() {
 
           {/* Results */}
           <div className="mb-6">
-            <p className="text-text-secondary">
+            <p className="text-text-mid">
               Showing {filteredJobs.length} of {jobs.length} positions
             </p>
           </div>
@@ -310,10 +310,10 @@ export default function JobsPage() {
 
           {filteredJobs.length === 0 && (
             <div className="text-center py-12">
-              <h3 className="text-xl font-semibold text-text-primary mb-2">
+              <h3 className="text-xl font-semibold text-text-high mb-2">
                 No positions found
               </h3>
-              <p className="text-text-secondary mb-4">
+              <p className="text-text-mid mb-4">
                 Try adjusting your search criteria or check back later for new opportunities.
               </p>
               <Button

@@ -40,7 +40,7 @@ export function JobCard({ job }: JobCardProps) {
   return (
     <motion.div
       whileHover={{ y: -5 }}
-      className="card-grey group cursor-pointer"
+      className="card-grey group cursor-pointer hover-lift"
       onClick={handleViewDetails}
     >
       <div className="flex justify-between items-start mb-4">
@@ -52,7 +52,7 @@ export function JobCard({ job }: JobCardProps) {
             {job.department.replace('_', ' ').toLowerCase()}
           </p>
         </div>
-        <span className="px-3 py-1 bg-purple-800 text-purple-200 text-sm rounded-full">
+        <span className="px-3 py-1 bg-purple-100 text-purple-700 text-sm rounded-full border border-purple-200 font-medium">
           {job.employmentTypes[0].replace('_', ' ')}
         </span>
       </div>
@@ -94,13 +94,13 @@ export function JobCard({ job }: JobCardProps) {
           {job.requiredSkills.slice(0, 4).map((skill, index) => (
             <span
               key={index}
-              className="px-2 py-1 bg-bg-850 text-text-mid text-xs rounded-md border border-border"
+              className="px-2 py-1 bg-bg-850 text-text-mid text-xs rounded-md border border-border hover:border-primary/50 transition-colors"
             >
               {skill}
             </span>
           ))}
           {job.requiredSkills.length > 4 && (
-            <span className="px-2 py-1 bg-bg-850 text-text-mid text-xs rounded-md border border-border">
+            <span className="px-2 py-1 bg-bg-850 text-text-mid text-xs rounded-md border border-border hover:border-primary/50 transition-colors">
               +{job.requiredSkills.length - 4} more
             </span>
           )}
@@ -122,7 +122,7 @@ export function JobCard({ job }: JobCardProps) {
             e.stopPropagation()
             handleViewDetails()
           }}
-          className="bg-bg-850 text-text-high hover:bg-bg-900 border-2 border-border hover:border-link flex-1 h-12 px-6 font-semibold rounded-lg transition-all duration-200"
+          className="bg-bg-850 text-text-high hover:bg-bg-900 border-2 border-border hover:border-link flex-1 h-12 px-6 font-semibold rounded-lg transition-all duration-200 hover:shadow-medium"
         >
           View Details
         </Button>

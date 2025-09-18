@@ -64,14 +64,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-purple-900 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-bg-850 flex items-center justify-center px-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         className="w-full max-w-md"
       >
-        <div className="bg-bg-800 rounded-2xl shadow-2xl p-8 border border-border">
+        <div className="bg-bg-800 rounded-2xl shadow-large p-8 border border-border">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-text-high mb-2">
               {isLoggedIn ? 'Already Logged In' : 'Welcome Back'}
@@ -82,8 +82,8 @@ export default function LoginPage() {
           </div>
 
           {isLoggedIn && (
-            <div className="mb-6 p-4 bg-success-bg border border-success-text rounded-lg">
-              <p className="text-success-text text-center mb-4">
+            <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+              <p className="text-emerald-700 text-center mb-4">
                 You are already logged in to your account.
               </p>
               <div className="flex gap-3 justify-center">
@@ -139,7 +139,7 @@ export default function LoginPage() {
               <label className="flex items-center">
                 <input
                   type="checkbox"
-                  className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  className="rounded border-border text-primary focus:ring-primary/20"
                 />
                 <span className="ml-2 text-sm text-text-mid">
                   Remember me
@@ -185,7 +185,7 @@ export default function LoginPage() {
                     setEmail('admin@amealio.com')
                     setPassword('admin123')
                   }}
-                  className="block w-full p-2 bg-bg-700 hover:bg-bg-600 rounded border border-border transition-colors"
+                  className="block w-full p-2 bg-bg-850 hover:bg-bg-900 rounded border border-border transition-colors hover:border-primary/50"
                 >
                   <strong>Admin:</strong> admin@amealio.com / admin123
                 </button>
@@ -194,7 +194,7 @@ export default function LoginPage() {
                     setEmail('hr@amealio.com')
                     setPassword('hr123')
                   }}
-                  className="block w-full p-2 bg-bg-700 hover:bg-bg-600 rounded border border-border transition-colors"
+                  className="block w-full p-2 bg-bg-850 hover:bg-bg-900 rounded border border-border transition-colors hover:border-primary/50"
                 >
                   <strong>HR:</strong> hr@amealio.com / hr123
                 </button>
@@ -203,7 +203,7 @@ export default function LoginPage() {
                     setEmail('user@amealio.com')
                     setPassword('user123')
                   }}
-                  className="block w-full p-2 bg-bg-700 hover:bg-bg-600 rounded border border-border transition-colors"
+                  className="block w-full p-2 bg-bg-850 hover:bg-bg-900 rounded border border-border transition-colors hover:border-primary/50"
                 >
                   <strong>Applicant:</strong> user@amealio.com / user123
                 </button>

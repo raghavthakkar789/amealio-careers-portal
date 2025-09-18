@@ -180,6 +180,7 @@ export default function AdminDashboard() {
           name: `${formData.firstName} ${formData.lastName}`,
           email: formData.email,
           department: formData.department,
+
           createdAt: new Date().toISOString().split('T')[0], // Use date only to avoid timezone issues
           activeJobs: 0,
           totalHires: 0
@@ -197,7 +198,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-bg-850">
       <div className="container mx-auto px-4 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -206,10 +207,10 @@ export default function AdminDashboard() {
         >
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-4xl font-bold text-text-primary mb-2">
+            <h1 className="text-4xl font-bold text-text-high mb-2">
               Admin Dashboard
             </h1>
-            <p className="text-text-secondary">
+            <p className="text-text-mid">
               Welcome back, {session.user?.name}! Manage the entire hiring process.
             </p>
           </div>
@@ -227,8 +228,8 @@ export default function AdminDashboard() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-4 py-2 border-b-2 transition-colors ${
                   activeTab === tab.id
-                    ? 'border-primary-500 text-primary-500'
-                    : 'border-transparent text-text-secondary hover:text-text-primary'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-text-mid hover:text-text-high'
                 }`}
               >
                 <tab.icon className="w-4 h-4" />
@@ -242,42 +243,42 @@ export default function AdminDashboard() {
             <div className="space-y-8">
               {/* Quick Stats */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="card-dark">
+                <div className="card">
                   <div className="flex items-center">
-                    <DocumentTextIcon className="w-8 h-8 text-primary-400 mr-3" />
+                    <DocumentTextIcon className="w-8 h-8 text-primary mr-3" />
                     <div>
-                      <p className="text-2xl font-bold text-text-primary">{analytics.totalApplications}</p>
-                      <p className="text-text-secondary">Total Applications</p>
+                      <p className="text-2xl font-bold text-text-high">{analytics.totalApplications}</p>
+                      <p className="text-text-mid">Total Applications</p>
                     </div>
                   </div>
                 </div>
                 
-                <div className="card-dark">
+                <div className="card">
                   <div className="flex items-center">
-                    <ClockIcon className="w-8 h-8 text-warning-text mr-3" />
+                    <ClockIcon className="w-8 h-8 text-amber mr-3" />
                     <div>
-                      <p className="text-2xl font-bold text-text-primary">{analytics.pendingReviews}</p>
-                      <p className="text-text-secondary">Pending Reviews</p>
+                      <p className="text-2xl font-bold text-text-high">{analytics.pendingReviews}</p>
+                      <p className="text-text-mid">Pending Reviews</p>
                     </div>
                   </div>
                 </div>
                 
-                <div className="card-dark">
+                <div className="card">
                   <div className="flex items-center">
-                    <CheckCircleIcon className="w-8 h-8 text-success-text mr-3" />
+                    <CheckCircleIcon className="w-8 h-8 text-emerald mr-3" />
                     <div>
-                      <p className="text-2xl font-bold text-text-primary">{analytics.hired}</p>
-                      <p className="text-text-secondary">Hired</p>
+                      <p className="text-2xl font-bold text-text-high">{analytics.hired}</p>
+                      <p className="text-text-mid">Hired</p>
                     </div>
                   </div>
                 </div>
                 
-                <div className="card-dark">
+                <div className="card">
                   <div className="flex items-center">
-                    <XCircleIcon className="w-8 h-8 text-error-text mr-3" />
+                    <XCircleIcon className="w-8 h-8 text-rose mr-3" />
                     <div>
-                      <p className="text-2xl font-bold text-text-primary">{analytics.rejected}</p>
-                      <p className="text-text-secondary">Rejected</p>
+                      <p className="text-2xl font-bold text-text-high">{analytics.rejected}</p>
+                      <p className="text-text-mid">Rejected</p>
                     </div>
                   </div>
                 </div>
@@ -285,23 +286,23 @@ export default function AdminDashboard() {
 
               {/* Department Stats */}
               <div className="card">
-                <h2 className="text-2xl font-bold text-text-primary mb-6">Department Statistics</h2>
+                <h2 className="text-2xl font-bold text-text-high mb-6">Department Statistics</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {Object.entries(analytics.departmentStats).map(([dept, stats]: [string, { applications: number; hired: number; pending: number }]) => (
-                    <div key={dept} className="bg-bg-850 p-4 rounded-lg border border-border">
-                      <h3 className="font-semibold text-text-primary mb-2">{dept}</h3>
+                    <div key={dept} className="bg-bg-850 p-4 rounded-lg border border-border hover:shadow-medium transition-all duration-200">
+                      <h3 className="font-semibold text-text-high mb-2">{dept}</h3>
                       <div className="space-y-1 text-sm">
                         <div className="flex justify-between">
-                          <span className="text-text-secondary">Applications:</span>
-                          <span className="text-text-primary">{stats.applications}</span>
+                          <span className="text-text-mid">Applications:</span>
+                          <span className="text-text-high">{stats.applications}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-text-secondary">Hired:</span>
-                          <span className="text-success-text">{stats.hired}</span>
+                          <span className="text-text-mid">Hired:</span>
+                          <span className="text-emerald">{stats.hired}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-text-secondary">Pending:</span>
-                          <span className="text-warning-text">{stats.pending}</span>
+                          <span className="text-text-mid">Pending:</span>
+                          <span className="text-amber">{stats.pending}</span>
                         </div>
                       </div>
                     </div>

@@ -36,7 +36,7 @@ export function Footer() {
               <Button
                 onClick={() => window.open('/contact', '_blank')}
                 variant="outline"
-                className="btn-secondary border-white/30 text-white hover:bg-white/20 hover:border-white/40 backdrop-blur-sm"
+                className="btn-secondary border-white/80 text-white bg-white/10 hover:bg-white/20 hover:border-white backdrop-blur-sm"
               >
                 Contact Us
               </Button>

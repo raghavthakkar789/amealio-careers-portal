@@ -25,7 +25,7 @@ import {
   ArrowRightOnRectangleIcon,
   BellIcon,
   StarIcon,
-  TrendingUpIcon,
+  ArrowTrendingUpIcon,
   CalendarIcon,
   UserGroupIcon,
   ClipboardDocumentListIcon,
@@ -258,8 +258,8 @@ export default function AdminDashboard() {
                     <ShieldCheckIcon className="w-10 h-10 text-white" />
                   </div>
                   <h1 className="text-5xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent mb-4">
-                    Admin Dashboard
-                  </h1>
+              Admin Dashboard
+            </h1>
                   <p className="text-xl text-text-mid max-w-2xl mx-auto">
                     Welcome back, {session.user?.name}! Oversee the entire hiring ecosystem and manage organizational growth.
                   </p>
@@ -289,7 +289,7 @@ export default function AdminDashboard() {
               { id: 'overview', label: 'Overview', icon: ChartBarIcon, color: 'from-primary to-purple-600' },
               { id: 'applicants', label: 'Applicant Profiles', icon: UsersIcon, color: 'from-emerald-500 to-emerald-600' },
               { id: 'hr-management', label: 'HR Management', icon: UserPlusIcon, color: 'from-amber-500 to-amber-600' },
-              { id: 'analytics', label: 'Analytics', icon: TrendingUpIcon, color: 'from-rose-500 to-rose-600' }
+              { id: 'analytics', label: 'Analytics', icon: ArrowTrendingUpIcon, color: 'from-rose-500 to-rose-600' }
             ].map(tab => (
               <button
                 key={tab.id}

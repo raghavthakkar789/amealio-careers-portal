@@ -19,7 +19,7 @@ import {
   CalendarIcon,
   BellIcon,
   StarIcon,
-  TrendingUpIcon
+  ArrowTrendingUpIcon
 } from '@heroicons/react/24/outline'
 
 export default function DashboardPage() {
@@ -176,7 +176,7 @@ export default function DashboardPage() {
             <div className="card hover-lift">
               <div className="flex items-center">
                 <div className="w-12 h-12 bg-gradient-to-r from-rose-500 to-rose-600 rounded-lg flex items-center justify-center mr-4">
-                  <TrendingUpIcon className="w-6 h-6 text-white" />
+                  <ArrowTrendingUpIcon className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <p className="text-3xl font-bold text-text-high">85%</p>

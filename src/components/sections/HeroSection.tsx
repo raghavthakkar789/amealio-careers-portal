@@ -24,8 +24,23 @@ export function HeroSection() {
         >
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
             Join the{' '}
-            <span className="text-gradient-light bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
-              amealio
+            <span className="relative inline-block">
+              {/* Main text with strong gradient */}
+              <span className="relative z-10 text-gradient-light bg-gradient-to-r from-white via-yellow-100 to-white bg-clip-text text-transparent drop-shadow-2xl font-black tracking-wide">
+                amealio
+              </span>
+              {/* Outer glow layer */}
+              <span className="absolute inset-0 bg-gradient-to-r from-white via-yellow-100 to-white bg-clip-text text-transparent blur-lg opacity-70">
+                amealio
+              </span>
+              {/* Inner glow layer */}
+              <span className="absolute inset-0 bg-gradient-to-r from-white via-yellow-100 to-white bg-clip-text text-transparent blur-md opacity-90">
+                amealio
+              </span>
+              {/* Subtle shadow layer */}
+              <span className="absolute inset-0 bg-gradient-to-r from-white via-yellow-100 to-white bg-clip-text text-transparent blur-sm opacity-60 translate-x-1 translate-y-1">
+                amealio
+              </span>
             </span>{' '}
             Team
           </h1>

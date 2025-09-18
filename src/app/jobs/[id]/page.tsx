@@ -30,6 +30,7 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [job, setJob] = useState<any>(null)
+  const [isDeadlinePassed, setIsDeadlinePassed] = useState(false)
 
   // Fetch job details from API
   useEffect(() => {
@@ -54,6 +55,15 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
 
     fetchJob()
   }, [resolvedParams.id, router])
+
+  // Calculate deadline status on client side to avoid hydration mismatch
+  useEffect(() => {
+    if (job?.applicationDeadline) {
+      const now = new Date()
+      const deadline = new Date(job.applicationDeadline)
+      setIsDeadlinePassed(deadline < now)
+    }
+  }, [job?.applicationDeadline])
 
   if (status === 'loading' || loading) {
     return (
@@ -83,17 +93,6 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
     }
     router.push(`/jobs/${job.id}/apply`)
   }
-
-  const [isDeadlinePassed, setIsDeadlinePassed] = useState(false)
-
-  // Calculate deadline status on client side to avoid hydration mismatch
-  useEffect(() => {
-    if (job?.applicationDeadline) {
-      const now = new Date()
-      const deadline = new Date(job.applicationDeadline)
-      setIsDeadlinePassed(deadline < now)
-    }
-  }, [job?.applicationDeadline])
 
   return (
     <div className="min-h-screen bg-background">

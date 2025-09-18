@@ -398,9 +398,7 @@ export default function HRInterviewsPage() {
               </div>
             </div>
           </div>
-
-          {/* Action Button */}
-          <div className="mb-8">
+            
             <Button
               onClick={() => setShowScheduleModal(true)}
               className="btn-primary"

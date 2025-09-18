@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { CacheManager } from '@/lib/performance'
 
 // Mock job data with different details for each job
 const mockJobs = {
@@ -282,21 +281,6 @@ export async function GET(
   try {
     const resolvedParams = await params
     const jobId = resolvedParams.id
-    
-    // Check cache first
-    const cacheKey = `job-${jobId}`
-    const cachedJob = CacheManager.get(cacheKey)
-    
-    if (cachedJob) {
-      return NextResponse.json(cachedJob, { 
-        status: 200,
-        headers: {
-          'Cache-Control': 'public, max-age=300, s-maxage=300',
-          'X-Cache': 'HIT'
-        }
-      })
-    }
-
     const job = mockJobs[jobId as keyof typeof mockJobs]
 
     if (!job) {
@@ -306,16 +290,7 @@ export async function GET(
       )
     }
 
-    // Cache the result for 5 minutes
-    CacheManager.set(cacheKey, job, 300000)
-
-    return NextResponse.json(job, { 
-      status: 200,
-      headers: {
-        'Cache-Control': 'public, max-age=300, s-maxage=300',
-        'X-Cache': 'MISS'
-      }
-    })
+    return NextResponse.json(job, { status: 200 })
 
   } catch (error) {
     console.error('Error fetching job:', error)

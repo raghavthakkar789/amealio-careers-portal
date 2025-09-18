@@ -110,8 +110,8 @@ export default function DashboardPage() {
                     <UserCircleIcon className="w-10 h-10 text-white" />
                   </div>
                   <h1 className="text-5xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent mb-4">
-                    Welcome, {session.user?.name}!
-                  </h1>
+              Welcome, {session.user?.name}!
+            </h1>
                   <p className="text-xl text-text-mid max-w-2xl mx-auto">
                     Your career journey starts here. Track applications, discover opportunities, and manage your professional profile.
                   </p>
@@ -171,8 +171,8 @@ export default function DashboardPage() {
                   <p className="text-text-mid">Pending</p>
                 </div>
               </div>
-            </div>
-            
+          </div>
+
             <div className="card hover-lift">
               <div className="flex items-center">
                 <div className="w-12 h-12 bg-gradient-to-r from-rose-500 to-rose-600 rounded-lg flex items-center justify-center mr-4">
@@ -199,18 +199,18 @@ export default function DashboardPage() {
                   <DocumentTextIcon className="w-8 h-8 text-white" />
                 </div>
                 <h3 className="text-2xl font-bold text-text-high mb-3">
-                  My Applications
-                </h3>
+                My Applications
+              </h3>
                 <p className="text-text-mid mb-6 leading-relaxed">
                   Track your job applications, view status updates, and manage your application history.
-                </p>
-                <Button
-                  onClick={() => router.push('/applications')}
+              </p>
+              <Button
+                onClick={() => router.push('/applications')}
                   className="btn-primary w-full hover-glow"
-                >
+              >
                   <DocumentTextIcon className="w-5 h-5 mr-2" />
-                  View Applications
-                </Button>
+                View Applications
+              </Button>
               </div>
             </div>
 
@@ -220,18 +220,18 @@ export default function DashboardPage() {
                   <BriefcaseIcon className="w-8 h-8 text-white" />
                 </div>
                 <h3 className="text-2xl font-bold text-text-high mb-3">
-                  Available Jobs
-                </h3>
+                Available Jobs
+              </h3>
                 <p className="text-text-mid mb-6 leading-relaxed">
                   Discover exciting career opportunities and find your next role with us.
-                </p>
-                <Button
-                  onClick={() => router.push('/jobs')}
+              </p>
+              <Button
+                onClick={() => router.push('/jobs')}
                   className="btn-primary w-full hover-glow"
-                >
+              >
                   <BriefcaseIcon className="w-5 h-5 mr-2" />
-                  Browse Jobs
-                </Button>
+                Browse Jobs
+              </Button>
               </div>
             </div>
 
@@ -241,20 +241,20 @@ export default function DashboardPage() {
                   <UserCircleIcon className="w-8 h-8 text-white" />
                 </div>
                 <h3 className="text-2xl font-bold text-text-high mb-3">
-                  My Profile
-                </h3>
+                My Profile
+              </h3>
                 <p className="text-text-mid mb-6 leading-relaxed">
                   Keep your professional profile updated and showcase your skills.
-                </p>
-                <Button
-                  onClick={() => router.push('/profile')}
+              </p>
+              <Button
+                onClick={() => router.push('/profile')}
                   className="btn-primary w-full hover-glow"
-                >
+              >
                   <UserCircleIcon className="w-5 h-5 mr-2" />
-                  Edit Profile
-                </Button>
-              </div>
+                Edit Profile
+              </Button>
             </div>
+          </div>
           </motion.div>
 
           {/* Enhanced Recent Activity */}
@@ -270,8 +270,8 @@ export default function DashboardPage() {
                   <ChartBarIcon className="w-5 h-5 text-white" />
                 </div>
                 <h2 className="text-3xl font-bold text-text-high">
-                  Recent Activity
-                </h2>
+              Recent Activity
+            </h2>
               </div>
               <Button variant="secondary" className="btn-secondary">
                 <BellIcon className="w-4 h-4 mr-2" />
@@ -290,23 +290,23 @@ export default function DashboardPage() {
                   <div className="w-12 h-12 bg-gradient-to-r from-amber-500 to-amber-600 rounded-lg flex items-center justify-center">
                     <DocumentTextIcon className="w-6 h-6 text-white" />
                   </div>
-                  <div>
+                <div>
                     <h4 className="text-lg font-semibold text-text-high">
-                      Application Submitted
-                    </h4>
+                    Application Submitted
+                  </h4>
                     <p className="text-text-mid">
                       Senior Software Engineer • 2 days ago
-                    </p>
-                  </div>
+                  </p>
+                </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="status-badge status-pending">
-                    Pending Review
-                  </span>
+                <span className="status-badge status-pending">
+                  Pending Review
+                </span>
                   <Button variant="secondary" className="btn-secondary">
                     View Details
                   </Button>
-                </div>
+              </div>
               </motion.div>
 
               <motion.div
@@ -319,19 +319,19 @@ export default function DashboardPage() {
                   <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center">
                     <CalendarIcon className="w-6 h-6 text-white" />
                   </div>
-                  <div>
+                <div>
                     <h4 className="text-lg font-semibold text-text-high">
-                      Interview Scheduled
-                    </h4>
+                    Interview Scheduled
+                  </h4>
                     <p className="text-text-mid">
                       Product Manager • 1 week ago
-                    </p>
-                  </div>
+                  </p>
+                </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="status-badge status-review">
-                    Scheduled
-                  </span>
+                <span className="status-badge status-review">
+                  Scheduled
+                </span>
                   <Button variant="secondary" className="btn-secondary">
                     View Details
                   </Button>
@@ -355,8 +355,8 @@ export default function DashboardPage() {
                     <p className="text-text-mid">
                       Skills & Experience • 3 days ago
                     </p>
-                  </div>
-                </div>
+              </div>
+            </div>
                 <div className="flex items-center gap-3">
                   <span className="status-badge status-success">
                     Complete
@@ -364,7 +364,7 @@ export default function DashboardPage() {
                   <Button variant="secondary" className="btn-secondary">
                     View Profile
                   </Button>
-                </div>
+          </div>
               </motion.div>
             </div>
           </motion.div>

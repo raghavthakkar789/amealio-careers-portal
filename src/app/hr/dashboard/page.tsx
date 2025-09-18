@@ -216,8 +216,8 @@ export default function HRDashboard() {
                     <UserGroupIcon className="w-10 h-10 text-white" />
                   </div>
                   <h1 className="text-5xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent mb-4">
-                    HR Dashboard
-                  </h1>
+              HR Dashboard
+            </h1>
                   <p className="text-xl text-text-mid max-w-2xl mx-auto">
                     Welcome back, {session.user?.name}! Manage recruitment, track applications, and streamline hiring processes.
                   </p>
@@ -307,20 +307,20 @@ export default function HRDashboard() {
               <div className="text-center">
                 <div className="w-16 h-16 bg-gradient-to-r from-primary to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
                   <PlusIcon className="w-8 h-8 text-white" />
-                </div>
+          </div>
                 <h3 className="text-xl font-bold text-text-high mb-3">
                   Create Job
                 </h3>
                 <p className="text-text-mid mb-4 text-sm">
                   Post new positions and attract top talent
                 </p>
-                <Button
-                  onClick={() => setShowCreateJob(true)}
+            <Button
+              onClick={() => setShowCreateJob(true)}
                   className="btn-primary w-full hover-glow"
-                >
+            >
                   <PlusIcon className="w-4 h-4 mr-2" />
                   Create Job
-                </Button>
+            </Button>
               </div>
             </div>
 
@@ -335,13 +335,13 @@ export default function HRDashboard() {
                 <p className="text-text-mid mb-4 text-sm">
                   Review and manage candidate applications
                 </p>
-                <Button
-                  onClick={() => router.push('/hr/applications')}
+            <Button
+              onClick={() => router.push('/hr/applications')}
                   className="btn-primary w-full hover-glow"
-                >
+            >
                   <EyeIcon className="w-4 h-4 mr-2" />
                   View All
-                </Button>
+            </Button>
               </div>
             </div>
 
@@ -356,8 +356,8 @@ export default function HRDashboard() {
                 <p className="text-text-mid mb-4 text-sm">
                   Schedule and manage interview sessions
                 </p>
-                <Button
-                  onClick={() => router.push('/hr/interviews')}
+            <Button
+              onClick={() => router.push('/hr/interviews')}
                   className="btn-primary w-full hover-glow"
                 >
                   <CalendarIcon className="w-4 h-4 mr-2" />
@@ -468,8 +468,8 @@ export default function HRDashboard() {
                 <Button variant="secondary" className="btn-secondary">
                   <CalendarIcon className="w-4 h-4 mr-2" />
                   Schedule
-                </Button>
-              </div>
+            </Button>
+          </div>
               
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-gradient-to-r from-bg-800 to-bg-850 rounded-xl border border-border hover:shadow-medium transition-all duration-300">

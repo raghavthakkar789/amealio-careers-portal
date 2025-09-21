@@ -221,7 +221,7 @@ export default function JobsPage() {
                     Welcome back, {session.user?.name}!
                   </h3>
                   <p className="text-emerald-600">
-                    You're logged in and ready to apply for positions.
+                    You&apos;re logged in and ready to apply for positions.
                   </p>
                 </div>
               </div>

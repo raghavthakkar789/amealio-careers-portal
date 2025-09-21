@@ -99,7 +99,7 @@ export default function RegisterPage() {
       } else {
         toast.error(data.message || 'Registration failed')
       }
-    } catch (error) {
+    } catch {
       toast.error('An error occurred during registration')
     } finally {
       setLoading(false)

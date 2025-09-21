@@ -61,6 +61,16 @@ export default function AdminDashboard() {
     departmentStats: {} as Record<string, { applications: number; hired: number; pending: number }>
   })
 
+  // Authentication check
+  useEffect(() => {
+    if (status === 'loading') return
+
+    if (!session || session.user?.role !== 'ADMIN') {
+      router.push('/login')
+      return
+    }
+  }, [session, status, router])
+
   // Mock data - replace with actual API calls
   useEffect(() => {
     const fetchData = async () => {
@@ -155,7 +165,6 @@ export default function AdminDashboard() {
   }
 
   if (!session || session.user?.role !== 'ADMIN') {
-    router.push('/login')
     return null
   }
 
@@ -237,7 +246,7 @@ export default function AdminDashboard() {
           {/* Enhanced Header */}
           <div className="text-center mb-12">
             <div className="flex justify-between items-start mb-6">
-              <div className="flex-1 flex justify-start">
+              <div className="flex-1 flex justify-start gap-3">
                 <Button
                   onClick={() => router.push('/')}
                   variant="secondary"
@@ -245,6 +254,14 @@ export default function AdminDashboard() {
                 >
                   <HomeIcon className="w-4 h-4 mr-2" />
                   Home
+                </Button>
+                <Button
+                  onClick={() => router.push('/dashboard')}
+                  variant="secondary"
+                  className="btn-secondary hover-lift"
+                >
+                  <ChartBarIcon className="w-4 h-4 mr-2" />
+                  Dashboard
                 </Button>
               </div>
               <div className="flex-1 text-center">
@@ -383,11 +400,11 @@ export default function AdminDashboard() {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-text-mid">Hired:</span>
-                          <span className="text-emerald">{stats.hired}</span>
+                          <span className="text-emerald-600">{stats.hired}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-text-mid">Pending:</span>
-                          <span className="text-amber">{stats.pending}</span>
+                          <span className="text-amber-600">{stats.pending}</span>
                         </div>
                       </div>
                     </div>
@@ -413,9 +430,9 @@ export default function AdminDashboard() {
                         </div>
                         <div className="flex gap-2">
                           <span className={`px-3 py-1 rounded-full text-sm ${
-                            applicant.status === 'HIRED' ? 'bg-success-bg text-success-text' :
-                            applicant.status === 'REJECTED' ? 'bg-error-bg text-error-text' :
-                            'bg-warning-bg text-warning-text'
+                            applicant.status === 'HIRED' ? 'bg-emerald-100 text-emerald-700' :
+                            applicant.status === 'REJECTED' ? 'bg-rose-100 text-rose-700' :
+                            'bg-amber-100 text-amber-700'
                           }`}>
                             {applicant.status.replace('_', ' ')}
                           </span>
@@ -447,9 +464,9 @@ export default function AdminDashboard() {
                             <div className="flex justify-between">
                               <span className="text-text-secondary">Background:</span>
                               <span className={`${
-                                applicant.backgroundCheck === 'COMPLETED' ? 'text-success-text' :
-                                applicant.backgroundCheck === 'PENDING' ? 'text-warning-text' :
-                                'text-error-text'
+                                applicant.backgroundCheck === 'COMPLETED' ? 'text-emerald-600' :
+                                applicant.backgroundCheck === 'PENDING' ? 'text-amber-600' :
+                                'text-rose-600'
                               }`}>
                                 {applicant.backgroundCheck}
                               </span>
@@ -457,9 +474,9 @@ export default function AdminDashboard() {
                             <div className="flex justify-between">
                               <span className="text-text-secondary">References:</span>
                               <span className={`${
-                                applicant.referenceCheck === 'COMPLETED' ? 'text-success-text' :
-                                applicant.referenceCheck === 'PENDING' ? 'text-warning-text' :
-                                'text-error-text'
+                                applicant.referenceCheck === 'COMPLETED' ? 'text-emerald-600' :
+                                applicant.referenceCheck === 'PENDING' ? 'text-amber-600' :
+                                'text-rose-600'
                               }`}>
                                 {applicant.referenceCheck}
                               </span>
@@ -467,8 +484,8 @@ export default function AdminDashboard() {
                             <div className="flex justify-between">
                               <span className="text-text-secondary">HR Recommendation:</span>
                               <span className={`${
-                                applicant.hrRecommendation === 'HIRE' ? 'text-success-text' :
-                                'text-error-text'
+                                applicant.hrRecommendation === 'HIRE' ? 'text-emerald-600' :
+                                'text-rose-600'
                               }`}>
                                 {applicant.hrRecommendation}
                               </span>
@@ -493,19 +510,19 @@ export default function AdminDashboard() {
                         <div className="flex gap-4 pt-4 border-t border-border">
                           <Button
                             onClick={() => handleFinalDecision(applicant.id, 'HIRE')}
-                            className="btn-success"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                           >
                             <CheckCircleIcon className="w-4 h-4 mr-2" />
                             Approve Hire
                           </Button>
                           <Button
                             onClick={() => handleFinalDecision(applicant.id, 'REJECT')}
-                            className="btn-error"
+                            className="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                           >
                             <XCircleIcon className="w-4 h-4 mr-2" />
                             Reject
                           </Button>
-                          <Button className="btn-secondary">
+                          <Button className="bg-bg-800 hover:bg-bg-850 text-text-high px-4 py-2 rounded-lg font-medium transition-colors border border-border">
                             <EyeIcon className="w-4 h-4 mr-2" />
                             View Full Profile
                           </Button>
@@ -577,7 +594,7 @@ export default function AdminDashboard() {
                       <option value="FINANCE">Finance</option>
                       <option value="OPERATIONS">Operations</option>
                     </select>
-                    <Button type="submit" className="btn-primary">
+                    <Button type="submit" className="bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-lg font-medium transition-colors">
                       <UserPlusIcon className="w-4 h-4 mr-2" />
                       Create HR User
                     </Button>
@@ -606,10 +623,10 @@ export default function AdminDashboard() {
                             <p className="text-text-secondary text-sm">Total Hires</p>
                           </div>
                           <div className="flex gap-2">
-                            <Button className="btn-secondary">
+                            <Button className="bg-bg-800 hover:bg-bg-850 text-text-high px-3 py-2 rounded-lg font-medium transition-colors border border-border">
                               <PencilIcon className="w-4 h-4" />
                             </Button>
-                            <Button className="btn-error">
+                            <Button className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-lg font-medium transition-colors">
                               <TrashIcon className="w-4 h-4" />
                             </Button>
                           </div>
@@ -638,11 +655,11 @@ export default function AdminDashboard() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-text-secondary">Fastest Hire:</span>
-                        <span className="text-success-text font-semibold">5 days</span>
+                        <span className="text-emerald-600 font-semibold">5 days</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-text-secondary">Longest Process:</span>
-                        <span className="text-warning-text font-semibold">45 days</span>
+                        <span className="text-amber-600 font-semibold">45 days</span>
                       </div>
                     </div>
                   </div>
@@ -671,7 +688,7 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="mt-6">
-                  <Button className="btn-primary">
+                  <Button className="bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-lg font-medium transition-colors">
                     <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
                     Export Analytics Report
                   </Button>

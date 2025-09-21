@@ -42,7 +42,7 @@ export const authOptions: NextAuthOptions = {
               }
             }
           }
-        } catch (error) {
+        } catch {
           console.log('Database not available, using demo accounts')
         }
 

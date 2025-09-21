@@ -20,7 +20,6 @@ import {
   PlusIcon,
   ArrowLeftIcon,
   MagnifyingGlassIcon,
-  FunnelIcon,
   PhoneIcon,
   DocumentTextIcon,
   EnvelopeIcon,
@@ -244,7 +243,7 @@ export default function HRInterviewsPage() {
       })
       
       toast.success('Interview scheduled successfully!')
-    } catch (error) {
+    } catch {
       toast.error('Failed to schedule interview')
     }
   }
@@ -275,7 +274,7 @@ export default function HRInterviewsPage() {
       setFeedbackForm({ rating: 0, feedback: '', recommendation: 'PENDING' })
       
       toast.success('Feedback submitted successfully!')
-    } catch (error) {
+    } catch {
       toast.error('Failed to submit feedback')
     }
   }
@@ -321,7 +320,7 @@ export default function HRInterviewsPage() {
       })
       
       toast.success('Interview rescheduled successfully!')
-    } catch (error) {
+    } catch {
       toast.error('Failed to reschedule interview')
     }
   }
@@ -398,7 +397,8 @@ export default function HRInterviewsPage() {
               </div>
             </div>
           </div>
-            
+          
+          <div className="flex justify-end">
             <Button
               onClick={() => setShowScheduleModal(true)}
               className="btn-primary"
@@ -407,7 +407,13 @@ export default function HRInterviewsPage() {
               Schedule Interview
             </Button>
           </div>
-
+        </motion.div>
+        
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
           {/* Filters and Search */}
           <div className="card mb-8">
             <div className="flex flex-col lg:flex-row gap-4 mb-4">
@@ -825,7 +831,7 @@ export default function HRInterviewsPage() {
                       </label>
                       <select
                         value={scheduleForm.type}
-                        onChange={(e) => setScheduleForm(prev => ({ ...prev, type: e.target.value as any }))}
+                        onChange={(e) => setScheduleForm(prev => ({ ...prev, type: e.target.value as 'PHONE' | 'VIDEO' | 'IN_PERSON' }))}
                         className="w-full p-3 border border-border rounded-lg bg-white text-text-high focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
                       >
                         <option value="VIDEO">📹 Video Conference Call</option>
@@ -879,7 +885,7 @@ export default function HRInterviewsPage() {
                         placeholder="https://meet.google.com/abc-defg-hij"
                       />
                       <p className="text-xs text-text-mid">
-                        Leave blank if you'll send the link separately
+                        Leave blank if you&apos;ll send the link separately
                       </p>
                     </div>
                   )}
@@ -1063,7 +1069,7 @@ export default function HRInterviewsPage() {
                       </label>
                       <select
                         value={feedbackForm.recommendation}
-                        onChange={(e) => setFeedbackForm(prev => ({ ...prev, recommendation: e.target.value as any }))}
+                        onChange={(e) => setFeedbackForm(prev => ({ ...prev, recommendation: e.target.value as 'HIRE' | 'NO_HIRE' | 'PENDING' }))}
                         className="w-full p-3 border border-border rounded-lg bg-white text-text-high focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
                         required
                       >
@@ -1323,7 +1329,7 @@ Please be specific, objective, and constructive in your evaluation..."
                       </label>
                       <select
                         value={rescheduleForm.type}
-                        onChange={(e) => setRescheduleForm(prev => ({ ...prev, type: e.target.value as any }))}
+                        onChange={(e) => setRescheduleForm(prev => ({ ...prev, type: e.target.value as 'PHONE' | 'VIDEO' | 'IN_PERSON' }))}
                         className="w-full p-3 border border-border rounded-lg bg-bg-800 text-text-high focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
                       >
                         <option value="VIDEO">📹 Video Call</option>

@@ -110,13 +110,13 @@ export function ApplicationProcessSection() {
               <div>
                 <h4 className="font-semibold text-text-high mb-2">Communication</h4>
                 <p className="text-text-mid text-sm">
-                  Regular updates via email and our portal. You'll always know where you stand in the process.
+                  Regular updates via email and our portal. You&apos;ll always know where you stand in the process.
                 </p>
               </div>
               <div>
                 <h4 className="font-semibold text-text-high mb-2">Support</h4>
                 <p className="text-text-mid text-sm">
-                  Our HR team is here to help. Don't hesitate to reach out with any questions or concerns.
+                  Our HR team is here to help. Don&apos;t hesitate to reach out with any questions or concerns.
                 </p>
               </div>
             </div>

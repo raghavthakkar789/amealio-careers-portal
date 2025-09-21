@@ -2,29 +2,32 @@
 
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { toast } from 'react-hot-toast'
-import { 
-  ArrowRightOnRectangleIcon, 
-  HomeIcon,
+import {
   DocumentTextIcon,
-  BriefcaseIcon,
-  UserCircleIcon,
-  ChartBarIcon,
-  ClockIcon,
   CheckCircleIcon,
-  CalendarIcon,
+  ClockIcon,
+  ArrowUpIcon,
+  HomeIcon,
+  ArrowRightOnRectangleIcon,
   BellIcon,
-  StarIcon,
-  ArrowTrendingUpIcon
+  UserIcon,
+  BriefcaseIcon
 } from '@heroicons/react/24/outline'
+
 
 export default function DashboardPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const [isHydrated, setIsHydrated] = useState(false)
+
+  useEffect(() => {
+    setIsHydrated(true)
+  }, [])
 
   const handleLogout = async () => {
     try {
@@ -33,7 +36,7 @@ export default function DashboardPage() {
         redirect: true 
       })
       toast.success('Logged out successfully!')
-    } catch (error) {
+    } catch {
       toast.error('Failed to logout. Please try again.')
     }
   }
@@ -58,7 +61,7 @@ export default function DashboardPage() {
     }
   }, [session, status, router])
 
-  if (status === 'loading') {
+  if (!isHydrated || status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" />
@@ -107,7 +110,7 @@ export default function DashboardPage() {
                   className="mb-4"
                 >
                   <div className="w-20 h-20 bg-gradient-to-r from-primary to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-large">
-                    <UserCircleIcon className="w-10 h-10 text-white" />
+                    <UserIcon className="w-10 h-10 text-white" />
                   </div>
                   <h1 className="text-5xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent mb-4">
               Welcome, {session.user?.name}!
@@ -171,12 +174,12 @@ export default function DashboardPage() {
                   <p className="text-text-mid">Pending</p>
                 </div>
               </div>
-          </div>
+            </div>
 
             <div className="card hover-lift">
               <div className="flex items-center">
                 <div className="w-12 h-12 bg-gradient-to-r from-rose-500 to-rose-600 rounded-lg flex items-center justify-center mr-4">
-                  <ArrowTrendingUpIcon className="w-6 h-6 text-white" />
+                  <ArrowUpIcon className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <p className="text-3xl font-bold text-text-high">85%</p>
@@ -238,7 +241,7 @@ export default function DashboardPage() {
             <div className="card hover-lift group">
               <div className="text-center">
                 <div className="w-16 h-16 bg-gradient-to-r from-amber-500 to-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                  <UserCircleIcon className="w-8 h-8 text-white" />
+                  <UserIcon className="w-8 h-8 text-white" />
                 </div>
                 <h3 className="text-2xl font-bold text-text-high mb-3">
                 My Profile
@@ -250,7 +253,7 @@ export default function DashboardPage() {
                 onClick={() => router.push('/profile')}
                   className="btn-primary w-full hover-glow"
               >
-                  <UserCircleIcon className="w-5 h-5 mr-2" />
+                  <UserIcon className="w-5 h-5 mr-2" />
                 Edit Profile
               </Button>
             </div>
@@ -267,7 +270,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-to-r from-primary to-purple-600 rounded-lg flex items-center justify-center">
-                  <ChartBarIcon className="w-5 h-5 text-white" />
+                  <CheckCircleIcon className="w-5 h-5 text-white" />
                 </div>
                 <h2 className="text-3xl font-bold text-text-high">
               Recent Activity
@@ -317,7 +320,7 @@ export default function DashboardPage() {
               >
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center">
-                    <CalendarIcon className="w-6 h-6 text-white" />
+                    <ClockIcon className="w-6 h-6 text-white" />
                   </div>
                 <div>
                     <h4 className="text-lg font-semibold text-text-high">
@@ -346,7 +349,7 @@ export default function DashboardPage() {
               >
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-gradient-to-r from-primary to-purple-600 rounded-lg flex items-center justify-center">
-                    <StarIcon className="w-6 h-6 text-white" />
+                    <CheckCircleIcon className="w-6 h-6 text-white" />
                   </div>
                   <div>
                     <h4 className="text-lg font-semibold text-text-high">

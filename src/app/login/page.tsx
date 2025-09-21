@@ -56,7 +56,7 @@ export default function LoginPage() {
         setIsLoggedIn(true)
         toast.success('Login successful!')
       }
-    } catch (error) {
+    } catch {
       toast.error('An error occurred during login')
     } finally {
       setLoading(false)
@@ -88,7 +88,17 @@ export default function LoginPage() {
               </p>
               <div className="flex gap-3 justify-center">
                 <Button
-                  onClick={() => router.push('/dashboard')}
+                  onClick={async () => {
+                    // Redirect based on user role
+                    const session = await getSession()
+                    if (session?.user?.role === 'ADMIN') {
+                      router.push('/admin/dashboard')
+                    } else if (session?.user?.role === 'HR') {
+                      router.push('/hr/dashboard')
+                    } else {
+                      router.push('/dashboard')
+                    }
+                  }}
                   className="btn-primary"
                 >
                   Go to Dashboard
@@ -164,7 +174,7 @@ export default function LoginPage() {
 
           <div className="mt-8 text-center">
             <p className="text-text-mid">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <Link
                 href="/register"
                 className="text-link hover:text-link-hover font-medium"

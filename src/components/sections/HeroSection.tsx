@@ -8,7 +8,7 @@ import { UserCircleIcon } from '@heroicons/react/24/outline'
 
 export function HeroSection() {
   const router = useRouter()
-  const { data: session, status } = useSession()
+  const { data: session } = useSession()
 
   return (
     <section className="relative min-h-screen flex items-center justify-center bg-hero-gradient overflow-hidden">
@@ -49,7 +49,7 @@ export function HeroSection() {
           </h1>
           
           <p className="text-xl sm:text-2xl mb-8 max-w-3xl mx-auto text-purple-100">
-            Build the future with us. We're looking for passionate individuals who want to make a difference in the world through innovative technology.
+            Build the future with us. We&apos;re looking for passionate individuals who want to make a difference in the world through innovative technology.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -62,7 +62,16 @@ export function HeroSection() {
             
             {session ? (
               <Button
-                onClick={() => router.push('/dashboard')}
+                onClick={() => {
+                  // Redirect based on user role
+                  if (session.user?.role === 'ADMIN') {
+                    router.push('/admin/dashboard')
+                  } else if (session.user?.role === 'HR') {
+                    router.push('/hr/dashboard')
+                  } else {
+                    router.push('/dashboard')
+                  }
+                }}
                 variant="secondary"
                 className="btn-secondary text-lg px-8 py-4 bg-white/10 text-white border-white/30 hover:bg-white/20 hover:border-white/40 backdrop-blur-sm"
               >

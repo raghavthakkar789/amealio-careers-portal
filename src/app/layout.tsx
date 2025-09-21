@@ -25,6 +25,27 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Prevent MetaMask connection attempts
+              if (typeof window !== 'undefined') {
+                window.addEventListener('load', function() {
+                  // Override ethereum object to prevent connection attempts
+                  if (window.ethereum) {
+                    const originalRequest = window.ethereum.request;
+                    window.ethereum.request = function(args) {
+                      console.warn('MetaMask connection blocked for this application');
+                      return Promise.reject(new Error('MetaMask connection not supported in this application'));
+                    };
+                  }
+                });
+              }
+            `,
+          }}
+        />
+      </head>
       <body className={inter.className} suppressHydrationWarning={true}>
         <AuthProvider>
           {children}

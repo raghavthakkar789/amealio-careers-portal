@@ -103,7 +103,7 @@ export function CompanyValuesSection() {
               Join Our Mission
             </h3>
             <p className="text-lg text-text-mid mb-6">
-              We're not just building products – we're building the future. 
+              We&apos;re not just building products – we&apos;re building the future. 
               Join a team that values your unique perspective and supports your growth.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

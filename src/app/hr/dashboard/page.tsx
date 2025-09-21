@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
@@ -12,18 +12,14 @@ import {
   PlusIcon, 
   BriefcaseIcon, 
   DocumentTextIcon,
-  UsersIcon,
   ChartBarIcon,
   CalendarIcon,
   ClockIcon,
   CheckCircleIcon,
-  XCircleIcon,
-  TrendingUpIcon,
   EyeIcon,
   ArrowRightOnRectangleIcon,
   HomeIcon,
   BellIcon,
-  StarIcon,
   UserGroupIcon,
   ClipboardDocumentListIcon,
   PhoneIcon
@@ -42,7 +38,7 @@ export default function HRDashboard() {
         redirect: true 
       })
       toast.success('Logged out successfully!')
-    } catch (error) {
+    } catch {
       toast.error('Failed to logout. Please try again.')
     }
   }
@@ -139,9 +135,9 @@ export default function HRDashboard() {
         location: '',
         remoteWork: false,
       })
-    } catch (error) {
+    } catch {
       toast.error('Failed to create job')
-      console.error('Error creating job:', error)
+      console.error('Error creating job')
     } finally {
       setLoading(false)
     }
@@ -195,7 +191,7 @@ export default function HRDashboard() {
           {/* Enhanced Header */}
           <div className="text-center mb-12">
             <div className="flex justify-between items-start mb-6">
-              <div className="flex-1 flex justify-start">
+              <div className="flex-1 flex justify-start gap-3">
                 <Button
                   onClick={() => router.push('/')}
                   variant="secondary"
@@ -203,6 +199,14 @@ export default function HRDashboard() {
                 >
                   <HomeIcon className="w-4 h-4 mr-2" />
                   Home
+                </Button>
+                <Button
+                  onClick={() => router.push('/dashboard')}
+                  variant="secondary"
+                  className="btn-secondary hover-lift"
+                >
+                  <ChartBarIcon className="w-4 h-4 mr-2" />
+                  Dashboard
                 </Button>
               </div>
               <div className="flex-1 text-center">
@@ -381,7 +385,7 @@ export default function HRDashboard() {
                   onClick={() => {}}
                   className="btn-primary w-full hover-glow"
                 >
-                  <TrendingUpIcon className="w-4 h-4 mr-2" />
+                  <ChartBarIcon className="w-4 h-4 mr-2" />
                   View Reports
                 </Button>
               </div>

@@ -191,7 +191,7 @@ export default function HRDashboard() {
           {/* Enhanced Header */}
           <div className="text-center mb-12">
             <div className="flex justify-between items-start mb-6">
-              <div className="flex-1 flex justify-start gap-3">
+              <div className="flex-1 flex justify-start">
                 <Button
                   onClick={() => router.push('/')}
                   variant="secondary"
@@ -374,7 +374,7 @@ export default function HRDashboard() {
                   Track hiring metrics and performance
                 </p>
                 <Button
-                  onClick={() => {}}
+                  onClick={() => router.push('/hr/analytics')}
                   className="btn-primary w-full hover-glow"
                 >
                   <ChartBarIcon className="w-4 h-4 mr-2" />

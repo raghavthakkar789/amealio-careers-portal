@@ -69,7 +69,7 @@ export function HeroSection() {
                   } else if (session.user?.role === 'HR') {
                     router.push('/hr/dashboard')
                   } else {
-                    router.push('/dashboard')
+                    router.push('/applicant/dashboard')
                   }
                 }}
                 variant="secondary"

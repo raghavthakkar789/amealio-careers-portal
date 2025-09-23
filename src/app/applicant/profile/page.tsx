@@ -10,7 +10,6 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { toast } from 'react-hot-toast'
 import { 
   UserIcon,
-  EnvelopeIcon,
   PhoneIcon,
   MapPinIcon,
   BriefcaseIcon,
@@ -134,7 +133,7 @@ export default function ProfilePage() {
       }))
       
       toast.success('Resume uploaded successfully!')
-    } catch (error) {
+    } catch {
       toast.error('Failed to upload resume. Please try again.')
     } finally {
       setUploadingResume(false)
@@ -180,7 +179,7 @@ export default function ProfilePage() {
       setProfile(prev => prev ? { ...prev, ...formData } : null)
       setIsEditing(false)
       toast.success('Profile updated successfully!')
-    } catch (error) {
+    } catch {
       toast.error('Failed to update profile. Please try again.')
     } finally {
       setSaving(false)
@@ -217,7 +216,7 @@ export default function ProfilePage() {
           <div className="flex items-center justify-between mb-8">
             <div>
               <Button
-                onClick={() => router.push('/dashboard')}
+                onClick={() => router.push('/applicant/dashboard')}
                 variant="secondary"
                 className="mb-4"
               >

@@ -24,7 +24,17 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
   const [jobLoading, setJobLoading] = useState(true)
   const [resumeFile, setResumeFile] = useState<File | null>(null)
   const [additionalFiles, setAdditionalFiles] = useState<File[]>([])
-  const [job, setJob] = useState<any>(null)
+  const [job, setJob] = useState<{
+    id: string
+    title: string
+    department: string
+    location: string
+    remoteWork: boolean
+    description: string
+    requirements: string[]
+    responsibilities: string[]
+    benefits: string[]
+  } | null>(null)
 
   const [formData, setFormData] = useState({
     coverLetter: '',
@@ -170,7 +180,7 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
       }
 
       toast.success('Application submitted successfully!')
-      router.push('/dashboard')
+      router.push('/applicant/dashboard')
     } catch (error) {
       toast.error('Failed to submit application')
       console.error('Error submitting application:', error)
@@ -190,11 +200,11 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
           {/* Header */}
           <div className="mb-8">
             <Button
-              onClick={() => router.back()}
+              onClick={() => router.push(`/jobs/${resolvedParams.id}`)}
               className="btn-secondary mb-4"
             >
               <ArrowLeftIcon className="w-4 h-4 mr-2" />
-              Back to Jobs
+              Back to Job Details
             </Button>
             
             <h1 className="text-4xl font-bold text-text-primary mb-2">

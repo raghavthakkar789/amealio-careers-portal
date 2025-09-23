@@ -51,7 +51,7 @@ export default function LoginPage() {
         } else if (session?.user?.role === 'HR') {
           router.push('/hr/dashboard')
         } else {
-          router.push('/dashboard')
+          router.push('/applicant/dashboard')
         }
         setIsLoggedIn(true)
         toast.success('Login successful!')
@@ -96,7 +96,7 @@ export default function LoginPage() {
                     } else if (session?.user?.role === 'HR') {
                       router.push('/hr/dashboard')
                     } else {
-                      router.push('/dashboard')
+                      router.push('/applicant/dashboard')
                     }
                   }}
                   className="btn-primary"

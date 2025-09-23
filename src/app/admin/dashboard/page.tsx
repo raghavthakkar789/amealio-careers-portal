@@ -266,7 +266,7 @@ export default function AdminDashboard() {
           {/* Enhanced Header */}
           <div className="text-center mb-12">
             <div className="flex justify-between items-start mb-6">
-              <div className="flex-1 flex justify-start gap-3">
+              <div className="flex-1 flex justify-start">
                 <Button
                   onClick={() => router.push('/')}
                   variant="secondary"

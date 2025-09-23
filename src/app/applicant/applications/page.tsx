@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
@@ -30,9 +30,11 @@ interface Application {
 export default function ApplicationsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [applications, setApplications] = useState<Application[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL')
+  const [highlightedApp, setHighlightedApp] = useState<string | null>(null)
 
   useEffect(() => {
     if (status === 'loading') return
@@ -49,27 +51,41 @@ export default function ApplicationsPage() {
       router.push('/hr/dashboard')
     }
 
+    // Check for highlight parameter
+    const highlightParam = searchParams.get('highlight')
+    if (highlightParam) {
+      setHighlightedApp(highlightParam)
+      // Remove highlight after 3 seconds
+      setTimeout(() => {
+        setHighlightedApp(null)
+        // Clean up URL
+        const url = new URL(window.location.href)
+        url.searchParams.delete('highlight')
+        window.history.replaceState({}, '', url.toString())
+      }, 3000)
+    }
+
     // Mock data - replace with actual API call
     setTimeout(() => {
       setApplications([
         {
-          id: '1',
+          id: 'app-1',
           jobTitle: 'Senior Software Engineer',
           company: 'Amealio',
           department: 'Engineering',
           appliedDate: '2024-01-15',
-          status: 'INTERVIEW',
-          interviewDate: '2024-01-25',
-          notes: 'Technical interview scheduled'
+          status: 'PENDING',
+          notes: 'Application submitted and pending review'
         },
         {
-          id: '2',
+          id: 'app-2',
           jobTitle: 'Product Manager',
           company: 'Amealio',
           department: 'Product',
           appliedDate: '2024-01-10',
-          status: 'REVIEW',
-          notes: 'Application under review'
+          status: 'INTERVIEW',
+          interviewDate: '2024-01-25',
+          notes: 'Interview scheduled for next week'
         },
         {
           id: '3',
@@ -92,7 +108,7 @@ export default function ApplicationsPage() {
       ])
       setLoading(false)
     }, 1000)
-  }, [session, status, router])
+  }, [session, status, router, searchParams])
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -166,7 +182,7 @@ export default function ApplicationsPage() {
           <div className="flex items-center justify-between mb-8">
             <div>
               <Button
-                onClick={() => router.push('/dashboard')}
+                onClick={() => router.push('/applicant/dashboard')}
                 variant="secondary"
                 className="mb-4"
               >
@@ -230,7 +246,11 @@ export default function ApplicationsPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: index * 0.1 }}
-                  className="card hover:shadow-card-hover transition-all duration-300"
+                  className={`card hover:shadow-card-hover transition-all duration-300 ${
+                    highlightedApp === application.id 
+                      ? 'ring-2 ring-primary ring-opacity-50 bg-gradient-to-r from-primary/5 to-purple-600/5 animate-pulse' 
+                      : ''
+                  }`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">

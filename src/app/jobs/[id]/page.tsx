@@ -105,7 +105,7 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
           {/* Header */}
           <div className="mb-8">
             <Button
-              onClick={() => router.back()}
+              onClick={() => router.push('/jobs')}
               className="btn-secondary mb-4"
             >
               <ArrowLeftIcon className="w-4 h-4 mr-2" />

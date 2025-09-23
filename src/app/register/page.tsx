@@ -131,7 +131,7 @@ export default function RegisterPage() {
               </p>
               <div className="flex gap-3 justify-center">
                 <Button
-                  onClick={() => router.push('/dashboard')}
+                  onClick={() => router.push('/applicant/dashboard')}
                   className="btn-primary"
                 >
                   Go to Dashboard

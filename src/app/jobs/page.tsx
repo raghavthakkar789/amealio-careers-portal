@@ -126,7 +126,7 @@ export default function JobsPage() {
   })
 
   const departments = ['ENGINEERING', 'MARKETING', 'SALES', 'HR', 'FINANCE', 'OPERATIONS']
-  const locations = [...new Set(jobs.map(job => job.location).filter(Boolean))]
+  const locations = Array.from(new Set(jobs.map(job => job.location).filter(Boolean)))
 
   if (loading) {
     return (
@@ -147,12 +147,12 @@ export default function JobsPage() {
           className="mb-6"
         >
           <Button
-            onClick={() => router.back()}
+            onClick={() => router.push('/applicant/dashboard')}
             variant="secondary"
             className="btn-secondary flex items-center gap-2"
           >
             <ArrowLeftIcon className="w-4 h-4" />
-            Back
+            Back to Dashboard
           </Button>
         </motion.div>
 

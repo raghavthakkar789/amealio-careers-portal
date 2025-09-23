@@ -39,7 +39,7 @@ export function AuthGuard({
       } else if (session.user?.role === 'HR') {
         router.push('/hr/dashboard')
       } else {
-        router.push('/dashboard')
+        router.push('/applicant/dashboard')
       }
       return
     }

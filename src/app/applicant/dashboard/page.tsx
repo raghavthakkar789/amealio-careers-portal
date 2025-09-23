@@ -208,7 +208,7 @@ export default function DashboardPage() {
                   Track your job applications, view status updates, and manage your application history.
               </p>
               <Button
-                onClick={() => router.push('/applications')}
+                onClick={() => router.push('/applicant/applications')}
                   className="btn-primary w-full hover-glow"
               >
                   <DocumentTextIcon className="w-5 h-5 mr-2" />
@@ -250,7 +250,7 @@ export default function DashboardPage() {
                   Keep your professional profile updated and showcase your skills.
               </p>
               <Button
-                onClick={() => router.push('/profile')}
+                onClick={() => router.push('/applicant/profile')}
                   className="btn-primary w-full hover-glow"
               >
                   <UserIcon className="w-5 h-5 mr-2" />
@@ -276,7 +276,11 @@ export default function DashboardPage() {
               Recent Activity
             </h2>
               </div>
-              <Button variant="secondary" className="btn-secondary">
+              <Button 
+                onClick={() => router.push('/applicant/activity')}
+                variant="secondary" 
+                className="btn-secondary"
+              >
                 <BellIcon className="w-4 h-4 mr-2" />
                 View All
               </Button>
@@ -306,7 +310,11 @@ export default function DashboardPage() {
                 <span className="status-badge status-pending">
                   Pending Review
                 </span>
-                  <Button variant="secondary" className="btn-secondary">
+                  <Button 
+                    variant="secondary" 
+                    className="btn-secondary"
+                    onClick={() => router.push('/applicant/applications?highlight=app-1')}
+                  >
                     View Details
                   </Button>
               </div>
@@ -335,7 +343,11 @@ export default function DashboardPage() {
                 <span className="status-badge status-review">
                   Scheduled
                 </span>
-                  <Button variant="secondary" className="btn-secondary">
+                  <Button 
+                    variant="secondary" 
+                    className="btn-secondary"
+                    onClick={() => router.push('/applicant/applications?highlight=app-2')}
+                  >
                     View Details
                   </Button>
                 </div>
@@ -364,7 +376,11 @@ export default function DashboardPage() {
                   <span className="status-badge status-success">
                     Complete
                   </span>
-                  <Button variant="secondary" className="btn-secondary">
+                  <Button 
+                    variant="secondary" 
+                    className="btn-secondary"
+                    onClick={() => router.push('/applicant/profile')}
+                  >
                     View Profile
                   </Button>
           </div>

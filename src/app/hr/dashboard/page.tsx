@@ -200,14 +200,6 @@ export default function HRDashboard() {
                   <HomeIcon className="w-4 h-4 mr-2" />
                   Home
                 </Button>
-                <Button
-                  onClick={() => router.push('/dashboard')}
-                  variant="secondary"
-                  className="btn-secondary hover-lift"
-                >
-                  <ChartBarIcon className="w-4 h-4 mr-2" />
-                  Dashboard
-                </Button>
               </div>
               <div className="flex-1 text-center">
                 <motion.div

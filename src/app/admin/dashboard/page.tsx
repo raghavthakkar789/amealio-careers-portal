@@ -10,7 +10,6 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { toast } from 'react-hot-toast'
 import { 
   UsersIcon, 
-  BriefcaseIcon, 
   ChartBarIcon,
   DocumentTextIcon,
   CheckCircleIcon,
@@ -23,20 +22,14 @@ import {
   ArrowDownTrayIcon,
   HomeIcon,
   ArrowRightOnRectangleIcon,
-  BellIcon,
-  StarIcon,
   ArrowTrendingUpIcon,
-  CalendarIcon,
-  UserGroupIcon,
-  ClipboardDocumentListIcon,
-  ShieldCheckIcon,
-  CogIcon
+  ShieldCheckIcon
 } from '@heroicons/react/24/outline'
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [loading, setLoading] = useState(false)
+  const [, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
 
   const handleLogout = async () => {
@@ -46,12 +39,33 @@ export default function AdminDashboard() {
         redirect: true 
       })
       toast.success('Logged out successfully!')
-    } catch (error) {
+    } catch {
       toast.error('Failed to logout. Please try again.')
     }
   }
-  const [applicants, setApplicants] = useState<any[]>([])
-  const [hrUsers, setHrUsers] = useState<any[]>([])
+  const [applicants, setApplicants] = useState<Array<{
+    id: string;
+    name: string;
+    email: string;
+    position: string;
+    status: string;
+    applicationDate: string;
+    interviewScore: number;
+    hrRecommendation: string;
+    backgroundCheck: string;
+    referenceCheck: string;
+    experience: string;
+    skills: string[];
+  }>>([])
+  const [hrUsers, setHrUsers] = useState<Array<{
+    id: string;
+    name: string;
+    email: string;
+    department: string;
+    createdAt: string;
+    activeJobs: number;
+    totalHires: number;
+  }>>([])
   const [analytics, setAnalytics] = useState({
     totalApplications: 0,
     pendingReviews: 0,
@@ -168,7 +182,7 @@ export default function AdminDashboard() {
     return null
   }
 
-  const handleFinalDecision = async (applicantId: string, decision: 'HIRE' | 'REJECT', salary?: string, startDate?: string) => {
+  const handleFinalDecision = async (applicantId: string, decision: 'HIRE' | 'REJECT') => {
     setLoading(true)
     try {
       // API call to make final decision
@@ -182,14 +196,20 @@ export default function AdminDashboard() {
           ? { ...applicant, status: decision === 'HIRE' ? 'HIRED' : 'REJECTED' }
           : applicant
       ))
-    } catch (error) {
+    } catch {
       toast.error('Failed to make final decision')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleCreateHRUser = async (formData: any) => {
+  const handleCreateHRUser = async (formData: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+    department: string;
+  }) => {
     setLoading(true)
     try {
       const response = await fetch('/api/admin/create-hr', {
@@ -254,14 +274,6 @@ export default function AdminDashboard() {
                 >
                   <HomeIcon className="w-4 h-4 mr-2" />
                   Home
-                </Button>
-                <Button
-                  onClick={() => router.push('/dashboard')}
-                  variant="secondary"
-                  className="btn-secondary hover-lift"
-                >
-                  <ChartBarIcon className="w-4 h-4 mr-2" />
-                  Dashboard
                 </Button>
               </div>
               <div className="flex-1 text-center">
@@ -420,7 +432,7 @@ export default function AdminDashboard() {
               <div className="card">
                 <h2 className="text-2xl font-bold text-text-primary mb-6">Applicant Profiles</h2>
                 <div className="space-y-4">
-                  {applicants.map((applicant: any) => (
+                  {applicants.map((applicant) => (
                     <div key={applicant.id} className="bg-bg-850 p-6 rounded-lg border border-border">
                       <div className="flex justify-between items-start mb-4">
                         <div>
@@ -548,11 +560,11 @@ export default function AdminDashboard() {
                     e.preventDefault()
                     const formData = new FormData(e.currentTarget)
                     handleCreateHRUser({
-                      firstName: formData.get('firstName'),
-                      lastName: formData.get('lastName'),
-                      email: formData.get('email'),
-                      password: formData.get('password'),
-                      department: formData.get('department')
+                      firstName: formData.get('firstName') as string,
+                      lastName: formData.get('lastName') as string,
+                      email: formData.get('email') as string,
+                      password: formData.get('password') as string,
+                      department: formData.get('department') as string
                     })
                   }} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Input
@@ -603,7 +615,7 @@ export default function AdminDashboard() {
 
                 {/* HR Users List */}
                 <div className="space-y-4">
-                  {hrUsers.map((hrUser: any) => (
+                  {hrUsers.map((hrUser) => (
                     <div key={hrUser.id} className="bg-bg-850 p-4 rounded-lg border border-border">
                       <div className="flex justify-between items-center">
                         <div>

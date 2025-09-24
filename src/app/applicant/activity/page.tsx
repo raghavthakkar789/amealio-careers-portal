@@ -7,6 +7,7 @@ import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { toast } from 'react-hot-toast'
+import { activityService, ActivityItem } from '@/lib/activity-service'
 import {
   DocumentTextIcon,
   BellIcon,
@@ -17,31 +18,12 @@ import {
   ArrowLeftIcon
 } from '@heroicons/react/24/outline'
 
-interface ActivityItem {
-  id: string
-  type: 'application' | 'interview' | 'profile_update' | 'job_view'
-  title: string
-  description: string
-  date: string
-  status: 'pending' | 'review' | 'success' | 'scheduled'
-  jobId?: string
-  applicationId?: string
-  metadata?: {
-    position?: string
-    company?: string
-    location?: string
-    interviewDate?: string
-    interviewType?: string
-  }
-}
-
 export default function ActivityPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [isHydrated, setIsHydrated] = useState(false)
   const [activities, setActivities] = useState<ActivityItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedActivity, setSelectedActivity] = useState<string | null>(null)
 
   useEffect(() => {
     setIsHydrated(true)
@@ -51,14 +33,6 @@ export default function ActivityPage() {
 
   const handleViewProfile = () => {
     router.push('/applicant/profile')
-  }
-
-  const handleViewDetails = (activityId: string, applicationId?: string) => {
-    setSelectedActivity(activityId)
-    if (applicationId) {
-      // Navigate to applications page with highlighted application
-      router.push(`/applicant/applications?highlight=${applicationId}`)
-    }
   }
 
   const handleViewJob = (jobId: string) => {
@@ -73,92 +47,9 @@ export default function ActivityPage() {
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 1000))
         
-        const mockActivities: ActivityItem[] = [
-          {
-            id: '1',
-            type: 'application',
-            title: 'Application Submitted',
-            description: 'Senior Software Engineer at amealio',
-            date: '2 days ago',
-            status: 'pending',
-            jobId: 'job-1',
-            applicationId: 'app-1',
-            metadata: {
-              position: 'Senior Software Engineer',
-              company: 'amealio',
-              location: 'Remote'
-            }
-          },
-          {
-            id: '2',
-            type: 'interview',
-            title: 'Interview Scheduled',
-            description: 'Product Manager position - Video Interview',
-            date: '1 week ago',
-            status: 'scheduled',
-            jobId: 'job-2',
-            applicationId: 'app-2',
-            metadata: {
-              position: 'Product Manager',
-              company: 'amealio',
-              interviewDate: '2024-01-25',
-              interviewType: 'Video Call'
-            }
-          },
-          {
-            id: '3',
-            type: 'profile_update',
-            title: 'Profile Updated',
-            description: 'Skills & Experience section updated',
-            date: '3 days ago',
-            status: 'success'
-          },
-          {
-            id: '4',
-            type: 'application',
-            title: 'Application Submitted',
-            description: 'UX Designer at amealio',
-            date: '5 days ago',
-            status: 'review',
-            jobId: 'job-3',
-            applicationId: 'app-3',
-            metadata: {
-              position: 'UX Designer',
-              company: 'amealio',
-              location: 'Hybrid'
-            }
-          },
-          {
-            id: '5',
-            type: 'job_view',
-            title: 'Job Viewed',
-            description: 'Data Scientist position viewed',
-            date: '1 week ago',
-            status: 'success',
-            jobId: 'job-4',
-            metadata: {
-              position: 'Data Scientist',
-              company: 'amealio'
-            }
-          },
-          {
-            id: '6',
-            type: 'interview',
-            title: 'Interview Completed',
-            description: 'Frontend Developer - Technical Interview',
-            date: '2 weeks ago',
-            status: 'success',
-            jobId: 'job-5',
-            applicationId: 'app-4',
-            metadata: {
-              position: 'Frontend Developer',
-              company: 'amealio',
-              interviewType: 'Technical Interview'
-            }
-          }
-        ]
-        
-        setActivities(mockActivities)
+        // Get activities from shared service
+        const activities = activityService.getAllActivities()
+        setActivities(activities)
       } catch (error) {
         toast.error('Failed to load activities')
         console.error('Error loading activities:', error)
@@ -168,6 +59,15 @@ export default function ActivityPage() {
     }
 
     fetchActivities()
+  }, [])
+
+  // Subscribe to activity updates
+  useEffect(() => {
+    const unsubscribe = activityService.subscribe((updatedActivities) => {
+      setActivities(updatedActivities)
+    })
+
+    return unsubscribe
   }, [])
 
   useEffect(() => {
@@ -318,9 +218,7 @@ export default function ActivityPage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.6, delay: 0.1 * index }}
-                  className={`flex items-center justify-between p-6 bg-gradient-to-r from-bg-800 to-bg-850 rounded-xl border border-border hover:shadow-medium transition-all duration-300 ${
-                    selectedActivity === activity.id ? 'ring-2 ring-primary ring-opacity-50' : ''
-                  }`}
+                  className="flex items-center justify-between p-6 bg-gradient-to-r from-bg-800 to-bg-850 rounded-xl border border-border hover:shadow-medium transition-all duration-300"
                 >
                   <div className="flex items-center gap-4">
                     <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
@@ -379,12 +277,12 @@ export default function ActivityPage() {
                       )}
                       {activity.applicationId && (
                         <Button
-                          onClick={() => handleViewDetails(activity.id, activity.applicationId)}
+                          onClick={() => router.push(`/applicant/applications?highlight=${activity.applicationId}`)}
                           variant="secondary"
                           className="btn-secondary"
                         >
                           <DocumentTextIcon className="w-4 h-4 mr-1" />
-                          View Details
+                          View Application
                         </Button>
                       )}
                       {activity.type === 'profile_update' && (
@@ -412,7 +310,7 @@ export default function ActivityPage() {
             className="mt-8 flex justify-center gap-4"
           >
             <Button
-              onClick={() => router.push('/applications')}
+              onClick={() => router.push('/applicant/applications')}
               className="btn-primary hover-glow"
             >
               <DocumentTextIcon className="w-5 h-5 mr-2" />

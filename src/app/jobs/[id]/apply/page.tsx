@@ -2,7 +2,7 @@
 
 import { useState, use, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -20,10 +20,13 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
   const resolvedParams = use(params)
   const { data: session, status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [loading, setLoading] = useState(false)
   const [jobLoading, setJobLoading] = useState(true)
   const [resumeFile, setResumeFile] = useState<File | null>(null)
   const [additionalFiles, setAdditionalFiles] = useState<File[]>([])
+  const [isEditMode, setIsEditMode] = useState(false)
+  const [applicationId, setApplicationId] = useState<string | null>(null)
   const [job, setJob] = useState<{
     id: string
     title: string
@@ -95,17 +98,58 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
     }
   }, [session])
 
+  // Check for edit mode and load existing application data
+  useEffect(() => {
+    const editParam = searchParams.get('edit')
+    const appId = searchParams.get('applicationId')
+    
+    if (editParam === 'true' && appId) {
+      setIsEditMode(true)
+      setApplicationId(appId)
+      
+      // Load existing application data
+      const loadExistingApplication = async () => {
+        try {
+          // Mock existing application data - replace with actual API call
+          await new Promise(resolve => setTimeout(resolve, 500))
+          
+          setFormData({
+            coverLetter: 'I am excited to apply for this position...',
+            experience: '5-10 years',
+            education: 'Bachelor of Computer Science',
+            skills: 'React, Node.js, TypeScript, AWS',
+            availability: 'Immediately available',
+            expectedSalary: '$120,000 - $150,000',
+            references: 'Available upon request',
+            linkedinProfile: 'https://linkedin.com/in/johndoe',
+          })
+          
+          toast.success('Application loaded for editing')
+        } catch (error) {
+          toast.error('Failed to load application data')
+          console.error('Error loading application:', error)
+        }
+      }
+      
+      loadExistingApplication()
+    }
+  }, [searchParams])
+
+  // Handle authentication redirect
+  useEffect(() => {
+    if (status === 'loading') return
+
+    if (!session) {
+      router.push('/login')
+    }
+  }, [session, status, router])
+
   if (status === 'loading' || jobLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <LoadingSpinner size="lg" />
       </div>
     )
-  }
-
-  if (!session) {
-    router.push('/login')
-    return null
   }
 
   if (!job) {
@@ -140,7 +184,7 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
       // Create FormData for file upload
       const formDataToSend = new FormData()
       formDataToSend.append('jobId', job.id)
-      formDataToSend.append('applicantId', session.user?.id || '')
+      formDataToSend.append('applicantId', session?.user?.id || '')
       formDataToSend.append('coverLetter', formData.coverLetter)
       formDataToSend.append('experience', formData.experience)
       formDataToSend.append('education', formData.education)
@@ -170,17 +214,28 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
         })
       }
 
-      const response = await fetch('/api/applications', {
-        method: 'POST',
+      // Determine API endpoint based on edit mode
+      const apiEndpoint = isEditMode 
+        ? `/api/applications/${applicationId}` 
+        : '/api/applications'
+      
+      const method = isEditMode ? 'PUT' : 'POST'
+
+      const response = await fetch(apiEndpoint, {
+        method,
         body: formDataToSend,
       })
 
       if (!response.ok) {
-        throw new Error('Failed to submit application')
+        const errorData = await response.text()
+        console.error('API Error Response:', errorData)
+        console.error('Response Status:', response.status)
+        throw new Error(`Failed to ${isEditMode ? 'update' : 'submit'} application: ${response.status}`)
       }
 
-      toast.success('Application submitted successfully!')
-      router.push('/applicant/dashboard')
+      const action = isEditMode ? 'updated' : 'submitted'
+      toast.success(`Application ${action} successfully!`)
+      router.push('/applicant/applications')
     } catch (error) {
       toast.error('Failed to submit application')
       console.error('Error submitting application:', error)
@@ -208,10 +263,11 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
             </Button>
             
             <h1 className="text-4xl font-bold text-text-primary mb-2">
-              Apply for {job.title}
+              {isEditMode ? 'Edit Application' : 'Apply for'} {job.title}
             </h1>
             <p className="text-text-secondary">
               {job.department} • {job.location} • {job.remoteWork ? 'Remote' : 'On-site'}
+              {isEditMode && <span className="ml-2 text-amber-600 font-medium">• Editing Mode</span>}
             </p>
           </div>
 
@@ -286,7 +342,7 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
                       <div className="mt-2">
                         <input
                           type="file"
-                          accept=".pdf,.doc,.docx"
+                          accept="*/*"
                           onChange={(e) => handleFileUpload(e, 'resume')}
                           required
                           className="input-field"
@@ -307,7 +363,7 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
                       <div className="mt-2">
                         <input
                           type="file"
-                          accept=".pdf,.doc,.docx,.jpg,.png"
+                          accept="*/*"
                           multiple
                           onChange={(e) => handleFileUpload(e, 'additional')}
                           className="input-field"
@@ -342,14 +398,26 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
                   {/* Experience */}
                   <div>
                     <label className="form-label">Work Experience *</label>
-                    <textarea
+                    <select
                       value={formData.experience}
                       onChange={(e) => setFormData(prev => ({ ...prev, experience: e.target.value }))}
-                      placeholder="Describe your relevant work experience..."
-                      rows={4}
                       required
                       className="input-field"
-                    />
+                    >
+                      <option value="">Select your work experience</option>
+                      <option value="Applying for internship">Applying for internship</option>
+                      <option value="Internship completed">Internship completed</option>
+                      <option value="0-6 months">0-6 months</option>
+                      <option value="6 months-1 year">6 months-1 year</option>
+                      <option value="1-2 years">1-2 years</option>
+                      <option value="2-3 years">2-3 years</option>
+                      <option value="3-4 years">3-4 years</option>
+                      <option value="4-5 years">4-5 years</option>
+                      <option value="5-10 years">5-10 years</option>
+                      <option value="10-15 years">10-15 years</option>
+                      <option value="15-20 years">15-20 years</option>
+                      <option value="20+ years">20+ years</option>
+                    </select>
                   </div>
 
                   {/* Education */}
@@ -435,7 +503,10 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
                       disabled={loading}
                       className="btn-primary flex-1"
                     >
-                      {loading ? 'Submitting...' : 'Submit Application'}
+                      {loading 
+                        ? (isEditMode ? 'Updating...' : 'Submitting...') 
+                        : (isEditMode ? 'Update Application' : 'Submit Application')
+                      }
                     </Button>
                     <Button
                       type="button"

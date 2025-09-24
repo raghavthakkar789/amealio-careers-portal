@@ -7,6 +7,7 @@ import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { toast } from 'react-hot-toast'
+import { activityService, ActivityItem } from '@/lib/activity-service'
 import {
   DocumentTextIcon,
   CheckCircleIcon,
@@ -14,9 +15,10 @@ import {
   ArrowUpIcon,
   HomeIcon,
   ArrowRightOnRectangleIcon,
-  BellIcon,
   UserIcon,
-  BriefcaseIcon
+  BriefcaseIcon,
+  BellIcon,
+  EyeIcon
 } from '@heroicons/react/24/outline'
 
 
@@ -24,10 +26,32 @@ export default function DashboardPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [isHydrated, setIsHydrated] = useState(false)
+  const [recentActivities, setRecentActivities] = useState<ActivityItem[]>([])
 
   useEffect(() => {
     setIsHydrated(true)
   }, [])
+
+  // Load recent activities
+  useEffect(() => {
+    if (isHydrated) {
+      const activities = activityService.getRecentActivities()
+      setRecentActivities(activities)
+    }
+  }, [isHydrated])
+
+  // Subscribe to activity updates
+  useEffect(() => {
+    const unsubscribe = activityService.subscribe((allActivities) => {
+      const recent = allActivities.slice(0, 3)
+      setRecentActivities(recent)
+    })
+
+    return unsubscribe
+  }, [])
+
+  // Ensure recentActivities is used (for linter)
+  const displayActivities = recentActivities
 
   const handleLogout = async () => {
     try {
@@ -273,8 +297,8 @@ export default function DashboardPage() {
                   <CheckCircleIcon className="w-5 h-5 text-white" />
                 </div>
                 <h2 className="text-3xl font-bold text-text-high">
-              Recent Activity
-            </h2>
+                  Recent Activity
+                </h2>
               </div>
               <Button 
                 onClick={() => router.push('/applicant/activity')}
@@ -287,104 +311,81 @@ export default function DashboardPage() {
             </div>
             
             <div className="space-y-6">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.6 }}
-                className="flex items-center justify-between p-6 bg-gradient-to-r from-bg-800 to-bg-850 rounded-xl border border-border hover:shadow-medium transition-all duration-300"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-amber-500 to-amber-600 rounded-lg flex items-center justify-center">
-                    <DocumentTextIcon className="w-6 h-6 text-white" />
+              {displayActivities.map((activity, index) => (
+                <motion.div
+                  key={activity.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6, delay: 0.6 + (index * 0.1) }}
+                  className="flex items-center justify-between p-6 bg-gradient-to-r from-bg-800 to-bg-850 rounded-xl border border-border hover:shadow-medium transition-all duration-300"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                      activity.type === 'application' ? 'bg-gradient-to-r from-amber-500 to-amber-600' :
+                      activity.type === 'interview' ? 'bg-gradient-to-r from-emerald-500 to-emerald-600' :
+                      activity.type === 'profile_update' ? 'bg-gradient-to-r from-purple-500 to-purple-600' :
+                      activity.type === 'job_view' ? 'bg-gradient-to-r from-blue-500 to-blue-600' :
+                      'bg-gradient-to-r from-gray-500 to-gray-600'
+                    }`}>
+                      {activity.type === 'application' && <DocumentTextIcon className="w-6 h-6 text-white" />}
+                      {activity.type === 'interview' && <ClockIcon className="w-6 h-6 text-white" />}
+                      {activity.type === 'profile_update' && <CheckCircleIcon className="w-6 h-6 text-white" />}
+                      {activity.type === 'job_view' && <EyeIcon className="w-6 h-6 text-white" />}
+                      {activity.type === 'status_change' && <CheckCircleIcon className="w-6 h-6 text-white" />}
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-semibold text-text-high">
+                        {activity.title}
+                      </h4>
+                      <p className="text-text-mid">
+                        {activity.description} • {activity.date}
+                      </p>
+                    </div>
                   </div>
-                <div>
-                    <h4 className="text-lg font-semibold text-text-high">
-                    Application Submitted
-                  </h4>
-                    <p className="text-text-mid">
-                      Senior Software Engineer • 2 days ago
-                  </p>
-                </div>
-                </div>
-                <div className="flex items-center gap-3">
-                <span className="status-badge status-pending">
-                  Pending Review
-                </span>
-                  <Button 
-                    variant="secondary" 
-                    className="btn-secondary"
-                    onClick={() => router.push('/applicant/applications?highlight=app-1')}
-                  >
-                    View Details
-                  </Button>
-              </div>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.7 }}
-                className="flex items-center justify-between p-6 bg-gradient-to-r from-bg-800 to-bg-850 rounded-xl border border-border hover:shadow-medium transition-all duration-300"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center">
-                    <ClockIcon className="w-6 h-6 text-white" />
+                  <div className="flex items-center gap-3">
+                    <span className={`status-badge ${
+                      activity.status === 'pending' ? 'status-pending' :
+                      activity.status === 'review' ? 'status-review' :
+                      activity.status === 'success' ? 'status-success' :
+                      activity.status === 'scheduled' ? 'status-pending' :
+                      'status-success'
+                    }`}>
+                      {activity.status === 'pending' ? 'Pending' :
+                       activity.status === 'review' ? 'Under Review' :
+                       activity.status === 'success' ? 'Completed' :
+                       activity.status === 'scheduled' ? 'Scheduled' :
+                       'Completed'}
+                    </span>
+                    {activity.jobId && (
+                      <Button 
+                        variant="secondary" 
+                        className="btn-secondary"
+                        onClick={() => router.push(`/jobs/${activity.jobId}`)}
+                      >
+                        View Job
+                      </Button>
+                    )}
+                    {activity.applicationId && (
+                      <Button 
+                        variant="secondary" 
+                        className="btn-secondary"
+                        onClick={() => router.push(`/applicant/applications?highlight=${activity.applicationId}`)}
+                      >
+                        View Application
+                      </Button>
+                    )}
+                    {activity.type === 'profile_update' && (
+                      <Button 
+                        variant="secondary" 
+                        className="btn-secondary"
+                        onClick={() => router.push('/applicant/profile')}
+                      >
+                        View Profile
+                      </Button>
+                    )}
                   </div>
-                <div>
-                    <h4 className="text-lg font-semibold text-text-high">
-                    Interview Scheduled
-                  </h4>
-                    <p className="text-text-mid">
-                      Product Manager • 1 week ago
-                  </p>
-                </div>
-                </div>
-                <div className="flex items-center gap-3">
-                <span className="status-badge status-review">
-                  Scheduled
-                </span>
-                  <Button 
-                    variant="secondary" 
-                    className="btn-secondary"
-                    onClick={() => router.push('/applicant/applications?highlight=app-2')}
-                  >
-                    View Details
-                  </Button>
-                </div>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.8 }}
-                className="flex items-center justify-between p-6 bg-gradient-to-r from-bg-800 to-bg-850 rounded-xl border border-border hover:shadow-medium transition-all duration-300"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-primary to-purple-600 rounded-lg flex items-center justify-center">
-                    <CheckCircleIcon className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-semibold text-text-high">
-                      Profile Updated
-                    </h4>
-                    <p className="text-text-mid">
-                      Skills & Experience • 3 days ago
-                    </p>
-              </div>
-            </div>
-                <div className="flex items-center gap-3">
-                  <span className="status-badge status-success">
-                    Complete
-                  </span>
-                  <Button 
-                    variant="secondary" 
-                    className="btn-secondary"
-                    onClick={() => router.push('/applicant/profile')}
-                  >
-                    View Profile
-                  </Button>
-          </div>
-              </motion.div>
+                </motion.div>
+              ))}
             </div>
           </motion.div>
         </motion.div>

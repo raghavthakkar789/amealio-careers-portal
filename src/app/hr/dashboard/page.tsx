@@ -19,7 +19,6 @@ import {
   EyeIcon,
   ArrowRightOnRectangleIcon,
   HomeIcon,
-  BellIcon,
   UserGroupIcon,
   ClipboardDocumentListIcon,
   PhoneIcon
@@ -393,19 +392,13 @@ export default function HRDashboard() {
           >
             {/* Recent Applications */}
             <div className="card">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center">
-                    <DocumentTextIcon className="w-5 h-5 text-white" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-text-high">
-                    Recent Applications
-                  </h2>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                  <DocumentTextIcon className="w-5 h-5 text-white" />
                 </div>
-                <Button variant="secondary" className="btn-secondary">
-                  <BellIcon className="w-4 h-4 mr-2" />
-                  View All
-                </Button>
+                <h2 className="text-2xl font-bold text-text-high">
+                  Recent Applications
+                </h2>
               </div>
               
               <div className="space-y-4">
@@ -452,20 +445,14 @@ export default function HRDashboard() {
 
             {/* Upcoming Interviews */}
             <div className="card">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-amber-500 to-amber-600 rounded-lg flex items-center justify-center">
-                    <CalendarIcon className="w-5 h-5 text-white" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-text-high">
-                    Upcoming Interviews
-                  </h2>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-gradient-to-r from-amber-500 to-amber-600 rounded-lg flex items-center justify-center">
+                  <CalendarIcon className="w-5 h-5 text-white" />
                 </div>
-                <Button variant="secondary" className="btn-secondary">
-                  <CalendarIcon className="w-4 h-4 mr-2" />
-                  Schedule
-            </Button>
-          </div>
+                <h2 className="text-2xl font-bold text-text-high">
+                  Upcoming Interviews
+                </h2>
+              </div>
               
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-gradient-to-r from-bg-800 to-bg-850 rounded-xl border border-border hover:shadow-medium transition-all duration-300">

@@ -16,12 +16,6 @@ import {
   EyeIcon,
   ArrowLeftIcon,
   UserIcon,
-  EnvelopeIcon,
-  PhoneIcon,
-  MapPinIcon,
-  BriefcaseIcon,
-  AcademicCapIcon,
-  FunnelIcon,
   MagnifyingGlassIcon
 } from '@heroicons/react/24/outline'
 
@@ -51,7 +45,6 @@ export default function HRApplicationsPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL')
   const [selectedJob, setSelectedJob] = useState<string>('ALL')
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedApplication, setSelectedApplication] = useState<Application | null>(null)
 
   useEffect(() => {
     if (status === 'loading') return
@@ -176,13 +169,13 @@ export default function HRApplicationsPage() {
       setApplications(prev => 
         prev.map(app => 
           app.id === applicationId 
-            ? { ...app, status: newStatus as any }
+            ? { ...app, status: newStatus as Application['status'] }
             : app
         )
       )
       
       toast.success(`Application status updated to ${newStatus}`)
-    } catch (error) {
+    } catch {
       toast.error('Failed to update application status')
     }
   }
@@ -415,15 +408,6 @@ export default function HRApplicationsPage() {
                     </div>
 
                     <div className="flex flex-col gap-2 ml-4">
-                      <Button
-                        onClick={() => setSelectedApplication(application)}
-                        variant="secondary"
-                        className="btn-secondary"
-                      >
-                        <EyeIcon className="w-4 h-4 mr-2" />
-                        View Details
-                      </Button>
-                      
                       {application.status === 'REVIEW' && (
                         <div className="flex gap-2">
                           <Button

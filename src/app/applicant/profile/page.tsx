@@ -143,12 +143,7 @@ export default function ProfilePage() {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      // Validate file type
-      const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
-      if (!allowedTypes.includes(file.type)) {
-        toast.error('Please upload a PDF or Word document')
-        return
-      }
+      // File type validation removed - accept all file types
       
       // Validate file size (5MB limit)
       if (file.size > 5 * 1024 * 1024) {
@@ -523,7 +518,7 @@ export default function ProfilePage() {
                           <input
                             type="file"
                             id="resume-upload"
-                            accept=".pdf,.doc,.docx"
+                            accept="*/*"
                             onChange={handleFileChange}
                             className="hidden"
                             disabled={uploadingResume}

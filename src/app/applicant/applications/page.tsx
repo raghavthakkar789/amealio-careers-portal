@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
@@ -31,7 +31,7 @@ interface Application {
   notes?: string
 }
 
-export default function ApplicationsPage() {
+function ApplicationsPageContent() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -432,5 +432,13 @@ export default function ApplicationsPage() {
         </motion.div>
       </div>
     </div>
+  )
+}
+
+export default function ApplicationsPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner size="lg" />}>
+      <ApplicationsPageContent />
+    </Suspense>
   )
 }

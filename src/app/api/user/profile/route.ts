@@ -30,7 +30,7 @@ export async function PATCH(request: NextRequest) {
       where: { id: session.user.id },
       data: {
         linkedinProfile: linkedinProfile || null,
-      } as any,
+      },
       select: {
         id: true,
         firstName: true,
@@ -39,7 +39,7 @@ export async function PATCH(request: NextRequest) {
         linkedinProfile: true,
         phoneNumber: true,
         profileImage: true,
-      } as any
+      }
     })
 
     return NextResponse.json(
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
         phoneNumber: true,
         profileImage: true,
         createdAt: true,
-      } as any
+      }
     })
 
     if (!user) {

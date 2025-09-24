@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 import { 
   EnvelopeIcon, 
@@ -52,9 +53,9 @@ export function Footer() {
             <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
             <ul className="space-y-2">
               <li>
-                <a href="/jobs" className="text-purple-200 hover:text-white transition-colors">
+                <Link href="/jobs" className="text-purple-200 hover:text-white transition-colors">
                   Open Positions
-                </a>
+                </Link>
               </li>
               <li>
                 <a href="/about" className="text-purple-200 hover:text-white transition-colors">

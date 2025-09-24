@@ -18,6 +18,36 @@ import {
   CalendarIcon
 } from '@heroicons/react/24/outline'
 
+interface Job {
+  id: string
+  title: string
+  description: string
+  summary: string
+  requirements: string[]
+  responsibilities: string[]
+  benefits: string[]
+  requiredSkills: string[]
+  location: string
+  employmentType: string
+  department: string
+  experience: string
+  salaryRange: string
+  applicationDeadline: string
+  postedAt: string
+  createdAt: string
+  remoteWork: boolean
+  createdBy?: {
+    firstName: string
+    lastName: string
+    email: string
+  }
+  company: {
+    name: string
+    logo: string
+    description: string
+  }
+}
+
 interface JobDetailsPageProps {
   params: Promise<{
     id: string
@@ -29,7 +59,7 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [loading, setLoading] = useState(true)
-  const [job, setJob] = useState<any>(null)
+  const [job, setJob] = useState<Job | null>(null)
   const [isDeadlinePassed, setIsDeadlinePassed] = useState(false)
 
   // Fetch job details from API
@@ -238,8 +268,8 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
                       <BriefcaseIcon className="w-5 h-5 text-primary-400 mr-3" />
                       <div>
                         <p className="text-text-secondary text-sm">Employment Type</p>
-                        <p className="text-text-primary font-medium">
-                          {job.employmentTypes.map((type: string) => type.replace('_', ' ')).join(', ')}
+                        <p className="text-text-primary font-medium">   
+                          {job.employmentType.replace('_', ' ')}
                         </p>
                       </div>
                     </div>

@@ -43,6 +43,7 @@ export default function DashboardPage() {
   // Subscribe to activity updates
   useEffect(() => {
     const unsubscribe = activityService.subscribe((allActivities) => {
+      // Activities are already sorted by the service, just take the first 3
       const recent = allActivities.slice(0, 3)
       setRecentActivities(recent)
     })

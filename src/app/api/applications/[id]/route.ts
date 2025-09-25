@@ -1,111 +1,110 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
 
-// PUT /api/applications/[id] - Update application
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const resolvedParams = await params
-    const session = await getServerSession(authOptions)
-    
-    console.log('PUT /api/applications/[id] - Session:', session?.user?.id)
-    console.log('PUT /api/applications/[id] - Application ID:', resolvedParams.id)
-    
-    if (!session?.user?.id) {
-      console.log('PUT /api/applications/[id] - Unauthorized: No session')
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+// Mock database - same as in route.ts
+const mockApplications = new Map([
+  ['app-1', {
+    id: 'app-1',
+    applicantId: 'user-1',
+    applicantName: 'John Doe',
+    applicantEmail: 'john.doe@example.com',
+    jobId: 'job-1',
+    jobTitle: 'Senior Software Engineer',
+    department: 'Engineering',
+    company: 'amealio',
+    status: 'UNDER_REVIEW',
+    appliedDate: '2024-01-15',
+    resumeUrl: '/api/files/resume-1',
+    coverLetter: 'I am excited to apply for this position...',
+    experience: '5+ years in software development',
+    education: 'Bachelor of Computer Science',
+    skills: ['React', 'Node.js', 'TypeScript', 'AWS'],
+    additionalFiles: [
+      { id: 'resume-1', fileName: 'john-doe-resume.pdf', fileType: 'application/pdf' }
+    ],
+    notes: 'Strong technical background',
+    interviewDate: '2024-01-25',
+    interviewTime: '2:00 PM',
+    interviewMode: 'Video Call'
+  }],
+  ['app-2', {
+    id: 'app-2',
+    applicantId: 'user-2',
+    applicantName: 'Jane Smith',
+    applicantEmail: 'jane.smith@example.com',
+    jobId: 'job-2',
+    jobTitle: 'Product Manager',
+    department: 'Product',
+    company: 'amealio',
+    status: 'INTERVIEW_SCHEDULED',
+    appliedDate: '2024-01-10',
+    resumeUrl: '/api/files/resume-2',
+    coverLetter: 'I have extensive experience in product management...',
+    experience: '3+ years in product management',
+    education: 'MBA in Business Administration',
+    skills: ['Product Management', 'Analytics', 'Leadership'],
+    additionalFiles: [
+      { id: 'resume-2', fileName: 'jane-smith-resume.pdf', fileType: 'application/pdf' },
+      { id: 'portfolio-1', fileName: 'jane-smith-portfolio.pdf', fileType: 'application/pdf' }
+    ],
+    notes: 'Excellent analytical skills',
+    interviewDate: '2024-01-20',
+    interviewTime: '10:00 AM',
+    interviewMode: 'In Person'
+  }],
+  ['app-3', {
+    id: 'app-3',
+    applicantId: 'user-3',
+    applicantName: 'Mike Johnson',
+    applicantEmail: 'mike.johnson@example.com',
+    jobId: 'job-3',
+    jobTitle: 'UX Designer',
+    department: 'Design',
+    company: 'amealio',
+    status: 'HIRED',
+    appliedDate: '2024-01-05',
+    resumeUrl: '/api/files/resume-3',
+    coverLetter: 'I am passionate about creating amazing user experiences...',
+    experience: '4+ years in UX design',
+    education: 'Bachelor of Design',
+    skills: ['Figma', 'User Research', 'Prototyping'],
+    additionalFiles: [
+      { id: 'resume-3', fileName: 'mike-johnson-resume.pdf', fileType: 'application/pdf' }
+    ],
+    notes: 'Great portfolio, hired',
+    interviewDate: '2024-01-12',
+    interviewTime: '3:00 PM',
+    interviewMode: 'Video Call'
+  }]
+])
 
-    const formData = await request.formData()
-    const coverLetter = formData.get('coverLetter') as string
-    const experience = formData.get('experience') as string
-    const education = formData.get('education') as string
-    const skills = formData.get('skills') as string
-    const availability = formData.get('availability') as string
-    const expectedSalary = formData.get('expectedSalary') as string
-    const references = formData.get('references') as string
-
-    // Check if application exists and belongs to user
-    let existingApplication
-    try {
-      existingApplication = await prisma.application.findFirst({
-        where: { 
-          id: resolvedParams.id,
-          applicantId: session.user.id,
-          status: 'PENDING' // Only allow updates for pending applications
-        }
-      })
-    } catch (dbError) {
-      console.error('PUT /api/applications/[id] - Database error:', dbError)
-      
-      // If database is not available, return mock response for development
-      return NextResponse.json({ 
-        success: true, 
-        application: { id: resolvedParams.id, status: 'PENDING' },
-        message: 'Application updated successfully! (Mock response - Database not available)' 
-      })
-    }
-
-    console.log('PUT /api/applications/[id] - Existing application:', existingApplication)
-
-    if (!existingApplication) {
-      console.log('PUT /api/applications/[id] - Application not found or cannot be updated')
-      
-      // For testing purposes, create a mock successful response
-      // Remove this in production
-      return NextResponse.json({ 
-        success: true, 
-        application: { id: resolvedParams.id, status: 'PENDING' },
-        message: 'Application updated successfully! (Mock response)' 
-      })
-      
-      // return NextResponse.json({ error: 'Application not found or cannot be updated' }, { status: 404 })
-    }
-
-    // Update application
-    try {
-      const updatedApplication = await prisma.application.update({
-        where: { id: resolvedParams.id },
-        data: {
-          coverLetter,
-          additionalFiles: [`Experience: ${experience}`, `Education: ${education}`, `Skills: ${skills}`, `Availability: ${availability}`, `Expected Salary: ${expectedSalary}`, `References: ${references}`]
-        }
-      })
-
-      console.log('PUT /api/applications/[id] - Update successful:', updatedApplication)
-
-      return NextResponse.json({ 
-        success: true, 
-        application: updatedApplication,
-        message: 'Application updated successfully!' 
-      })
-    } catch (prismaError) {
-      console.error('PUT /api/applications/[id] - Prisma error:', prismaError)
-      
-      // If it's a record not found error, return 404
-      if (prismaError instanceof Error && prismaError.message.includes('Record to update not found')) {
-        return NextResponse.json({ error: 'Application not found' }, { status: 404 })
-      }
-      
-      throw prismaError // Re-throw to be caught by outer catch
-    }
-
-  } catch (error) {
-    console.error('Error updating application:', error)
-    console.error('Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
-    })
-    return NextResponse.json(
-      { error: 'Failed to update application', details: error instanceof Error ? error.message : 'Unknown error' }, 
-      { status: 500 }
-    )
-  }
-}
+const mockJobs = new Map([
+  ['job-1', {
+    id: 'job-1',
+    title: 'Senior Software Engineer',
+    department: 'Engineering',
+    createdBy: 'hr-user-1',
+    isActive: true,
+    applicationsCount: 1
+  }],
+  ['job-2', {
+    id: 'job-2',
+    title: 'Product Manager',
+    department: 'Product',
+    createdBy: 'hr-user-1',
+    isActive: true,
+    applicationsCount: 1
+  }],
+  ['job-3', {
+    id: 'job-3',
+    title: 'UX Designer',
+    department: 'Design',
+    createdBy: 'hr-user-2',
+    isActive: true,
+    applicationsCount: 1
+  }]
+])
 
 // GET /api/applications/[id] - Get specific application
 export async function GET(
@@ -114,33 +113,150 @@ export async function GET(
 ) {
   try {
     const resolvedParams = await params
+    const { id } = resolvedParams
     const session = await getServerSession(authOptions)
     
-    if (!session?.user?.id) {
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const application = await prisma.application.findFirst({
-      where: { 
-        id: resolvedParams.id,
-        applicantId: session.user.id
-      },
-      include: {
-        job: true
-      }
-    })
-
+    const application = mockApplications.get(id)
+    
     if (!application) {
       return NextResponse.json({ error: 'Application not found' }, { status: 404 })
+    }
+
+    // Check access permissions
+    const hasAccess = await checkApplicationAccess(session.user, application)
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
     return NextResponse.json({ application })
 
   } catch (error) {
     console.error('Error fetching application:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch application' }, 
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
+}
+
+// PUT /api/applications/[id] - Update specific application
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const resolvedParams = await params
+    const { id } = resolvedParams
+    const session = await getServerSession(authOptions)
+    
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const application = mockApplications.get(id)
+    
+    if (!application) {
+      return NextResponse.json({ error: 'Application not found' }, { status: 404 })
+    }
+
+    // Check access permissions
+    const hasAccess = await checkApplicationAccess(session.user, application)
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
+
+    const body = await request.json()
+    const { status, notes, interviewDate, interviewTime, interviewMode } = body
+
+    // Update application
+    const updatedApplication = {
+      ...application,
+      status: status || application.status,
+      notes: notes || application.notes,
+      interviewDate: interviewDate || application.interviewDate,
+      interviewTime: interviewTime || application.interviewTime,
+      interviewMode: interviewMode || application.interviewMode
+    }
+
+    mockApplications.set(id, updatedApplication)
+
+    return NextResponse.json({ 
+      application: updatedApplication,
+      message: 'Application updated successfully' 
+    })
+
+  } catch (error) {
+    console.error('Error updating application:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+// DELETE /api/applications/[id] - Delete specific application
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const resolvedParams = await params
+    const { id } = resolvedParams
+    const session = await getServerSession(authOptions)
+    
+    if (!session || session.user?.role !== 'APPLICANT') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const application = mockApplications.get(id)
+    
+    if (!application) {
+      return NextResponse.json({ error: 'Application not found' }, { status: 404 })
+    }
+
+    // Only allow applicants to delete their own applications
+    if (application.applicantId !== session.user.id) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
+
+    // Only allow deletion if application is still pending
+    if (application.status !== 'PENDING') {
+      return NextResponse.json({ 
+        error: 'Cannot delete application that has been processed' 
+      }, { status: 400 })
+    }
+
+    mockApplications.delete(id)
+
+    // Update job application count
+    const job = mockJobs.get(application.jobId)
+    if (job) {
+      job.applicationsCount = Math.max(0, job.applicationsCount - 1)
+      mockJobs.set(application.jobId, job)
+    }
+
+    return NextResponse.json({ message: 'Application deleted successfully' })
+
+  } catch (error) {
+    console.error('Error deleting application:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+// Helper function to check application access
+async function checkApplicationAccess(user: any, application: any): Promise<boolean> {
+  if (user.role === 'ADMIN') {
+    return true // Admin has access to all applications
+  }
+  
+  if (user.role === 'HR') {
+    // HR can access applications for jobs they created
+    const job = mockJobs.get(application.jobId)
+    return !!(job && job.createdBy === user.id)
+  }
+  
+  if (user.role === 'APPLICANT') {
+    // Applicants can only access their own applications
+    return application.applicantId === user.id
+  }
+  
+  return false
 }

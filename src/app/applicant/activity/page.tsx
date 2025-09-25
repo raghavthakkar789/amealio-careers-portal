@@ -93,6 +93,22 @@ export default function ActivityPage() {
 
   const getActivityIcon = (type: string) => {
     switch (type) {
+      case 'application_submitted':
+        return <DocumentTextIcon className="w-6 h-6 text-white" />
+      case 'application_reviewed':
+        return <EyeIcon className="w-6 h-6 text-white" />
+      case 'interview_scheduled':
+        return <CalendarIcon className="w-6 h-6 text-white" />
+      case 'interview_completed':
+        return <BriefcaseIcon className="w-6 h-6 text-white" />
+      case 'application_accepted':
+        return <DocumentTextIcon className="w-6 h-6 text-white" />
+      case 'application_rejected':
+        return <DocumentTextIcon className="w-6 h-6 text-white" />
+      case 'interview_cancelled':
+        return <CalendarIcon className="w-6 h-6 text-white" />
+      case 'application_updated':
+        return <DocumentTextIcon className="w-6 h-6 text-white" />
       case 'application':
         return <DocumentTextIcon className="w-6 h-6 text-white" />
       case 'interview':
@@ -117,6 +133,14 @@ export default function ActivityPage() {
         return `${baseClasses} bg-emerald-100 text-emerald-700`
       case 'scheduled':
         return `${baseClasses} bg-purple-100 text-purple-700`
+      case 'completed':
+        return `${baseClasses} bg-green-100 text-green-700`
+      case 'error':
+        return `${baseClasses} bg-red-100 text-red-700`
+      case 'info':
+        return `${baseClasses} bg-blue-100 text-blue-700`
+      case 'warning':
+        return `${baseClasses} bg-yellow-100 text-yellow-700`
       default:
         return `${baseClasses} bg-gray-100 text-gray-700`
     }
@@ -132,6 +156,14 @@ export default function ActivityPage() {
         return 'Completed'
       case 'scheduled':
         return 'Scheduled'
+      case 'completed':
+        return 'Completed'
+      case 'error':
+        return 'Error'
+      case 'info':
+        return 'Information'
+      case 'warning':
+        return 'Warning'
       default:
         return status
     }

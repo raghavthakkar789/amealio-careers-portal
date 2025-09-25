@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { toast } from 'react-hot-toast'
+import { FileAccess } from '@/components/ui/FileAccess'
 import { 
   UserIcon,
   PhoneIcon,
@@ -584,24 +585,13 @@ export default function ProfilePage() {
                     ) : (
                       <div className="space-y-2">
                         {profile.resumeUrl ? (
-                          <div className="flex items-center justify-between p-3 bg-bg-800 rounded-lg border border-border">
-                            <div className="flex items-center gap-3">
-                              <DocumentIcon className="w-5 h-5 text-primary" />
-                              <div>
-                                <p className="text-sm font-medium text-text-high">
-                                  {profile.resumeFileName || 'Resume.pdf'}
-                                </p>
-                                <a 
-                                  href={profile.resumeUrl} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="text-xs text-primary hover:text-primary-hover"
-                                >
-                                  View Resume
-                                </a>
-                              </div>
-                            </div>
-                          </div>
+                          <FileAccess
+                            fileId="profile-resume"
+                            fileName={profile.resumeFileName || 'Resume.pdf'}
+                            fileType="application/pdf"
+                            showDownload={true}
+                            showPreview={true}
+                          />
                         ) : (
                           <p className="text-text-mid text-sm">No resume uploaded</p>
                         )}

@@ -96,18 +96,19 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
   }, [job?.applicationDeadline])
 
   const handleBackToDashboard = () => {
-    console.log('=== BUTTON CLICKED ===')
-    console.log('handleBackToDashboard called', { 
-      session, 
-      user: session?.user, 
-      status,
-      loading,
-      timestamp: new Date().toISOString()
-    })
-    
-    // Force redirect to landing page - no session checking
-    console.log('FORCING redirect to landing page (/)')
-    window.location.href = '/'
+    if (!session) {
+      router.push('/')
+      return
+    }
+
+    // Redirect based on user role
+    if (session.user?.role === 'ADMIN') {
+      router.push('/admin/dashboard')
+    } else if (session.user?.role === 'HR') {
+      router.push('/hr/dashboard')
+    } else {
+      router.push('/applicant/dashboard')
+    }
   }
 
   if (status === 'loading' || loading) {
@@ -124,16 +125,10 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
         <div className="text-center">
           <h2 className="text-2xl font-bold text-text-primary mb-4">Job Not Found</h2>
           <Button 
-            onClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              console.log('ERROR BUTTON CLICKED - handleBackToDashboard')
-              handleBackToDashboard()
-            }} 
+            onClick={handleBackToDashboard}
             className="btn-primary"
-            id="error-back-button"
           >
-            Back To Dashboard (Error)
+            Back To Dashboard
           </Button>
         </div>
       </div>
@@ -158,48 +153,13 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
         >
           {/* Header */}
           <div className="mb-8">
-            <div className="flex gap-2 mb-4">
+            <div className="mb-4">
               <Button
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  console.log('MAIN BUTTON CLICKED - handleBackToDashboard')
-                  handleBackToDashboard()
-                }}
+                onClick={handleBackToDashboard}
                 className="btn-secondary"
-                id="main-back-button"
               >
                 <ArrowLeftIcon className="w-4 h-4 mr-2" />
-                Back To Dashboard (Main)
-              </Button>
-              <Button
-                onClick={() => {
-                  console.log('Session Debug:', { session, status, loading })
-                  alert(`Session: ${session ? 'Logged in' : 'Not logged in'}\nStatus: ${status}\nLoading: ${loading}`)
-                }}
-                className="btn-primary"
-              >
-                Debug Session
-              </Button>
-              <Button
-                onClick={() => {
-                  console.log('DIRECT REDIRECT TEST')
-                  router.push('/')
-                }}
-                className="btn-primary"
-              >
-                Direct Redirect Test
-              </Button>
-              <Button
-                onClick={async () => {
-                  console.log('CLEARING SESSION AND REDIRECTING')
-                  // Clear session and redirect
-                  await fetch('/api/auth/signout', { method: 'POST' })
-                  window.location.href = '/'
-                }}
-                className="btn-primary"
-              >
-                Clear Session & Redirect
+                Back To Dashboard
               </Button>
             </div>
             

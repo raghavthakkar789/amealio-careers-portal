@@ -316,6 +316,7 @@ export default function AdminDashboard() {
           >
             {[
               { id: 'overview', label: 'Overview', icon: ChartBarIcon, color: 'from-primary to-purple-600' },
+              { id: 'applications', label: 'All Applications', icon: DocumentTextIcon, color: 'from-blue-500 to-blue-600' },
               { id: 'applicants', label: 'Applicant Profiles', icon: UsersIcon, color: 'from-emerald-500 to-emerald-600' },
               { id: 'hr-management', label: 'HR Management', icon: UserPlusIcon, color: 'from-amber-500 to-amber-600' },
               { id: 'analytics', label: 'Analytics', icon: ArrowTrendingUpIcon, color: 'from-rose-500 to-rose-600' }
@@ -421,6 +422,70 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* All Applications Tab */}
+          {activeTab === 'applications' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="space-y-6"
+            >
+              <div className="card">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-text-primary">All Applications</h2>
+                  <Button
+                    onClick={() => router.push('/admin/applications')}
+                    className="btn-primary"
+                  >
+                    <DocumentTextIcon className="w-4 h-4 mr-2" />
+                    Manage Applications
+                  </Button>
+                </div>
+                <p className="text-text-mid mb-6">
+                  View and manage all job applications across the platform. You have full access to all applications and can make hiring decisions.
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-bg-850 p-4 rounded-lg border border-border">
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center mr-3">
+                        <DocumentTextIcon className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-text-high">{analytics.totalApplications}</p>
+                        <p className="text-text-mid text-sm">Total Applications</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-bg-850 p-4 rounded-lg border border-border">
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center mr-3">
+                        <ClockIcon className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-text-high">{analytics.pendingReviews}</p>
+                        <p className="text-text-mid text-sm">Pending Reviews</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-bg-850 p-4 rounded-lg border border-border">
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center mr-3">
+                        <CheckCircleIcon className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-text-high">{analytics.hired}</p>
+                        <p className="text-text-mid text-sm">Hired</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </motion.div>

@@ -301,21 +301,21 @@ export default function HRDashboard() {
             <div className="card hover-lift group">
               <div className="text-center">
                 <div className="w-16 h-16 bg-gradient-to-r from-primary to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                  <PlusIcon className="w-8 h-8 text-white" />
-          </div>
+                  <BriefcaseIcon className="w-8 h-8 text-white" />
+                </div>
                 <h3 className="text-xl font-bold text-text-high mb-3">
-                  Create Job
+                  Job Management
                 </h3>
                 <p className="text-text-mid mb-4 text-sm">
-                  Post new positions and attract top talent
+                  Create, edit, and manage all job postings
                 </p>
-            <Button
-              onClick={() => setShowCreateJob(true)}
+                <Button
+                  onClick={() => router.push('/hr/jobs')}
                   className="btn-primary w-full hover-glow"
-            >
-                  <PlusIcon className="w-4 h-4 mr-2" />
-                  Create Job
-            </Button>
+                >
+                  <BriefcaseIcon className="w-4 h-4 mr-2" />
+                  Manage Jobs
+                </Button>
               </div>
             </div>
 

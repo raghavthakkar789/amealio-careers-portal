@@ -3,15 +3,61 @@
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
 import { useRouter } from 'next/navigation'
-import { useSession } from 'next-auth/react'
-import { UserCircleIcon } from '@heroicons/react/24/outline'
+import { useSession, signOut } from 'next-auth/react'
+import { UserCircleIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
+import { toast } from 'react-hot-toast'
 
 export function HeroSection() {
   const router = useRouter()
   const { data: session } = useSession()
 
+  const handleLogout = async () => {
+    try {
+      await signOut({ 
+        callbackUrl: '/',
+        redirect: true 
+      })
+      toast.success('Logged out successfully!')
+    } catch {
+      toast.error('Failed to logout. Please try again.')
+    }
+  }
+
   return (
     <section className="relative min-h-screen flex items-center justify-center bg-hero-gradient overflow-hidden">
+      {/* User Info and Logout Button - Top Right */}
+      {session && (
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6 }}
+          className="absolute top-6 right-6 z-20 flex items-center gap-3"
+        >
+          {/* User Info */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2 border border-white/30">
+            <div className="flex items-center gap-2">
+              <UserCircleIcon className="w-4 h-4 text-white" />
+              <div className="text-white text-sm">
+                <div className="font-medium">{session.user?.name}</div>
+                <div className="text-xs text-white/70 capitalize">
+                  {session.user?.role?.toLowerCase()}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Logout Button */}
+          <Button
+            onClick={handleLogout}
+            variant="secondary"
+            className="btn-secondary bg-white/10 text-white border-white/30 hover:bg-white/20 hover:border-white/40 backdrop-blur-sm"
+          >
+            <ArrowRightOnRectangleIcon className="w-4 h-4 mr-2" />
+            Logout
+          </Button>
+        </motion.div>
+      )}
+
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute top-0 left-0 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl animate-float"></div>

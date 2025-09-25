@@ -37,7 +37,9 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
     requirements: string[]
     responsibilities: string[]
     benefits: string[]
+    applicationDeadline?: string
   } | null>(null)
+  const [isDeadlinePassed, setIsDeadlinePassed] = useState(false)
 
   const [formData, setFormData] = useState({
     coverLetter: '',
@@ -73,6 +75,15 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
 
     fetchJob()
   }, [resolvedParams.id, router])
+
+  // Calculate deadline status on client side to avoid hydration mismatch
+  useEffect(() => {
+    if (job?.applicationDeadline) {
+      const now = new Date()
+      const deadline = new Date(job.applicationDeadline)
+      setIsDeadlinePassed(deadline < now)
+    }
+  }, [job?.applicationDeadline])
 
   // Fetch user profile to pre-populate LinkedIn field
   useEffect(() => {
@@ -178,6 +189,13 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Check if deadline has passed
+    if (isDeadlinePassed) {
+      toast.error('Application deadline has passed. Applications are no longer being accepted.')
+      return
+    }
+    
     setLoading(true)
 
     try {
@@ -271,6 +289,23 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
             </p>
           </div>
 
+          {/* Application Deadline Alert */}
+          {job.applicationDeadline && (
+            <div className={`card mb-8 ${isDeadlinePassed ? 'bg-error-bg border-error-text' : 'bg-warning-bg border-warning-text'}`}>
+              <div className="flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span className={`font-medium ${isDeadlinePassed ? 'text-error-text' : 'text-warning-text'}`}>
+                  {isDeadlinePassed 
+                    ? `Application deadline passed: ${new Date(job.applicationDeadline).toLocaleDateString()}`
+                    : `Application deadline: ${new Date(job.applicationDeadline).toLocaleDateString()}`
+                  }
+                </span>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Job Details Sidebar */}
             <div className="lg:col-span-1">
@@ -330,6 +365,19 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
                 <h2 className="text-2xl font-bold text-text-primary mb-6">
                   Application Form
                 </h2>
+                
+                {isDeadlinePassed && (
+                  <div className="bg-error-bg border border-error-text rounded-lg p-4 mb-6">
+                    <div className="flex items-center">
+                      <svg className="w-5 h-5 mr-2 text-error-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                      </svg>
+                      <span className="text-error-text font-medium">
+                        Application deadline has passed. This form is now read-only and applications cannot be submitted.
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* File Uploads */}
@@ -345,6 +393,7 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
                           accept="*/*"
                           onChange={(e) => handleFileUpload(e, 'resume')}
                           required
+                          disabled={isDeadlinePassed}
                           className="input-field"
                         />
                         {resumeFile && (
@@ -366,6 +415,7 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
                           accept="*/*"
                           multiple
                           onChange={(e) => handleFileUpload(e, 'additional')}
+                          disabled={isDeadlinePassed}
                           className="input-field"
                         />
                         {additionalFiles.length > 0 && (
@@ -391,6 +441,7 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
                       placeholder="Tell us why you're interested in this position and what makes you a great fit..."
                       rows={6}
                       required
+                      disabled={isDeadlinePassed}
                       className="input-field"
                     />
                   </div>
@@ -402,6 +453,7 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
                       value={formData.experience}
                       onChange={(e) => setFormData(prev => ({ ...prev, experience: e.target.value }))}
                       required
+                      disabled={isDeadlinePassed}
                       className="input-field"
                     >
                       <option value="">Select your work experience</option>
@@ -429,6 +481,7 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
                       placeholder="List your educational background..."
                       rows={3}
                       required
+                      disabled={isDeadlinePassed}
                       className="input-field"
                     />
                   </div>
@@ -442,6 +495,7 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
                       placeholder="List your technical skills and certifications..."
                       rows={3}
                       required
+                      disabled={isDeadlinePassed}
                       className="input-field"
                     />
                   </div>
@@ -454,6 +508,7 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
                       onChange={(e) => setFormData(prev => ({ ...prev, availability: e.target.value }))}
                       placeholder="When can you start? (e.g., Immediately, 2 weeks notice)"
                       required
+                      disabled={isDeadlinePassed}
                       className="input-field"
                     />
                   </div>
@@ -465,6 +520,7 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
                       value={formData.expectedSalary}
                       onChange={(e) => setFormData(prev => ({ ...prev, expectedSalary: e.target.value }))}
                       placeholder="Expected salary range (optional)"
+                      disabled={isDeadlinePassed}
                       className="input-field"
                     />
                   </div>
@@ -477,6 +533,7 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
                       onChange={(e) => setFormData(prev => ({ ...prev, linkedinProfile: e.target.value }))}
                       placeholder="https://linkedin.com/in/your-profile"
                       type="url"
+                      disabled={isDeadlinePassed}
                       className="input-field"
                     />
                     <p className="text-xs text-text-mid mt-1">
@@ -492,6 +549,7 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
                       onChange={(e) => setFormData(prev => ({ ...prev, references: e.target.value }))}
                       placeholder="Professional references (optional)"
                       rows={3}
+                      disabled={isDeadlinePassed}
                       className="input-field"
                     />
                   </div>
@@ -500,12 +558,14 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
                   <div className="flex gap-4 pt-6 border-t border-border">
                     <Button
                       type="submit"
-                      disabled={loading}
-                      className="btn-primary flex-1"
+                      disabled={loading || isDeadlinePassed}
+                      className={`flex-1 ${isDeadlinePassed ? 'btn-disabled' : 'btn-primary'}`}
                     >
                       {loading 
                         ? (isEditMode ? 'Updating...' : 'Submitting...') 
-                        : (isEditMode ? 'Update Application' : 'Submit Application')
+                        : isDeadlinePassed 
+                          ? 'Application Closed'
+                          : (isEditMode ? 'Update Application' : 'Submit Application')
                       }
                     </Button>
                     <Button

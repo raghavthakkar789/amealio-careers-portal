@@ -9,7 +9,7 @@ import { toast } from 'react-hot-toast'
 import Link from 'next/link'
 import { validateEmail, validatePhone } from '@/lib/utils'
 import { getSession, signOut } from 'next-auth/react'
-import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline'
+import { ArrowRightOnRectangleIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -108,6 +108,33 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-bg-850 flex items-center justify-center px-4 py-8">
+      {/* Back to Dashboard Button */}
+      <div className="absolute top-4 left-4">
+        <Button
+          onClick={() => {
+            if (!isLoggedIn) {
+              router.push('/')
+              return
+            }
+            
+            // Redirect based on user role if logged in
+            getSession().then(session => {
+              if (session?.user?.role === 'ADMIN') {
+                router.push('/admin/dashboard')
+              } else if (session?.user?.role === 'HR') {
+                router.push('/hr/dashboard')
+              } else {
+                router.push('/applicant/dashboard')
+              }
+            })
+          }}
+          className="btn-secondary"
+        >
+          <ArrowLeftIcon className="w-4 h-4 mr-2" />
+          Back to Dashboard
+        </Button>
+      </div>
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

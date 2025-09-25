@@ -95,6 +95,21 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
     }
   }, [job?.applicationDeadline])
 
+  const handleBackToDashboard = () => {
+    console.log('=== BUTTON CLICKED ===')
+    console.log('handleBackToDashboard called', { 
+      session, 
+      user: session?.user, 
+      status,
+      loading,
+      timestamp: new Date().toISOString()
+    })
+    
+    // Force redirect to landing page - no session checking
+    console.log('FORCING redirect to landing page (/)')
+    window.location.href = '/'
+  }
+
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -108,8 +123,17 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-text-primary mb-4">Job Not Found</h2>
-          <Button onClick={() => router.push('/jobs')} className="btn-primary">
-            Back to Jobs
+          <Button 
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              console.log('ERROR BUTTON CLICKED - handleBackToDashboard')
+              handleBackToDashboard()
+            }} 
+            className="btn-primary"
+            id="error-back-button"
+          >
+            Back To Dashboard (Error)
           </Button>
         </div>
       </div>
@@ -134,13 +158,50 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
         >
           {/* Header */}
           <div className="mb-8">
-            <Button
-              onClick={() => router.push('/jobs')}
-              className="btn-secondary mb-4"
-            >
-              <ArrowLeftIcon className="w-4 h-4 mr-2" />
-              Back to Jobs
-            </Button>
+            <div className="flex gap-2 mb-4">
+              <Button
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  console.log('MAIN BUTTON CLICKED - handleBackToDashboard')
+                  handleBackToDashboard()
+                }}
+                className="btn-secondary"
+                id="main-back-button"
+              >
+                <ArrowLeftIcon className="w-4 h-4 mr-2" />
+                Back To Dashboard (Main)
+              </Button>
+              <Button
+                onClick={() => {
+                  console.log('Session Debug:', { session, status, loading })
+                  alert(`Session: ${session ? 'Logged in' : 'Not logged in'}\nStatus: ${status}\nLoading: ${loading}`)
+                }}
+                className="btn-primary"
+              >
+                Debug Session
+              </Button>
+              <Button
+                onClick={() => {
+                  console.log('DIRECT REDIRECT TEST')
+                  router.push('/')
+                }}
+                className="btn-primary"
+              >
+                Direct Redirect Test
+              </Button>
+              <Button
+                onClick={async () => {
+                  console.log('CLEARING SESSION AND REDIRECTING')
+                  // Clear session and redirect
+                  await fetch('/api/auth/signout', { method: 'POST' })
+                  window.location.href = '/'
+                }}
+                className="btn-primary"
+              >
+                Clear Session & Redirect
+              </Button>
+            </div>
             
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <div>
@@ -269,7 +330,7 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
                       <div>
                         <p className="text-text-secondary text-sm">Employment Type</p>
                         <p className="text-text-primary font-medium">   
-                          {job.employmentType.replace('_', ' ')}
+                          {job.employmentType?.replace('_', ' ') || 'Not specified'}
                         </p>
                       </div>
                     </div>

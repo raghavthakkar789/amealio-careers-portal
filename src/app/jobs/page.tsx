@@ -147,7 +147,21 @@ export default function JobsPage() {
           className="mb-6"
         >
           <Button
-            onClick={() => router.push('/applicant/dashboard')}
+            onClick={() => {
+              if (!session) {
+                router.push('/')
+                return
+              }
+              
+              // Redirect based on user role
+              if (session.user?.role === 'ADMIN') {
+                router.push('/admin/dashboard')
+              } else if (session.user?.role === 'HR') {
+                router.push('/hr/dashboard')
+              } else {
+                router.push('/applicant/dashboard')
+              }
+            }}
             variant="secondary"
             className="btn-secondary flex items-center gap-2"
           >

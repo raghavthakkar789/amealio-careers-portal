@@ -1,12 +1,7 @@
 import { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
-import { PrismaAdapter } from '@next-auth/prisma-adapter'
-import { prisma } from '@/lib/prisma'
-import { validateDemoAccount } from '@/lib/demo-accounts'
-import bcrypt from 'bcryptjs'
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
   providers: [
     CredentialsProvider({
       name: 'credentials',
@@ -16,43 +11,30 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error('Invalid credentials')
+          return null
         }
 
-        try {
-          // Try database authentication first
-          const user = await prisma.user.findUnique({
-            where: {
-              email: credentials.email
-            }
-          })
+        // Simple hardcoded demo accounts
+        const demoAccounts = [
+          { email: 'admin@amealio.com', password: 'admin123', role: 'ADMIN', name: 'Admin User' },
+          { email: 'hr@amealio.com', password: 'hr123', role: 'HR', name: 'HR Manager' },
+          { email: 'user@amealio.com', password: 'user123', role: 'APPLICANT', name: 'John Doe' }
+        ]
 
-          if (user && user?.password) {
-            const isCorrectPassword = await bcrypt.compare(
-              credentials.password,
-              user.password
-            )
+        const account = demoAccounts.find(acc => 
+          acc.email === credentials.email && acc.password === credentials.password
+        )
 
-            if (isCorrectPassword) {
-              return {
-                id: user.id,
-                email: user.email,
-                name: `${user.firstName} ${user.lastName}`,
-                role: user.role,
-              }
-            }
+        if (account) {
+          return {
+            id: account.email,
+            email: account.email,
+            name: account.name,
+            role: account.role,
           }
-        } catch {
-          console.log('Database not available, using demo accounts')
         }
 
-        // Fallback to demo accounts if database is not available
-        const demoUser = validateDemoAccount(credentials.email, credentials.password)
-        if (demoUser) {
-          return demoUser
-        }
-
-        throw new Error('Invalid credentials')
+        return null
       }
     })
   ],
@@ -77,7 +59,6 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/login',
-    error: '/login?error=AuthenticationError',
   },
-  secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-for-development',
+  secret: 'fallback-secret-for-development',
 }

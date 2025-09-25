@@ -114,7 +114,7 @@ export function CompanyValuesSection() {
                 Explore Opportunities
               </button>
               <button 
-                onClick={() => router.push('/about')}
+                onClick={() => router.push('/culture')}
                 className="btn-secondary"
               >
                 Learn About Culture

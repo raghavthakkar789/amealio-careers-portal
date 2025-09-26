@@ -198,7 +198,7 @@ export default function ApplicationManagement({
                           </span>
                         </div>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                           <div>
                             <p className="text-sm text-text-mid">Job Position</p>
                             <p className="font-medium text-text-high">{application.jobTitle}</p>
@@ -206,6 +206,10 @@ export default function ApplicationManagement({
                           <div>
                             <p className="text-sm text-text-mid">Department</p>
                             <p className="font-medium text-text-high">{application.department}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-text-mid">Expected Salary</p>
+                            <p className="font-medium text-text-high">{application.expectedSalary || 'No base'}</p>
                           </div>
                           <div>
                             <p className="text-sm text-text-mid">Applied Date</p>

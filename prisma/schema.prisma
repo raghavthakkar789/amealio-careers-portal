@@ -46,13 +46,18 @@ enum InterviewStatus {
   NO_SHOW
 }
 
-enum Department {
-  ENGINEERING
-  MARKETING
-  SALES
-  HR
-  FINANCE
-  OPERATIONS
+model Department {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  jobs        Job[]
+
+  @@map("departments")
 }
 
 model User {
@@ -89,7 +94,7 @@ model User {
 model Job {
   id                String           @id @default(cuid())
   title             String
-  department        Department
+  departmentId      String
   summary           String?
   employmentTypes   EmploymentType[]
   applicationDeadline DateTime?
@@ -100,6 +105,7 @@ model Job {
   updatedAt         DateTime         @updatedAt
 
   // Relations
+  department        Department       @relation(fields: [departmentId], references: [id])
   applications      Application[]
   jobDescription    JobDescription?
   createdBy         User             @relation("HRCreator", fields: [createdById], references: [id])
@@ -133,6 +139,7 @@ model Application {
   resumeUrl         String
   additionalFiles   String[]
   coverLetter       String?
+  expectedSalary    String?           @default("No base")
   status            ApplicationStatus @default(PENDING)
   submittedAt       DateTime          @default(now())
   updatedAt         DateTime          @updatedAt

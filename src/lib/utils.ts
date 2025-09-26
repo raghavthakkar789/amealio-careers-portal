@@ -65,19 +65,6 @@ export function calculateAge(birthDate: Date): number {
   return age
 }
 
-export function formatSalary(min: number, max: number): string {
-  const formatNumber = (num: number) => {
-    if (num >= 1000000) {
-      return `$${(num / 1000000).toFixed(1)}M`
-    }
-    if (num >= 1000) {
-      return `$${(num / 1000).toFixed(0)}K`
-    }
-    return `$${num.toLocaleString()}`
-  }
-  
-  return `${formatNumber(min)} - ${formatNumber(max)}`
-}
 
 export function getStatusColor(status: string): string {
   switch (status.toLowerCase()) {

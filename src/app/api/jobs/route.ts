@@ -1,94 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-
-// Mock database
-const mockJobs = new Map([
-  ['job-1', {
-    id: 'job-1',
-    title: 'Senior Software Engineer',
-    department: 'Engineering',
-    summary: 'We are looking for a senior software engineer...',
-    employmentTypes: ['FULL_TIME'],
-    requiredSkills: ['React', 'Node.js', 'TypeScript', 'AWS'],
-    applicationDeadline: '2024-02-15',
-    isActive: true,
-    isDraft: false,
-    createdAt: '2024-01-15',
-    updatedAt: '2024-01-20',
-    createdBy: 'hr-user-1',
-    description: {
-      description: 'Join our engineering team...',
-      responsibilities: ['Develop new features', 'Code reviews'],
-      requirements: ['5+ years experience', 'React expertise'],
-      benefits: ['Health insurance', 'Flexible hours'],
-      location: 'San Francisco, CA',
-      remoteWork: true
-    }
-  }],
-  ['job-2', {
-    id: 'job-2',
-    title: 'Product Manager',
-    department: 'Product',
-    summary: 'Lead product strategy and development...',
-    employmentTypes: ['FULL_TIME'],
-    requiredSkills: ['Product Management', 'Analytics', 'Leadership'],
-    applicationDeadline: undefined, // No deadline
-    isActive: true,
-    isDraft: false,
-    createdAt: '2024-01-10',
-    updatedAt: '2024-01-18',
-    createdBy: 'hr-user-1',
-    description: {
-      description: 'Drive product strategy...',
-      responsibilities: ['Product roadmap', 'Stakeholder management'],
-      requirements: ['3+ years PM experience', 'Analytical skills'],
-      benefits: ['Competitive salary', 'Stock options'],
-      location: 'New York, NY',
-      remoteWork: false
-    }
-  }],
-  ['job-3', {
-    id: 'job-3',
-    title: 'UX Designer',
-    department: 'Design',
-    summary: 'Create amazing user experiences...',
-    employmentTypes: ['FULL_TIME', 'CONTRACT'],
-    requiredSkills: ['Figma', 'User Research', 'Prototyping'],
-    applicationDeadline: '2024-01-30',
-    isActive: false, // Inactive job
-    isDraft: false,
-    createdAt: '2024-01-05',
-    updatedAt: '2024-01-25',
-    createdBy: 'hr-user-2',
-    description: {
-      description: 'Design intuitive interfaces...',
-      responsibilities: ['UI/UX design', 'User research'],
-      requirements: ['Portfolio required', 'Figma expertise'],
-      benefits: ['Design tools', 'Conference budget'],
-      location: 'Remote',
-      remoteWork: true
-    }
-  }]
-])
-
-const mockApplications = new Map([
-  ['app-1', {
-    id: 'app-1',
-    jobId: 'job-1',
-    status: 'UNDER_REVIEW'
-  }],
-  ['app-2', {
-    id: 'app-2',
-    jobId: 'job-2',
-    status: 'INTERVIEW_SCHEDULED'
-  }],
-  ['app-3', {
-    id: 'app-3',
-    jobId: 'job-3',
-    status: 'HIRED'
-  }]
-])
+import { prisma } from '@/lib/prisma'
 
 // GET /api/jobs - Get jobs based on user role
 export async function GET(request: NextRequest) {
@@ -100,18 +13,41 @@ export async function GET(request: NextRequest) {
     }
 
     const user = session.user
-    let jobs: any[] = []
+    let whereClause: any = {}
 
     if (user.role === 'ADMIN') {
       // Admin can see all jobs
-      jobs = Array.from(mockJobs.values())
+      whereClause = {}
     } else if (user.role === 'HR') {
       // HR can see jobs they created
-      jobs = Array.from(mockJobs.values()).filter(job => job.createdBy === user.id)
+      whereClause.createdById = user.id
     } else if (user.role === 'APPLICANT') {
       // Applicants can only see active, non-draft jobs
-      jobs = Array.from(mockJobs.values()).filter(job => job.isActive && !job.isDraft)
+      whereClause.isActive = true
+      whereClause.isDraft = false
     }
+
+    const jobs = await prisma.job.findMany({
+      where: whereClause,
+      include: {
+        department: true,
+        createdBy: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        },
+        _count: {
+          select: {
+            applications: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    })
 
     return NextResponse.json({ jobs })
 
@@ -133,7 +69,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { 
       title, 
-      department, 
+      departmentId, 
       summary, 
       employmentTypes, 
       requiredSkills, 
@@ -145,35 +81,58 @@ export async function POST(request: NextRequest) {
     } = body
 
     // Validate required fields
-    if (!title || !department || !summary) {
+    if (!title || !departmentId || !summary) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // Create new job
-    const newJob = {
-      id: `job-${Date.now()}`,
-      title,
-      department,
-      summary,
-      employmentTypes: employmentTypes || [],
-      requiredSkills: requiredSkills || [],
-      applicationDeadline: hasDeadline ? applicationDeadline : undefined,
-      isActive: isActive !== false,
-      isDraft: isDraft || false,
-      createdAt: new Date().toISOString().split('T')[0],
-      updatedAt: new Date().toISOString().split('T')[0],
-      createdBy: session.user.id,
-      description: description || {
-        description: '',
-        responsibilities: [],
-        requirements: [],
-        benefits: [],
-        location: '',
-        remoteWork: false
-      }
+    // Verify department exists
+    const department = await prisma.department.findUnique({
+      where: { id: departmentId }
+    })
+
+    if (!department) {
+      return NextResponse.json({ error: 'Department not found' }, { status: 404 })
     }
 
-    mockJobs.set(newJob.id, newJob)
+    // Create new job
+    const newJob = await prisma.job.create({
+      data: {
+        title,
+        departmentId,
+        summary,
+        employmentTypes: employmentTypes || [],
+        requiredSkills: requiredSkills || [],
+        applicationDeadline: hasDeadline ? new Date(applicationDeadline) : null,
+        isActive: isActive !== false,
+        isDraft: isDraft || false,
+        createdById: session.user.id,
+      },
+      include: {
+        department: true,
+        createdBy: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        }
+      }
+    })
+
+    // Create job description if provided
+    if (description) {
+      await prisma.jobDescription.create({
+        data: {
+          jobId: newJob.id,
+          description: description.description || '',
+          responsibilities: description.responsibilities || [],
+          requirements: description.requirements || [],
+          benefits: description.benefits || [],
+          location: description.location || null,
+          remoteWork: description.remoteWork || false
+        }
+      })
+    }
 
     return NextResponse.json({ 
       job: newJob,
@@ -200,7 +159,13 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const job = mockJobs.get(id)
+    const job = await prisma.job.findUnique({
+      where: { id },
+      include: {
+        department: true,
+        createdBy: true
+      }
+    })
     
     if (!job) {
       return NextResponse.json({ error: 'Job not found' }, { status: 404 })
@@ -215,7 +180,7 @@ export async function PUT(
     const body = await request.json()
     const { 
       title, 
-      department, 
+      departmentId, 
       summary, 
       employmentTypes, 
       requiredSkills, 
@@ -226,22 +191,65 @@ export async function PUT(
       description
     } = body
 
-    // Update job
-    const updatedJob = {
-      ...job,
-      title: title || job.title,
-      department: department || job.department,
-      summary: summary || job.summary,
-      employmentTypes: employmentTypes || job.employmentTypes,
-      requiredSkills: requiredSkills || job.requiredSkills,
-      applicationDeadline: hasDeadline ? applicationDeadline : undefined,
-      isActive: isActive !== undefined ? isActive : job.isActive,
-      isDraft: isDraft !== undefined ? isDraft : job.isDraft,
-      updatedAt: new Date().toISOString().split('T')[0],
-      description: description || job.description
+    // Verify department exists if changing
+    if (departmentId && departmentId !== job.departmentId) {
+      const department = await prisma.department.findUnique({
+        where: { id: departmentId }
+      })
+
+      if (!department) {
+        return NextResponse.json({ error: 'Department not found' }, { status: 404 })
+      }
     }
 
-    mockJobs.set(id, updatedJob)
+    // Update job
+    const updatedJob = await prisma.job.update({
+      where: { id },
+      data: {
+        title: title || job.title,
+        departmentId: departmentId || job.departmentId,
+        summary: summary || job.summary,
+        employmentTypes: employmentTypes || job.employmentTypes,
+        requiredSkills: requiredSkills || job.requiredSkills,
+        applicationDeadline: hasDeadline ? new Date(applicationDeadline) : null,
+        isActive: isActive !== undefined ? isActive : job.isActive,
+        isDraft: isDraft !== undefined ? isDraft : job.isDraft,
+      },
+      include: {
+        department: true,
+        createdBy: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        }
+      }
+    })
+
+    // Update job description if provided
+    if (description) {
+      await prisma.jobDescription.upsert({
+        where: { jobId: id },
+        update: {
+          description: description.description || '',
+          responsibilities: description.responsibilities || [],
+          requirements: description.requirements || [],
+          benefits: description.benefits || [],
+          location: description.location || null,
+          remoteWork: description.remoteWork || false
+        },
+        create: {
+          jobId: id,
+          description: description.description || '',
+          responsibilities: description.responsibilities || [],
+          requirements: description.requirements || [],
+          benefits: description.benefits || [],
+          location: description.location || null,
+          remoteWork: description.remoteWork || false
+        }
+      })
+    }
 
     return NextResponse.json({ 
       job: updatedJob,
@@ -268,7 +276,20 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const job = mockJobs.get(id)
+    const job = await prisma.job.findUnique({
+      where: { id },
+      include: {
+        department: true,
+        createdBy: true,
+        applications: {
+          where: {
+            status: {
+              notIn: ['HIRED', 'REJECTED']
+            }
+          }
+        }
+      }
+    })
     
     if (!job) {
       return NextResponse.json({ error: 'Job not found' }, { status: 404 })
@@ -281,31 +302,24 @@ export async function DELETE(
     }
 
     // Check if job has pending applications
-    const pendingApplications = Array.from(mockApplications.values()).filter(app => 
-      app.jobId === id && !['HIRED', 'REJECTED'].includes(app.status)
-    )
-
-    if (pendingApplications.length > 0) {
+    if (job.applications.length > 0) {
       return NextResponse.json({ 
-        error: `Cannot delete job. There are ${pendingApplications.length} pending applications that must be processed first.`,
-        pendingApplications: pendingApplications.length,
-        applications: pendingApplications.map(app => ({
+        error: `Cannot delete job. There are ${job.applications.length} pending applications that must be processed first.`,
+        pendingApplications: job.applications.length,
+        applications: job.applications.map(app => ({
           id: app.id,
           status: app.status
         }))
       }, { status: 400 })
     }
 
-    // Safe to delete job
-    mockJobs.delete(id)
-
-    // Also delete all applications for this job
-    const jobApplications = Array.from(mockApplications.values()).filter(app => app.jobId === id)
-    jobApplications.forEach(app => mockApplications.delete(app.id))
+    // Safe to delete job (cascade will handle related records)
+    await prisma.job.delete({
+      where: { id }
+    })
 
     return NextResponse.json({ 
-      message: 'Job deleted successfully',
-      deletedApplications: jobApplications.length
+      message: 'Job deleted successfully'
     })
 
   } catch (error) {
@@ -322,7 +336,7 @@ async function checkJobAccess(user: any, job: any): Promise<boolean> {
   
   if (user.role === 'HR') {
     // HR can access jobs they created
-    return job.createdBy === user.id
+    return job.createdById === user.id
   }
   
   return false // Applicants cannot modify jobs

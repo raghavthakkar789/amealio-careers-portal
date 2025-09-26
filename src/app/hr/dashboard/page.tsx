@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
@@ -21,14 +21,18 @@ import {
   HomeIcon,
   UserGroupIcon,
   ClipboardDocumentListIcon,
-  PhoneIcon
+  PhoneIcon,
+  BuildingOfficeIcon
 } from '@heroicons/react/24/outline'
+import DepartmentManagement from '@/components/hr/DepartmentManagement'
 
 export default function HRDashboard() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [showCreateJob, setShowCreateJob] = useState(false)
+  const [showDepartmentManagement, setShowDepartmentManagement] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [departments, setDepartments] = useState<Array<{id: string, name: string}>>([])
 
   const handleLogout = async () => {
     try {
@@ -45,12 +49,31 @@ export default function HRDashboard() {
   // Job creation form state
   const [jobForm, setJobForm] = useState({
     title: '',
-    department: '',
+    departmentId: '',
     summary: '',
     employmentTypes: [] as string[],
     requiredSkills: [] as string[],
     applicationDeadline: '',
   })
+
+  // Fetch departments on component mount
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const response = await fetch('/api/departments')
+        if (response.ok) {
+          const data = await response.json()
+          setDepartments(data.departments.map((dept: any) => ({
+            id: dept.id,
+            name: dept.name
+          })))
+        }
+      } catch (error) {
+        console.error('Error fetching departments:', error)
+      }
+    }
+    fetchDepartments()
+  }, [])
 
   // Job description form state
   const [jobDescriptionForm, setJobDescriptionForm] = useState({
@@ -120,7 +143,7 @@ export default function HRDashboard() {
       // Reset forms
       setJobForm({
         title: '',
-        department: '',
+        departmentId: '',
         summary: '',
         employmentTypes: [],
         requiredSkills: [],
@@ -381,6 +404,27 @@ export default function HRDashboard() {
                 </Button>
               </div>
             </div>
+
+            <div className="card hover-lift group">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <BuildingOfficeIcon className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-text-high mb-3">
+                  Departments
+                </h3>
+                <p className="text-text-mid mb-4 text-sm">
+                  Manage departments and job categories
+                </p>
+                <Button
+                  onClick={() => setShowDepartmentManagement(true)}
+                  className="btn-primary w-full hover-glow"
+                >
+                  <BuildingOfficeIcon className="w-4 h-4 mr-2" />
+                  Manage
+                </Button>
+              </div>
+            </div>
           </motion.div>
 
           {/* Recent Activity & Notifications */}
@@ -522,18 +566,17 @@ export default function HRDashboard() {
                       <div>
                         <label className="form-label">Department</label>
                         <select
-                          value={jobForm.department}
-                          onChange={(e) => setJobForm(prev => ({ ...prev, department: e.target.value }))}
+                          value={jobForm.departmentId}
+                          onChange={(e) => setJobForm(prev => ({ ...prev, departmentId: e.target.value }))}
                           required
                           className="input-field"
                         >
                           <option value="">Select Department</option>
-                          <option value="ENGINEERING">Engineering</option>
-                          <option value="MARKETING">Marketing</option>
-                          <option value="SALES">Sales</option>
-                          <option value="HR">Human Resources</option>
-                          <option value="FINANCE">Finance</option>
-                          <option value="OPERATIONS">Operations</option>
+                          {departments.map((dept) => (
+                            <option key={dept.id} value={dept.id}>
+                              {dept.name}
+                            </option>
+                          ))}
                         </select>
                       </div>
                     </div>
@@ -743,6 +786,28 @@ export default function HRDashboard() {
                       </Button>
                     </div>
                   </form>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Department Management Modal */}
+          {showDepartmentManagement && (
+            <div className="modal-overlay">
+              <div className="modal-content max-w-6xl">
+                <div className="p-6">
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold text-text-primary">
+                      Department Management
+                    </h2>
+                    <Button
+                      onClick={() => setShowDepartmentManagement(false)}
+                      className="btn-secondary"
+                    >
+                      Close
+                    </Button>
+                  </div>
+                  <DepartmentManagement />
                 </div>
               </div>
             </div>

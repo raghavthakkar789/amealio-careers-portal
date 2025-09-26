@@ -18,13 +18,13 @@ async function main() {
     create: {
       email: 'admin@amealio.com',
       password: hashedPassword,
-      firstName: 'Admin',
-      lastName: 'User',
+      firstName: 'Rajesh',
+      lastName: 'Kumar',
       role: 'ADMIN',
       emailVerified: new Date(),
       dateOfBirth: new Date('1990-01-01'),
-      phoneNumber: '+1 (555) 123-4567',
-      address: '123 Admin Street, San Francisco, CA',
+      phoneNumber: '+91 98765 43210',
+      address: '123 MG Road, Mumbai, Maharashtra 400001',
     },
   })
 
@@ -35,13 +35,13 @@ async function main() {
     create: {
       email: 'hr@amealio.com',
       password: hrPassword,
-      firstName: 'HR',
-      lastName: 'Manager',
+      firstName: 'Priya',
+      lastName: 'Singh',
       role: 'HR',
       emailVerified: new Date(),
       dateOfBirth: new Date('1985-05-15'),
-      phoneNumber: '+1 (555) 234-5678',
-      address: '456 HR Avenue, San Francisco, CA',
+      phoneNumber: '+91 98765 43211',
+      address: '456 Brigade Road, Bangalore, Karnataka 560001',
     },
   })
 
@@ -52,15 +52,73 @@ async function main() {
     create: {
       email: 'user@amealio.com',
       password: userPassword,
-      firstName: 'John',
-      lastName: 'Doe',
+      firstName: 'Arjun',
+      lastName: 'Sharma',
       role: 'APPLICANT',
       emailVerified: new Date(),
       dateOfBirth: new Date('1995-08-20'),
-      phoneNumber: '+1 (555) 345-6789',
-      address: '789 Applicant Road, San Francisco, CA',
+      phoneNumber: '+91 98765 43212',
+      address: '789 Connaught Place, New Delhi, Delhi 110001',
     },
   })
+
+  // Create departments
+  const departments = await Promise.all([
+    prisma.department.upsert({
+      where: { name: 'Engineering' },
+      update: {},
+      create: {
+        name: 'Engineering',
+        description: 'Software development and technical roles',
+        isActive: true,
+      },
+    }),
+    prisma.department.upsert({
+      where: { name: 'Marketing' },
+      update: {},
+      create: {
+        name: 'Marketing',
+        description: 'Marketing and product management roles',
+        isActive: true,
+      },
+    }),
+    prisma.department.upsert({
+      where: { name: 'Sales' },
+      update: {},
+      create: {
+        name: 'Sales',
+        description: 'Sales and business development roles',
+        isActive: true,
+      },
+    }),
+    prisma.department.upsert({
+      where: { name: 'HR' },
+      update: {},
+      create: {
+        name: 'HR',
+        description: 'Human resources and people operations',
+        isActive: true,
+      },
+    }),
+    prisma.department.upsert({
+      where: { name: 'Finance' },
+      update: {},
+      create: {
+        name: 'Finance',
+        description: 'Financial planning and accounting roles',
+        isActive: true,
+      },
+    }),
+    prisma.department.upsert({
+      where: { name: 'Operations' },
+      update: {},
+      create: {
+        name: 'Operations',
+        description: 'Operations and administrative roles',
+        isActive: true,
+      },
+    }),
+  ])
 
   // Create demo jobs
   const jobs = await Promise.all([
@@ -70,7 +128,7 @@ async function main() {
       create: {
         id: 'job-1',
         title: 'Senior Software Engineer',
-        department: 'ENGINEERING',
+        departmentId: departments[0].id, // Engineering
         summary: 'Join our engineering team to build scalable web applications.',
         employmentTypes: ['FULL_TIME'],
         requiredSkills: ['React', 'Node.js', 'TypeScript', 'PostgreSQL', 'AWS'],
@@ -85,7 +143,7 @@ async function main() {
       create: {
         id: 'job-2',
         title: 'Product Manager',
-        department: 'MARKETING',
+        departmentId: departments[1].id, // Marketing
         summary: 'Lead product development and strategy for our platform.',
         employmentTypes: ['FULL_TIME'],
         requiredSkills: ['Product Strategy', 'Agile', 'User Research', 'Data Analysis'],
@@ -100,7 +158,7 @@ async function main() {
       create: {
         id: 'job-3',
         title: 'Sales Representative',
-        department: 'SALES',
+        departmentId: departments[2].id, // Sales
         summary: 'Drive revenue growth through strategic sales initiatives.',
         employmentTypes: ['FULL_TIME', 'PART_TIME'],
         requiredSkills: ['Sales', 'CRM', 'Communication', 'Negotiation'],
@@ -123,6 +181,7 @@ async function main() {
         resumeUrl: 'https://example.com/resume1.pdf',
         additionalFiles: ['https://example.com/portfolio1.pdf'],
         coverLetter: 'I am excited to apply for the Senior Software Engineer position at amealio. With 5+ years of experience in full-stack development, I believe I would be a great fit for your team.',
+        expectedSalary: '₹8,00,000 - ₹10,00,000',
         status: 'PENDING',
         applicantId: applicant.id,
         jobId: jobs[0].id,
@@ -138,6 +197,7 @@ async function main() {
         resumeUrl: 'https://example.com/resume2.pdf',
         additionalFiles: [],
         coverLetter: 'I am passionate about product management and would love to contribute to amealio\'s mission of building innovative solutions.',
+        expectedSalary: '₹9,00,000 - ₹12,00,000',
         status: 'UNDER_REVIEW',
         applicantId: applicant.id,
         jobId: jobs[1].id,
@@ -262,6 +322,7 @@ async function main() {
 
   console.log('✅ Database seeded successfully!')
   console.log('👥 Created users:', { admin: admin.email, hr: hr.email, applicant: applicant.email })
+  console.log('🏢 Created departments:', departments.length)
   console.log('💼 Created jobs:', jobs.length)
   console.log('📝 Created applications:', applications.length)
   console.log('📅 Created interviews:', interviews.length)

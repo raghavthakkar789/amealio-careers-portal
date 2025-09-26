@@ -26,7 +26,10 @@ import {
 interface Job {
   id: string
   title: string
-  department: string
+  department: {
+    id: string
+    name: string
+  }
   summary: string
   employmentTypes: string[]
   requiredSkills: string[]
@@ -35,8 +38,10 @@ interface Job {
   isDraft: boolean
   createdAt: string
   updatedAt: string
-  applicationsCount: number
-  description?: {
+  _count: {
+    applications: number
+  }
+  jobDescription?: {
     description: string
     responsibilities: string[]
     requirements: string[]
@@ -50,6 +55,7 @@ export default function HRJobManagementPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [jobs, setJobs] = useState<Job[]>([])
+  const [departments, setDepartments] = useState<Array<{id: string, name: string}>>([])
   const [loading, setLoading] = useState(true)
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingJob, setEditingJob] = useState<Job | null>(null)
@@ -58,7 +64,7 @@ export default function HRJobManagementPage() {
   // Job form state
   const [jobForm, setJobForm] = useState({
     title: '',
-    department: '',
+    departmentId: '',
     summary: '',
     employmentTypes: [] as string[],
     requiredSkills: [] as string[],
@@ -86,79 +92,41 @@ export default function HRJobManagementPage() {
       return
     }
 
-    // Mock data - replace with actual API call
-    setTimeout(() => {
-      setJobs([
-        {
-          id: '1',
-          title: 'Senior Software Engineer',
-          department: 'Engineering',
-          summary: 'We are looking for a senior software engineer to join our team...',
-          employmentTypes: ['FULL_TIME'],
-          requiredSkills: ['React', 'Node.js', 'TypeScript', 'AWS'],
-          applicationDeadline: '2024-02-15',
-          isActive: true,
-          isDraft: false,
-          createdAt: '2024-01-15',
-          updatedAt: '2024-01-20',
-          applicationsCount: 12,
-          description: {
-            description: 'Join our engineering team to build scalable web applications...',
-            responsibilities: ['Develop new features', 'Code reviews', 'Mentor junior developers'],
-            requirements: ['5+ years experience', 'React expertise', 'Team player'],
-            benefits: ['Health insurance', 'Flexible hours', 'Remote work'],
-            location: 'San Francisco, CA',
-            remoteWork: true
-          }
-        },
-        {
-          id: '2',
-          title: 'Product Manager',
-          department: 'Product',
-          summary: 'Lead product strategy and development...',
-          employmentTypes: ['FULL_TIME'],
-          requiredSkills: ['Product Management', 'Analytics', 'Leadership'],
-          applicationDeadline: undefined, // No deadline
-          isActive: true,
-          isDraft: false,
-          createdAt: '2024-01-10',
-          updatedAt: '2024-01-18',
-          applicationsCount: 8,
-          description: {
-            description: 'Drive product strategy and work with cross-functional teams...',
-            responsibilities: ['Product roadmap', 'Stakeholder management', 'Data analysis'],
-            requirements: ['3+ years PM experience', 'Analytical skills', 'Communication'],
-            benefits: ['Competitive salary', 'Stock options', 'Learning budget'],
-            location: 'New York, NY',
-            remoteWork: false
-          }
-        },
-        {
-          id: '3',
-          title: 'UX Designer',
-          department: 'Design',
-          summary: 'Create amazing user experiences...',
-          employmentTypes: ['FULL_TIME', 'CONTRACT'],
-          requiredSkills: ['Figma', 'User Research', 'Prototyping'],
-          applicationDeadline: '2024-01-30',
-          isActive: false, // Inactive job
-          isDraft: false,
-          createdAt: '2024-01-05',
-          updatedAt: '2024-01-25',
-          applicationsCount: 5,
-          description: {
-            description: 'Design intuitive and beautiful user interfaces...',
-            responsibilities: ['UI/UX design', 'User research', 'Prototyping'],
-            requirements: ['Portfolio required', 'Figma expertise', 'Creative thinking'],
-            benefits: ['Design tools', 'Conference budget', 'Flexible schedule'],
-            location: 'Remote',
-            remoteWork: true
-          }
-        }
-      ])
-      setLoading(false)
-    }, 1000)
+    fetchJobs()
+    fetchDepartments()
   }, [session, status, router])
+
+  const fetchJobs = async () => {
+    try {
+      const response = await fetch('/api/jobs')
+      if (response.ok) {
+        const data = await response.json()
+        setJobs(data.jobs)
+      } else {
+        toast.error('Failed to fetch jobs')
+      }
+    } catch (error) {
+      console.error('Error fetching jobs:', error)
+      toast.error('Failed to fetch jobs')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchDepartments = async () => {
+    try {
+      const response = await fetch('/api/departments')
+      if (response.ok) {
+        const data = await response.json()
+        setDepartments(data.departments.map((dept: any) => ({
+          id: dept.id,
+          name: dept.name
+        })))
+      }
+    } catch (error) {
+      console.error('Error fetching departments:', error)
+    }
+  }
 
   const handleCreateJob = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -168,10 +136,14 @@ export default function HRJobManagementPage() {
       // Mock API call - replace with actual API
       await new Promise(resolve => setTimeout(resolve, 1000))
       
+      const selectedDepartment = departments.find(d => d.id === jobForm.departmentId)
       const newJob: Job = {
         id: `job-${Date.now()}`,
         title: jobForm.title,
-        department: jobForm.department,
+        department: {
+          id: jobForm.departmentId,
+          name: selectedDepartment?.name || 'Unknown Department'
+        },
         summary: jobForm.summary,
         employmentTypes: jobForm.employmentTypes,
         requiredSkills: jobForm.requiredSkills,
@@ -180,8 +152,8 @@ export default function HRJobManagementPage() {
         isDraft: jobForm.isDraft,
         createdAt: new Date().toISOString().split('T')[0],
         updatedAt: new Date().toISOString().split('T')[0],
-        applicationsCount: 0,
-        description: {
+        _count: { applications: 0 },
+        jobDescription: {
           description: jobDescriptionForm.description,
           responsibilities: jobDescriptionForm.responsibilities,
           requirements: jobDescriptionForm.requirements,
@@ -212,10 +184,14 @@ export default function HRJobManagementPage() {
       // Mock API call - replace with actual API
       await new Promise(resolve => setTimeout(resolve, 1000))
       
+      const selectedDepartment = departments.find(d => d.id === jobForm.departmentId)
       const updatedJob: Job = {
         ...editingJob,
         title: jobForm.title,
-        department: jobForm.department,
+        department: {
+          id: jobForm.departmentId,
+          name: selectedDepartment?.name || 'Unknown Department'
+        },
         summary: jobForm.summary,
         employmentTypes: jobForm.employmentTypes,
         requiredSkills: jobForm.requiredSkills,
@@ -223,8 +199,8 @@ export default function HRJobManagementPage() {
         isActive: jobForm.isActive,
         isDraft: jobForm.isDraft,
         updatedAt: new Date().toISOString().split('T')[0],
-        description: {
-          ...editingJob.description,
+        jobDescription: {
+          ...editingJob.jobDescription,
           description: jobDescriptionForm.description,
           responsibilities: jobDescriptionForm.responsibilities,
           requirements: jobDescriptionForm.requirements,
@@ -248,13 +224,13 @@ export default function HRJobManagementPage() {
   const handleDeleteJob = async (jobId: string) => {
     // Check if job has pending applications
     const pendingApplications = jobs.filter(job => 
-      job.id === jobId && job.applicationsCount > 0
+      job.id === jobId && job._count.applications > 0
     )
 
     if (pendingApplications.length > 0) {
       const job = jobs.find(j => j.id === jobId)
       toast.error(
-        `Cannot delete job "${job?.title}". There are ${job?.applicationsCount} applications that must be processed first. Please review and process all applications before deleting this job.`,
+        `Cannot delete job "${job?.title}". There are ${job?._count.applications} applications that must be processed first. Please review and process all applications before deleting this job.`,
         { duration: 6000 }
       )
       return
@@ -304,7 +280,7 @@ export default function HRJobManagementPage() {
   const resetForms = () => {
     setJobForm({
       title: '',
-      department: '',
+      departmentId: '',
       summary: '',
       employmentTypes: [],
       requiredSkills: [],
@@ -327,7 +303,7 @@ export default function HRJobManagementPage() {
     setEditingJob(job)
     setJobForm({
       title: job.title,
-      department: job.department,
+      departmentId: job.department.id,
       summary: job.summary,
       employmentTypes: job.employmentTypes,
       requiredSkills: job.requiredSkills,
@@ -337,12 +313,12 @@ export default function HRJobManagementPage() {
       isDraft: job.isDraft
     })
     setJobDescriptionForm({
-      description: job.description?.description || '',
-      responsibilities: job.description?.responsibilities || [],
-      requirements: job.description?.requirements || [],
-      benefits: job.description?.benefits || [],
-      location: job.description?.location || '',
-      remoteWork: job.description?.remoteWork || false
+      description: job.jobDescription?.description || '',
+      responsibilities: job.jobDescription?.responsibilities || [],
+      requirements: job.jobDescription?.requirements || [],
+      benefits: job.jobDescription?.benefits || [],
+      location: job.jobDescription?.location || '',
+      remoteWork: job.jobDescription?.remoteWork || false
     })
   }
 
@@ -499,7 +475,7 @@ export default function HRJobManagementPage() {
                           <h3 className="text-xl font-semibold text-text-high">
                             {job.title}
                           </h3>
-                          <p className="text-text-mid">{job.department}</p>
+                          <p className="text-text-mid">{job.department.name}</p>
                         </div>
                         {getStatusBadge(job)}
                       </div>
@@ -511,7 +487,7 @@ export default function HRJobManagementPage() {
                           <p className="text-sm text-text-mid">Applications</p>
                           <p className="font-medium text-text-high flex items-center gap-1">
                             <UsersIcon className="w-4 h-4" />
-                            {job.applicationsCount}
+                            {job._count.applications}
                           </p>
                         </div>
                         <div>
@@ -593,12 +569,12 @@ export default function HRJobManagementPage() {
                         onClick={() => handleDeleteJob(job.id)}
                         variant="secondary"
                         className={`btn-secondary ${
-                          job.applicationsCount > 0 
+                          job._count.applications > 0 
                             ? 'text-gray-400 hover:text-gray-500 cursor-not-allowed opacity-50' 
                             : 'text-red-600 hover:text-red-700'
                         }`}
-                        disabled={job.applicationsCount > 0}
-                        title={job.applicationsCount > 0 ? `Cannot delete: ${job.applicationsCount} applications pending` : 'Delete job'}
+                        disabled={job._count.applications > 0}
+                        title={job._count.applications > 0 ? `Cannot delete: ${job._count.applications} applications pending` : 'Delete job'}
                       >
                         <TrashIcon className="w-4 h-4 mr-2" />
                         Delete
@@ -655,20 +631,17 @@ export default function HRJobManagementPage() {
                 <div>
                   <label className="form-label">Department *</label>
                   <select
-                    value={jobForm.department}
-                    onChange={(e) => setJobForm(prev => ({ ...prev, department: e.target.value }))}
+                    value={jobForm.departmentId}
+                    onChange={(e) => setJobForm(prev => ({ ...prev, departmentId: e.target.value }))}
                     required
                     className="input-field"
                   >
                     <option value="">Select Department</option>
-                    <option value="Engineering">Engineering</option>
-                    <option value="Product">Product</option>
-                    <option value="Design">Design</option>
-                    <option value="Marketing">Marketing</option>
-                    <option value="Sales">Sales</option>
-                    <option value="HR">HR</option>
-                    <option value="Finance">Finance</option>
-                    <option value="Operations">Operations</option>
+                    {departments.map((dept) => (
+                      <option key={dept.id} value={dept.id}>
+                        {dept.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>

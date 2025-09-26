@@ -48,6 +48,7 @@ export interface ApplicationState {
   experience: string
   education: string
   skills: string[]
+  expectedSalary?: string
   additionalFiles: Array<{
     id: string
     fileName: string
@@ -219,8 +220,8 @@ class ApplicationLifecycleService {
       {
         id: 'app-1',
         applicantId: 'user-1',
-        applicantName: 'John Doe',
-        applicantEmail: 'john.doe@example.com',
+        applicantName: 'Arjun Sharma',
+        applicantEmail: 'arjun.sharma@example.com',
         jobId: 'job-1',
         jobTitle: 'Senior Software Engineer',
         department: 'Engineering',
@@ -232,8 +233,9 @@ class ApplicationLifecycleService {
         experience: '5+ years in software development',
         education: 'Bachelor of Computer Science',
         skills: ['React', 'Node.js', 'TypeScript', 'AWS'],
+        expectedSalary: '₹8,00,000 - ₹10,00,000',
         additionalFiles: [
-          { id: 'resume-1', fileName: 'john-doe-resume.pdf', fileType: 'application/pdf' }
+          { id: 'resume-1', fileName: 'arjun-sharma-resume.pdf', fileType: 'application/pdf' }
         ],
         notes: 'Strong technical background',
         interviewDate: '2024-01-25',

@@ -519,7 +519,7 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
                     <Input
                       value={formData.expectedSalary}
                       onChange={(e) => setFormData(prev => ({ ...prev, expectedSalary: e.target.value }))}
-                      placeholder="Expected salary range (optional)"
+                      placeholder="Expected salary range in ₹ (optional)"
                       disabled={isDeadlinePassed}
                       className="input-field"
                     />

@@ -128,7 +128,7 @@ export default function DepartmentManagement() {
   }
 
   const handleDeleteDepartment = async (department: Department) => {
-    if (department._count.jobs > 0) {
+    if (department._count?.jobs > 0) {
       toast.error(`Cannot delete department with ${department._count.jobs} active job(s). Please close or reassign all jobs first.`)
       return
     }
@@ -241,13 +241,13 @@ export default function DepartmentManagement() {
                 <button
                   onClick={() => handleDeleteDepartment(department)}
                   className={`p-2 transition-colors ${
-                    department._count.jobs > 0
+                    department._count?.jobs > 0
                       ? 'text-gray-400 cursor-not-allowed'
                       : 'text-text-mid hover:text-red-500'
                   }`}
-                  disabled={department._count.jobs > 0}
+                  disabled={department._count?.jobs > 0}
                   title={
-                    department._count.jobs > 0
+                    department._count?.jobs > 0
                       ? `Cannot delete: ${department._count.jobs} active job(s)`
                       : 'Delete department'
                   }
@@ -267,12 +267,12 @@ export default function DepartmentManagement() {
               <div className="flex items-center gap-2">
                 <span className="text-text-mid text-sm">Active Jobs:</span>
                 <span className={`font-semibold ${
-                  department._count.jobs > 0 ? 'text-emerald-600' : 'text-text-mid'
+                  department._count?.jobs > 0 ? 'text-emerald-600' : 'text-text-mid'
                 }`}>
-                  {department._count.jobs}
+                  {department._count?.jobs || 0}
                 </span>
               </div>
-              {department._count.jobs > 0 && (
+              {department._count?.jobs > 0 && (
                 <div className="flex items-center gap-1 text-amber-600">
                   <ExclamationTriangleIcon className="w-4 h-4" />
                   <span className="text-xs">Protected</span>

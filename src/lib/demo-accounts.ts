@@ -4,19 +4,19 @@ export const demoAccounts = {
     email: 'admin@amealio.com',
     password: 'admin123',
     role: 'ADMIN',
-    name: 'Admin User'
+    name: 'Rajesh Kumar'
   },
   hr: {
     email: 'hr@amealio.com', 
     password: 'hr123',
     role: 'HR',
-    name: 'HR Manager'
+    name: 'Priya Singh'
   },
   applicant: {
     email: 'user@amealio.com',
     password: 'user123', 
     role: 'APPLICANT',
-    name: 'John Doe'
+    name: 'Arjun Sharma'
   }
 }
 

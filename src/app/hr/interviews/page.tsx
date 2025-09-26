@@ -104,7 +104,7 @@ export default function HRInterviewsPage() {
       setInterviews([
         {
           id: '1',
-          applicantName: 'John Doe',
+          applicantName: 'Arjun Sharma',
           applicantEmail: 'john.doe@example.com',
           jobTitle: 'Senior Software Engineer',
           department: 'Engineering',
@@ -113,13 +113,13 @@ export default function HRInterviewsPage() {
           duration: 60,
           type: 'VIDEO',
           meetingLink: 'https://meet.google.com/abc-defg-hij',
-          interviewer: 'Sarah Johnson',
+          interviewer: 'Sneha Gupta',
           status: 'SCHEDULED',
           notes: 'Technical interview focusing on React and Node.js'
         },
         {
           id: '2',
-          applicantName: 'Jane Smith',
+          applicantName: 'Priya Patel',
           applicantEmail: 'jane.smith@example.com',
           jobTitle: 'Product Manager',
           department: 'Product',
@@ -128,7 +128,7 @@ export default function HRInterviewsPage() {
           duration: 90,
           type: 'IN_PERSON',
           location: 'Conference Room A',
-          interviewer: 'Mike Chen',
+          interviewer: 'Rajesh Kumar',
           status: 'COMPLETED',
           notes: 'Product strategy and leadership discussion',
           feedback: 'Strong analytical skills, good communication',
@@ -136,7 +136,7 @@ export default function HRInterviewsPage() {
         },
         {
           id: '3',
-          applicantName: 'Mike Johnson',
+          applicantName: 'Rahul Kumar',
           applicantEmail: 'mike.johnson@example.com',
           jobTitle: 'UX Designer',
           department: 'Design',

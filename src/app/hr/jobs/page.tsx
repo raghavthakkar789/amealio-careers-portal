@@ -84,6 +84,11 @@ export default function HRJobManagementPage() {
     remoteWork: false
   })
 
+  // Individual item input states
+  const [newResponsibility, setNewResponsibility] = useState('')
+  const [newRequirement, setNewRequirement] = useState('')
+  const [newBenefit, setNewBenefit] = useState('')
+
   useEffect(() => {
     if (status === 'loading') return
 
@@ -297,6 +302,61 @@ export default function HRJobManagementPage() {
       location: '',
       remoteWork: false
     })
+    setNewResponsibility('')
+    setNewRequirement('')
+    setNewBenefit('')
+  }
+
+  // Functions to add/remove items
+  const addResponsibility = () => {
+    if (newResponsibility.trim()) {
+      setJobDescriptionForm(prev => ({
+        ...prev,
+        responsibilities: [...prev.responsibilities, newResponsibility.trim()]
+      }))
+      setNewResponsibility('')
+    }
+  }
+
+  const removeResponsibility = (index: number) => {
+    setJobDescriptionForm(prev => ({
+      ...prev,
+      responsibilities: prev.responsibilities.filter((_, i) => i !== index)
+    }))
+  }
+
+  const addRequirement = () => {
+    if (newRequirement.trim()) {
+      setJobDescriptionForm(prev => ({
+        ...prev,
+        requirements: [...prev.requirements, newRequirement.trim()]
+      }))
+      setNewRequirement('')
+    }
+  }
+
+  const removeRequirement = (index: number) => {
+    setJobDescriptionForm(prev => ({
+      ...prev,
+      requirements: prev.requirements.filter((_, i) => i !== index)
+    }))
+  }
+
+  const addBenefit = () => {
+    if (newBenefit.trim()) {
+      setJobDescriptionForm(prev => ({
+        ...prev,
+        benefits: [...prev.benefits, newBenefit.trim()]
+      }))
+      setNewBenefit('')
+    }
+  }
+
+  const removeBenefit = (index: number) => {
+    setJobDescriptionForm(prev => ({
+      ...prev,
+      benefits: prev.benefits.filter((_, i) => i !== index)
+    }))
   }
 
   const startEdit = (job: Job) => {
@@ -320,6 +380,9 @@ export default function HRJobManagementPage() {
       location: job.jobDescription?.location || '',
       remoteWork: job.jobDescription?.remoteWork || false
     })
+    setNewResponsibility('')
+    setNewRequirement('')
+    setNewBenefit('')
   }
 
   const filteredJobs = jobs.filter(job => {
@@ -782,45 +845,129 @@ export default function HRJobManagementPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="form-label">Responsibilities</label>
-                      <textarea
-                        value={jobDescriptionForm.responsibilities.join('\n')}
-                        onChange={(e) => {
-                          const responsibilities = e.target.value.split('\n').filter(item => item.trim())
-                          setJobDescriptionForm(prev => ({ ...prev, responsibilities }))
-                        }}
-                        className="input-field"
-                        rows={3}
-                        placeholder="One responsibility per line..."
-                      />
+                      <div className="space-y-2">
+                        {jobDescriptionForm.responsibilities.map((responsibility, index) => (
+                          <div key={index} className="flex items-center gap-2 p-2 bg-bg-850 rounded-lg border border-border">
+                            <span className="flex-1 text-text-high">{responsibility}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeResponsibility(index)}
+                              className="p-1 text-red-500 hover:text-red-600 transition-colors"
+                            >
+                              <XCircleIcon className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                        <div className="flex gap-2">
+                          <Input
+                            type="text"
+                            value={newResponsibility}
+                            onChange={(e) => setNewResponsibility(e.target.value)}
+                            placeholder="Add a responsibility..."
+                            className="input-field flex-1"
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault()
+                                addResponsibility()
+                              }
+                            }}
+                          />
+                          <Button
+                            type="button"
+                            onClick={addResponsibility}
+                            variant="secondary"
+                            className="btn-secondary px-3"
+                            disabled={!newResponsibility.trim()}
+                          >
+                            <PlusIcon className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                     
                     <div>
                       <label className="form-label">Requirements</label>
-                      <textarea
-                        value={jobDescriptionForm.requirements.join('\n')}
-                        onChange={(e) => {
-                          const requirements = e.target.value.split('\n').filter(item => item.trim())
-                          setJobDescriptionForm(prev => ({ ...prev, requirements }))
-                        }}
-                        className="input-field"
-                        rows={3}
-                        placeholder="One requirement per line..."
-                      />
+                      <div className="space-y-2">
+                        {jobDescriptionForm.requirements.map((requirement, index) => (
+                          <div key={index} className="flex items-center gap-2 p-2 bg-bg-850 rounded-lg border border-border">
+                            <span className="flex-1 text-text-high">{requirement}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeRequirement(index)}
+                              className="p-1 text-red-500 hover:text-red-600 transition-colors"
+                            >
+                              <XCircleIcon className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                        <div className="flex gap-2">
+                          <Input
+                            type="text"
+                            value={newRequirement}
+                            onChange={(e) => setNewRequirement(e.target.value)}
+                            placeholder="Add a requirement..."
+                            className="input-field flex-1"
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault()
+                                addRequirement()
+                              }
+                            }}
+                          />
+                          <Button
+                            type="button"
+                            onClick={addRequirement}
+                            variant="secondary"
+                            className="btn-secondary px-3"
+                            disabled={!newRequirement.trim()}
+                          >
+                            <PlusIcon className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                   
                   <div>
                     <label className="form-label">Benefits</label>
-                    <textarea
-                      value={jobDescriptionForm.benefits.join('\n')}
-                      onChange={(e) => {
-                        const benefits = e.target.value.split('\n').filter(item => item.trim())
-                        setJobDescriptionForm(prev => ({ ...prev, benefits }))
-                      }}
-                      className="input-field"
-                      rows={3}
-                      placeholder="One benefit per line..."
-                    />
+                    <div className="space-y-2">
+                      {jobDescriptionForm.benefits.map((benefit, index) => (
+                        <div key={index} className="flex items-center gap-2 p-2 bg-bg-850 rounded-lg border border-border">
+                          <span className="flex-1 text-text-high">{benefit}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeBenefit(index)}
+                            className="p-1 text-red-500 hover:text-red-600 transition-colors"
+                          >
+                            <XCircleIcon className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                      <div className="flex gap-2">
+                        <Input
+                          type="text"
+                          value={newBenefit}
+                          onChange={(e) => setNewBenefit(e.target.value)}
+                          placeholder="Add a benefit..."
+                          className="input-field flex-1"
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault()
+                              addBenefit()
+                            }
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          onClick={addBenefit}
+                          variant="secondary"
+                          className="btn-secondary px-3"
+                          disabled={!newBenefit.trim()}
+                        >
+                          <PlusIcon className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -831,7 +978,7 @@ export default function HRJobManagementPage() {
                         value={jobDescriptionForm.location}
                         onChange={(e) => setJobDescriptionForm(prev => ({ ...prev, location: e.target.value }))}
                         className="input-field"
-                        placeholder="e.g., San Francisco, CA"
+                        placeholder="e.g., Pune, Bangalore, Hyderabad, etc."
                       />
                     </div>
                     

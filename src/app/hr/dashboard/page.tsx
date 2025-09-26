@@ -449,10 +449,10 @@ export default function HRDashboard() {
                 <div className="flex items-center justify-between p-4 bg-gradient-to-r from-bg-800 to-bg-850 rounded-xl border border-border hover:shadow-medium transition-all duration-300">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-gradient-to-r from-primary to-purple-600 rounded-full flex items-center justify-center">
-                      <span className="text-white font-bold text-sm">JD</span>
+                      <span className="text-white font-bold text-sm">AS</span>
                     </div>
                     <div>
-                      <h4 className="font-semibold text-text-high">John Doe</h4>
+                      <h4 className="font-semibold text-text-high">Arjun Sharma</h4>
                       <p className="text-sm text-text-mid">Senior Developer • 2 hours ago</p>
                     </div>
                   </div>
@@ -462,10 +462,10 @@ export default function HRDashboard() {
                 <div className="flex items-center justify-between p-4 bg-gradient-to-r from-bg-800 to-bg-850 rounded-xl border border-border hover:shadow-medium transition-all duration-300">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center">
-                      <span className="text-white font-bold text-sm">JS</span>
+                      <span className="text-white font-bold text-sm">PP</span>
                     </div>
                     <div>
-                      <h4 className="font-semibold text-text-high">Jane Smith</h4>
+                      <h4 className="font-semibold text-text-high">Priya Patel</h4>
                       <p className="text-sm text-text-mid">Product Manager • 4 hours ago</p>
                     </div>
                   </div>
@@ -475,10 +475,10 @@ export default function HRDashboard() {
                 <div className="flex items-center justify-between p-4 bg-gradient-to-r from-bg-800 to-bg-850 rounded-xl border border-border hover:shadow-medium transition-all duration-300">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-gradient-to-r from-amber-500 to-amber-600 rounded-full flex items-center justify-center">
-                      <span className="text-white font-bold text-sm">MJ</span>
+                      <span className="text-white font-bold text-sm">RK</span>
                     </div>
                     <div>
-                      <h4 className="font-semibold text-text-high">Mike Johnson</h4>
+                      <h4 className="font-semibold text-text-high">Rahul Kumar</h4>
                       <p className="text-sm text-text-mid">UX Designer • 1 day ago</p>
                     </div>
                   </div>

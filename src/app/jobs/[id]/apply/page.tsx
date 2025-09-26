@@ -130,7 +130,7 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
             education: 'Bachelor of Computer Science',
             skills: 'React, Node.js, TypeScript, AWS',
             availability: 'Immediately available',
-            expectedSalary: '$120,000 - $150,000',
+            expectedSalary: '₹12,00,000 - ₹15,00,000',
             references: 'Available upon request',
             linkedinProfile: 'https://linkedin.com/in/johndoe',
           })

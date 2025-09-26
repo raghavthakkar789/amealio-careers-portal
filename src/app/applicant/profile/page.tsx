@@ -72,7 +72,7 @@ export default function ProfilePage() {
     setTimeout(() => {
       setProfile({
         id: session.user?.id || '1',
-        name: session.user?.name || 'John Doe',
+        name: session.user?.name || 'Arjun Sharma',
         email: session.user?.email || 'john.doe@example.com',
         phone: '+1 (555) 123-4567',
         location: 'San Francisco, CA',
@@ -87,7 +87,7 @@ export default function ProfilePage() {
         portfolioUrl: 'https://johndoe.dev'
       })
       setFormData({
-        name: session.user?.name || 'John Doe',
+        name: session.user?.name || 'Arjun Sharma',
         email: session.user?.email || 'john.doe@example.com',
         phone: '+1 (555) 123-4567',
         location: 'San Francisco, CA',

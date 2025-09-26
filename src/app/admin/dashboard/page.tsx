@@ -96,7 +96,7 @@ export default function AdminDashboard() {
         setApplicants([
           {
             id: '1',
-            name: 'John Doe',
+            name: 'Arjun Sharma',
             email: 'john@example.com',
             position: 'Senior Software Engineer',
             status: 'PENDING_REVIEW',
@@ -110,7 +110,7 @@ export default function AdminDashboard() {
           },
           {
             id: '2',
-            name: 'Jane Smith',
+            name: 'Priya Patel',
             email: 'jane@example.com',
             position: 'Product Manager',
             status: 'APPROVED',
@@ -127,7 +127,7 @@ export default function AdminDashboard() {
         setHrUsers([
           {
             id: '1',
-            name: 'Sarah Johnson',
+            name: 'Sneha Gupta',
             email: 'sarah@amealio.com',
             department: 'HR',
             createdAt: '2024-01-01',
@@ -136,7 +136,7 @@ export default function AdminDashboard() {
           },
           {
             id: '2',
-            name: 'Mike Wilson',
+            name: 'Rahul Kumar',
             email: 'mike@amealio.com',
             department: 'HR',
             createdAt: '2024-01-15',

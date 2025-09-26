@@ -7,8 +7,8 @@ const mockApplications = new Map([
   ['app-1', {
     id: 'app-1',
     applicantId: 'user-1',
-    applicantName: 'John Doe',
-    applicantEmail: 'john.doe@example.com',
+    applicantName: 'Arjun Sharma',
+    applicantEmail: 'arjun.sharma@example.com',
     jobId: 'job-1',
     jobTitle: 'Senior Software Engineer',
     department: 'Engineering',
@@ -21,7 +21,7 @@ const mockApplications = new Map([
     education: 'Bachelor of Computer Science',
     skills: ['React', 'Node.js', 'TypeScript', 'AWS'],
     additionalFiles: [
-      { id: 'resume-1', fileName: 'john-doe-resume.pdf', fileType: 'application/pdf' }
+      { id: 'resume-1', fileName: 'arjun-sharma-resume.pdf', fileType: 'application/pdf' }
     ],
     notes: 'Strong technical background',
     interviewDate: '2024-01-25',
@@ -31,8 +31,8 @@ const mockApplications = new Map([
   ['app-2', {
     id: 'app-2',
     applicantId: 'user-2',
-    applicantName: 'Jane Smith',
-    applicantEmail: 'jane.smith@example.com',
+    applicantName: 'Priya Patel',
+    applicantEmail: 'priya.patel@example.com',
     jobId: 'job-2',
     jobTitle: 'Product Manager',
     department: 'Product',
@@ -45,8 +45,8 @@ const mockApplications = new Map([
     education: 'MBA in Business Administration',
     skills: ['Product Management', 'Analytics', 'Leadership'],
     additionalFiles: [
-      { id: 'resume-2', fileName: 'jane-smith-resume.pdf', fileType: 'application/pdf' },
-      { id: 'portfolio-1', fileName: 'jane-smith-portfolio.pdf', fileType: 'application/pdf' }
+      { id: 'resume-2', fileName: 'priya-patel-resume.pdf', fileType: 'application/pdf' },
+      { id: 'portfolio-1', fileName: 'priya-patel-portfolio.pdf', fileType: 'application/pdf' }
     ],
     notes: 'Excellent analytical skills',
     interviewDate: '2024-01-20',
@@ -56,8 +56,8 @@ const mockApplications = new Map([
   ['app-3', {
     id: 'app-3',
     applicantId: 'user-3',
-    applicantName: 'Mike Johnson',
-    applicantEmail: 'mike.johnson@example.com',
+    applicantName: 'Rahul Kumar',
+    applicantEmail: 'rahul.kumar@example.com',
     jobId: 'job-3',
     jobTitle: 'UX Designer',
     department: 'Design',
@@ -70,7 +70,7 @@ const mockApplications = new Map([
     education: 'Bachelor of Design',
     skills: ['Figma', 'User Research', 'Prototyping'],
     additionalFiles: [
-      { id: 'resume-3', fileName: 'mike-johnson-resume.pdf', fileType: 'application/pdf' }
+      { id: 'resume-3', fileName: 'rahul-kumar-resume.pdf', fileType: 'application/pdf' }
     ],
     notes: 'Great portfolio, hired',
     interviewDate: '2024-01-12',

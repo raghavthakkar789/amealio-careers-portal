@@ -16,9 +16,9 @@ export const authOptions: NextAuthOptions = {
 
         // Simple hardcoded demo accounts
         const demoAccounts = [
-          { email: 'admin@amealio.com', password: 'admin123', role: 'ADMIN', name: 'Admin User' },
-          { email: 'hr@amealio.com', password: 'hr123', role: 'HR', name: 'HR Manager' },
-          { email: 'user@amealio.com', password: 'user123', role: 'APPLICANT', name: 'John Doe' }
+          { email: 'admin@amealio.com', password: 'admin123', role: 'ADMIN', name: 'Rajesh Kumar' },
+          { email: 'hr@amealio.com', password: 'hr123', role: 'HR', name: 'Priya Singh' },
+          { email: 'user@amealio.com', password: 'user123', role: 'APPLICANT', name: 'Arjun Sharma' }
         ]
 
         const account = demoAccounts.find(acc => 

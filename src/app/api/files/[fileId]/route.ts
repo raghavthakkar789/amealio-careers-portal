@@ -6,27 +6,27 @@ import { authOptions } from '@/lib/auth'
 const mockFiles = new Map([
   ['resume-1', {
     id: 'resume-1',
-    fileName: 'john-doe-resume.pdf',
+    fileName: 'arjun-sharma-resume.pdf',
     fileType: 'application/pdf',
-    content: 'Mock PDF content for John Doe resume',
+    content: 'Mock PDF content for Arjun Sharma resume',
     uploadedBy: 'user-1',
     uploadedAt: new Date('2024-01-15'),
     applicationId: 'app-1'
   }],
   ['resume-2', {
     id: 'resume-2',
-    fileName: 'jane-smith-resume.pdf',
+    fileName: 'priya-patel-resume.pdf',
     fileType: 'application/pdf',
-    content: 'Mock PDF content for Jane Smith resume',
+    content: 'Mock PDF content for Priya Patel resume',
     uploadedBy: 'user-2',
     uploadedAt: new Date('2024-01-16'),
     applicationId: 'app-2'
   }],
   ['portfolio-1', {
     id: 'portfolio-1',
-    fileName: 'jane-smith-portfolio.pdf',
+    fileName: 'priya-patel-portfolio.pdf',
     fileType: 'application/pdf',
-    content: 'Mock PDF content for Jane Smith portfolio',
+    content: 'Mock PDF content for Priya Patel portfolio',
     uploadedBy: 'user-2',
     uploadedAt: new Date('2024-01-16'),
     applicationId: 'app-2'

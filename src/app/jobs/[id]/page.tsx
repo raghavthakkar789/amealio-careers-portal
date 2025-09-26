@@ -31,7 +31,6 @@ interface Job {
   employmentType: string
   department: string
   experience: string
-  salaryRange: string
   applicationDeadline: string
   postedAt: string
   createdAt: string

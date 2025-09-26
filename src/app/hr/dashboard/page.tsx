@@ -31,8 +31,19 @@ export default function HRDashboard() {
   const router = useRouter()
   const [showCreateJob, setShowCreateJob] = useState(false)
   const [showDepartmentManagement, setShowDepartmentManagement] = useState(false)
+  const [showAddHR, setShowAddHR] = useState(false)
   const [loading, setLoading] = useState(false)
   const [departments, setDepartments] = useState<Array<{id: string, name: string}>>([])
+
+  // HR Request form state
+  const [hrRequestForm, setHrRequestForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phoneNumber: '',
+    department: '',
+    reason: ''
+  })
 
   const handleLogout = async () => {
     try {
@@ -160,6 +171,42 @@ export default function HRDashboard() {
     } catch {
       toast.error('Failed to create job')
       console.error('Error creating job')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleAddHRRequest = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    
+    try {
+      const response = await fetch('/api/hr-requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(hrRequestForm),
+      })
+
+      if (response.ok) {
+        toast.success('HR request submitted successfully!')
+        setShowAddHR(false)
+        setHrRequestForm({
+          firstName: '',
+          lastName: '',
+          email: '',
+          phoneNumber: '',
+          department: '',
+          reason: ''
+        })
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to submit HR request')
+      }
+    } catch (error) {
+      toast.error('Failed to submit HR request')
+      console.error('Error submitting HR request:', error)
     } finally {
       setLoading(false)
     }
@@ -422,6 +469,27 @@ export default function HRDashboard() {
                 >
                   <BuildingOfficeIcon className="w-4 h-4 mr-2" />
                   Manage
+                </Button>
+              </div>
+            </div>
+
+            <div className="card hover-lift group">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-violet-500 to-violet-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <UserGroupIcon className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-text-high mb-3">
+                  Add Another HR
+                </h3>
+                <p className="text-text-mid mb-4 text-sm">
+                  Request to add a new HR team member
+                </p>
+                <Button
+                  onClick={() => setShowAddHR(true)}
+                  className="btn-primary w-full hover-glow"
+                >
+                  <UserGroupIcon className="w-4 h-4 mr-2" />
+                  Request HR
                 </Button>
               </div>
             </div>
@@ -808,6 +876,121 @@ export default function HRDashboard() {
                     </Button>
                   </div>
                   <DepartmentManagement />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Add HR Request Modal */}
+          {showAddHR && (
+            <div className="modal-overlay">
+              <div className="modal-content max-w-2xl">
+                <div className="p-6">
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold text-text-primary">
+                      Request New HR Member
+                    </h2>
+                    <Button
+                      onClick={() => setShowAddHR(false)}
+                      className="btn-secondary"
+                    >
+                      Close
+                    </Button>
+                  </div>
+                  
+                  <form onSubmit={handleAddHRRequest} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="form-label">First Name *</label>
+                        <Input
+                          type="text"
+                          value={hrRequestForm.firstName}
+                          onChange={(e) => setHrRequestForm(prev => ({ ...prev, firstName: e.target.value }))}
+                          required
+                          className="input-field"
+                          placeholder="Enter first name"
+                        />
+                      </div>
+                      <div>
+                        <label className="form-label">Last Name *</label>
+                        <Input
+                          type="text"
+                          value={hrRequestForm.lastName}
+                          onChange={(e) => setHrRequestForm(prev => ({ ...prev, lastName: e.target.value }))}
+                          required
+                          className="input-field"
+                          placeholder="Enter last name"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="form-label">Email Address *</label>
+                      <Input
+                        type="email"
+                        value={hrRequestForm.email}
+                        onChange={(e) => setHrRequestForm(prev => ({ ...prev, email: e.target.value }))}
+                        required
+                        className="input-field"
+                        placeholder="Enter email address"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="form-label">Phone Number</label>
+                      <Input
+                        type="tel"
+                        value={hrRequestForm.phoneNumber}
+                        onChange={(e) => setHrRequestForm(prev => ({ ...prev, phoneNumber: e.target.value }))}
+                        className="input-field"
+                        placeholder="Enter phone number"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="form-label">Department</label>
+                      <select
+                        value={hrRequestForm.department}
+                        onChange={(e) => setHrRequestForm(prev => ({ ...prev, department: e.target.value }))}
+                        className="input-field"
+                      >
+                        <option value="">Select Department</option>
+                        {departments.map((dept) => (
+                          <option key={dept.id} value={dept.name}>
+                            {dept.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="form-label">Reason for Request</label>
+                      <textarea
+                        value={hrRequestForm.reason}
+                        onChange={(e) => setHrRequestForm(prev => ({ ...prev, reason: e.target.value }))}
+                        className="input-field"
+                        rows={3}
+                        placeholder="Explain why this HR member is needed..."
+                      />
+                    </div>
+
+                    <div className="flex gap-4 pt-4">
+                      <Button
+                        type="submit"
+                        className="btn-primary flex-1"
+                        disabled={loading}
+                      >
+                        {loading ? 'Submitting...' : 'Submit Request'}
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => setShowAddHR(false)}
+                        className="btn-secondary flex-1"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
                 </div>
               </div>
             </div>

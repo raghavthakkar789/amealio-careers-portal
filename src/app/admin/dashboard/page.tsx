@@ -23,7 +23,9 @@ import {
   HomeIcon,
   ArrowRightOnRectangleIcon,
   ArrowTrendingUpIcon,
-  ShieldCheckIcon
+  ShieldCheckIcon,
+  UserGroupIcon,
+  KeyIcon
 } from '@heroicons/react/24/outline'
 
 export default function AdminDashboard() {
@@ -319,6 +321,7 @@ export default function AdminDashboard() {
               { id: 'applications', label: 'All Applications', icon: DocumentTextIcon, color: 'from-blue-500 to-blue-600' },
               { id: 'applicants', label: 'Applicant Profiles', icon: UsersIcon, color: 'from-emerald-500 to-emerald-600' },
               { id: 'hr-management', label: 'HR Management', icon: UserPlusIcon, color: 'from-amber-500 to-amber-600' },
+              { id: 'hr-requests', label: 'HR Requests', icon: UserGroupIcon, color: 'from-violet-500 to-violet-600' },
               { id: 'analytics', label: 'Analytics', icon: ArrowTrendingUpIcon, color: 'from-rose-500 to-rose-600' }
             ].map(tab => (
               <button
@@ -711,6 +714,53 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* HR Requests Tab */}
+          {activeTab === 'hr-requests' && (
+            <div className="space-y-6">
+              <div className="card">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-text-primary">HR Request Management</h2>
+                  <Button
+                    onClick={() => router.push('/admin/hr-management')}
+                    className="btn-primary"
+                  >
+                    <UserGroupIcon className="w-4 h-4 mr-2" />
+                    Manage HR Requests
+                  </Button>
+                </div>
+                <p className="text-text-secondary mb-6">
+                  Review and manage HR requests submitted by existing HR team members. Approve or reject requests and assign passwords to new HR users.
+                </p>
+                <div className="bg-gradient-to-r from-violet-500/10 to-purple-600/10 p-6 rounded-lg border border-violet-500/20">
+                  <div className="flex items-center gap-3 mb-4">
+                    <UserGroupIcon className="w-8 h-8 text-violet-500" />
+                    <h3 className="text-lg font-semibold text-text-primary">HR Request System</h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="text-center">
+                      <div className="w-12 h-12 bg-violet-500/20 rounded-lg flex items-center justify-center mx-auto mb-2">
+                        <UserGroupIcon className="w-6 h-6 text-violet-500" />
+                      </div>
+                      <p className="text-sm text-text-secondary">HR members can request new team members</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="w-12 h-12 bg-amber-500/20 rounded-lg flex items-center justify-center mx-auto mb-2">
+                        <ClockIcon className="w-6 h-6 text-amber-500" />
+                      </div>
+                      <p className="text-sm text-text-secondary">Admin reviews and approves requests</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center mx-auto mb-2">
+                        <KeyIcon className="w-6 h-6 text-green-500" />
+                      </div>
+                      <p className="text-sm text-text-secondary">Admin assigns passwords to new HR users</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

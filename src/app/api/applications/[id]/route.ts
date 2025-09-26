@@ -1,110 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-
-// Mock database - same as in route.ts
-const mockApplications = new Map([
-  ['app-1', {
-    id: 'app-1',
-    applicantId: 'user-1',
-    applicantName: 'Arjun Sharma',
-    applicantEmail: 'arjun.sharma@example.com',
-    jobId: 'job-1',
-    jobTitle: 'Senior Software Engineer',
-    department: 'Engineering',
-    company: 'amealio',
-    status: 'UNDER_REVIEW',
-    appliedDate: '2024-01-15',
-    resumeUrl: '/api/files/resume-1',
-    coverLetter: 'I am excited to apply for this position...',
-    experience: '5+ years in software development',
-    education: 'Bachelor of Computer Science',
-    skills: ['React', 'Node.js', 'TypeScript', 'AWS'],
-    additionalFiles: [
-      { id: 'resume-1', fileName: 'arjun-sharma-resume.pdf', fileType: 'application/pdf' }
-    ],
-    notes: 'Strong technical background',
-    interviewDate: '2024-01-25',
-    interviewTime: '2:00 PM',
-    interviewMode: 'Video Call'
-  }],
-  ['app-2', {
-    id: 'app-2',
-    applicantId: 'user-2',
-    applicantName: 'Priya Patel',
-    applicantEmail: 'priya.patel@example.com',
-    jobId: 'job-2',
-    jobTitle: 'Product Manager',
-    department: 'Product',
-    company: 'amealio',
-    status: 'INTERVIEW_SCHEDULED',
-    appliedDate: '2024-01-10',
-    resumeUrl: '/api/files/resume-2',
-    coverLetter: 'I have extensive experience in product management...',
-    experience: '3+ years in product management',
-    education: 'MBA in Business Administration',
-    skills: ['Product Management', 'Analytics', 'Leadership'],
-    additionalFiles: [
-      { id: 'resume-2', fileName: 'priya-patel-resume.pdf', fileType: 'application/pdf' },
-      { id: 'portfolio-1', fileName: 'priya-patel-portfolio.pdf', fileType: 'application/pdf' }
-    ],
-    notes: 'Excellent analytical skills',
-    interviewDate: '2024-01-20',
-    interviewTime: '10:00 AM',
-    interviewMode: 'In Person'
-  }],
-  ['app-3', {
-    id: 'app-3',
-    applicantId: 'user-3',
-    applicantName: 'Rahul Kumar',
-    applicantEmail: 'rahul.kumar@example.com',
-    jobId: 'job-3',
-    jobTitle: 'UX Designer',
-    department: 'Design',
-    company: 'amealio',
-    status: 'HIRED',
-    appliedDate: '2024-01-05',
-    resumeUrl: '/api/files/resume-3',
-    coverLetter: 'I am passionate about creating amazing user experiences...',
-    experience: '4+ years in UX design',
-    education: 'Bachelor of Design',
-    skills: ['Figma', 'User Research', 'Prototyping'],
-    additionalFiles: [
-      { id: 'resume-3', fileName: 'rahul-kumar-resume.pdf', fileType: 'application/pdf' }
-    ],
-    notes: 'Great portfolio, hired',
-    interviewDate: '2024-01-12',
-    interviewTime: '3:00 PM',
-    interviewMode: 'Video Call'
-  }]
-])
-
-const mockJobs = new Map([
-  ['job-1', {
-    id: 'job-1',
-    title: 'Senior Software Engineer',
-    department: 'Engineering',
-    createdBy: 'hr-user-1',
-    isActive: true,
-    applicationsCount: 1
-  }],
-  ['job-2', {
-    id: 'job-2',
-    title: 'Product Manager',
-    department: 'Product',
-    createdBy: 'hr-user-1',
-    isActive: true,
-    applicationsCount: 1
-  }],
-  ['job-3', {
-    id: 'job-3',
-    title: 'UX Designer',
-    department: 'Design',
-    createdBy: 'hr-user-2',
-    isActive: true,
-    applicationsCount: 1
-  }]
-])
+import { prisma } from '@/lib/prisma'
 
 // GET /api/applications/[id] - Get specific application
 export async function GET(
@@ -120,7 +17,31 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const application = mockApplications.get(id)
+    const application = await prisma.application.findUnique({
+      where: { id },
+      include: {
+        applicant: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        },
+        job: {
+          select: {
+            id: true,
+            title: true,
+            department: {
+              select: {
+                name: true
+              }
+            },
+            createdById: true
+          }
+        }
+      }
+    })
     
     if (!application) {
       return NextResponse.json({ error: 'Application not found' }, { status: 404 })
@@ -154,7 +75,16 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const application = mockApplications.get(id)
+    const application = await prisma.application.findUnique({
+      where: { id },
+      include: {
+        job: {
+          select: {
+            createdById: true
+          }
+        }
+      }
+    })
     
     if (!application) {
       return NextResponse.json({ error: 'Application not found' }, { status: 404 })
@@ -170,16 +100,35 @@ export async function PUT(
     const { status, notes, interviewDate, interviewTime, interviewMode } = body
 
     // Update application
-    const updatedApplication = {
-      ...application,
-      status: status || application.status,
-      notes: notes || application.notes,
-      interviewDate: interviewDate || application.interviewDate,
-      interviewTime: interviewTime || application.interviewTime,
-      interviewMode: interviewMode || application.interviewMode
-    }
-
-    mockApplications.set(id, updatedApplication)
+    const updatedApplication = await prisma.application.update({
+      where: { id },
+      data: {
+        status: status || application.status,
+        // Note: interview fields would need to be added to the schema
+        // For now, we'll just update the basic fields
+      },
+      include: {
+        applicant: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        },
+        job: {
+          select: {
+            id: true,
+            title: true,
+            department: {
+              select: {
+                name: true
+              }
+            }
+          }
+        }
+      }
+    })
 
     return NextResponse.json({ 
       application: updatedApplication,
@@ -206,7 +155,9 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const application = mockApplications.get(id)
+    const application = await prisma.application.findUnique({
+      where: { id }
+    })
     
     if (!application) {
       return NextResponse.json({ error: 'Application not found' }, { status: 404 })
@@ -224,14 +175,9 @@ export async function DELETE(
       }, { status: 400 })
     }
 
-    mockApplications.delete(id)
-
-    // Update job application count
-    const job = mockJobs.get(application.jobId)
-    if (job) {
-      job.applicationsCount = Math.max(0, job.applicationsCount - 1)
-      mockJobs.set(application.jobId, job)
-    }
+    await prisma.application.delete({
+      where: { id }
+    })
 
     return NextResponse.json({ message: 'Application deleted successfully' })
 
@@ -249,8 +195,7 @@ async function checkApplicationAccess(user: any, application: any): Promise<bool
   
   if (user.role === 'HR') {
     // HR can access applications for jobs they created
-    const job = mockJobs.get(application.jobId)
-    return !!(job && job.createdBy === user.id)
+    return application.job.createdById === user.id
   }
   
   if (user.role === 'APPLICANT') {

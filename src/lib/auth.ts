@@ -1,5 +1,6 @@
 import { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
+import { prisma } from '@/lib/prisma'
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -14,23 +15,20 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
-        // Simple hardcoded demo accounts
-        const demoAccounts = [
-          { email: 'admin@amealio.com', password: 'admin123', role: 'ADMIN', name: 'Rajesh Kumar' },
-          { email: 'hr@amealio.com', password: 'hr123', role: 'HR', name: 'Priya Singh' },
-          { email: 'user@amealio.com', password: 'user123', role: 'APPLICANT', name: 'Arjun Sharma' }
-        ]
+        // Check database for user
+        const user = await prisma.user.findUnique({
+          where: { 
+            email: credentials.email,
+            isActive: true
+          }
+        })
 
-        const account = demoAccounts.find(acc => 
-          acc.email === credentials.email && acc.password === credentials.password
-        )
-
-        if (account) {
+        if (user && user.password === credentials.password) {
           return {
-            id: account.email,
-            email: account.email,
-            name: account.name,
-            role: account.role,
+            id: user.id,
+            email: user.email,
+            name: `${user.firstName} ${user.lastName}`,
+            role: user.role,
           }
         }
 

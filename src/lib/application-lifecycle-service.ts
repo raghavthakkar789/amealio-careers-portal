@@ -1,4 +1,5 @@
 // Application Lifecycle Management Service
+import { prisma } from '@/lib/prisma'
 export interface ApplicationStage {
   id: string
   name: string
@@ -35,32 +36,35 @@ export interface ApplicationHistory {
 export interface ApplicationState {
   id: string
   applicantId: string
-  applicantName: string
-  applicantEmail: string
   jobId: string
   jobTitle: string
-  department: string
-  company: string
-  currentStage: string
-  appliedDate: string
+  employmentType: string
   resumeUrl: string
-  coverLetter: string
-  experience: string
-  education: string
-  skills: string[]
-  expectedSalary?: string
   additionalFiles: Array<{
     id: string
     fileName: string
     fileType: string
   }>
-  notes: string
-  interviewDate?: string
-  interviewTime?: string
-  interviewMode?: string
-  history: ApplicationHistory[]
-  createdAt: string
+  coverLetter: string
+  expectedSalary?: string
+  status: string
+  notes?: string
+  submittedAt: string
   updatedAt: string
+  // Related data from includes
+  applicant?: {
+    id: string
+    firstName: string
+    lastName: string
+    email: string
+  }
+  job?: {
+    id: string
+    title: string
+    department?: {
+      name: string
+    }
+  }
 }
 
 class ApplicationLifecycleService {
@@ -70,7 +74,7 @@ class ApplicationLifecycleService {
 
   constructor() {
     this.initializeStages()
-    this.initializeMockData()
+    // Mock data initialization removed - now using database
   }
 
   private initializeStages() {
@@ -215,53 +219,10 @@ class ApplicationLifecycleService {
     })
   }
 
-  private initializeMockData() {
-    const mockApplications: ApplicationState[] = [
-      {
-        id: 'app-1',
-        applicantId: 'user-1',
-        applicantName: 'Arjun Sharma',
-        applicantEmail: 'arjun.sharma@example.com',
-        jobId: 'job-1',
-        jobTitle: 'Senior Software Engineer',
-        department: 'Engineering',
-        company: 'amealio',
-        currentStage: 'UNDER_REVIEW',
-        appliedDate: '2024-01-15',
-        resumeUrl: '/api/files/resume-1',
-        coverLetter: 'I am excited to apply for this position...',
-        experience: '5+ years in software development',
-        education: 'Bachelor of Computer Science',
-        skills: ['React', 'Node.js', 'TypeScript', 'AWS'],
-        expectedSalary: '₹8,00,000 - ₹10,00,000',
-        additionalFiles: [
-          { id: 'resume-1', fileName: 'arjun-sharma-resume.pdf', fileType: 'application/pdf' }
-        ],
-        notes: 'Strong technical background',
-        interviewDate: '2024-01-25',
-        interviewTime: '2:00 PM',
-        interviewMode: 'Video Call',
-        history: [
-          {
-            id: 'hist-1',
-            applicationId: 'app-1',
-            fromStage: 'APPLIED',
-            toStage: 'UNDER_REVIEW',
-            action: 'REVIEW',
-            performedBy: 'hr-user-1',
-            performedByRole: 'HR',
-            timestamp: '2024-01-16T10:00:00Z',
-            notes: 'Application moved to review stage'
-          }
-        ],
-        createdAt: '2024-01-15T09:00:00Z',
-        updatedAt: '2024-01-16T10:00:00Z'
-      }
-    ]
-
-    mockApplications.forEach(app => {
-      this.applications.set(app.id, app)
-    })
+  private async initializeMockData() {
+    // This service now works with database data
+    // Mock data initialization is no longer needed
+    // Applications will be loaded from the database via API calls
   }
 
   // Get all applications based on user role
@@ -291,41 +252,9 @@ class ApplicationLifecycleService {
     const application = this.applications.get(applicationId)
     if (!application) return null
 
-    const currentStage = this.stages.get(application.currentStage)
-    if (!currentStage) return null
-
-    const allowedAction = currentStage.actions.find(a => a.id === action)
-    if (!allowedAction) return null
-
-    if (!allowedAction.allowedRoles.includes(performedByRole)) return null
-    if (!currentStage.nextStages.includes(newStage)) return null
-
-    const historyEntry: ApplicationHistory = {
-      id: `hist-${Date.now()}`,
-      applicationId,
-      fromStage: application.currentStage,
-      toStage: newStage,
-      action,
-      performedBy,
-      performedByRole,
-      timestamp: new Date().toISOString(),
-      notes
-    }
-
-    const updatedApplication: ApplicationState = {
-      ...application,
-      currentStage: newStage,
-      history: [...application.history, historyEntry],
-      updatedAt: new Date().toISOString()
-    }
-
-    this.applications.set(applicationId, updatedApplication)
-    this.notifyListeners()
-    
-    // Notify activity service about the change
-    this.notifyActivityService(historyEntry, application.jobTitle)
-    
-    return updatedApplication
+    // This method is now deprecated as updates are handled by the API
+    // Keeping for backward compatibility but functionality moved to API
+    return null
   }
 
   // Notify activity service about application stage changes
@@ -338,15 +267,9 @@ class ApplicationLifecycleService {
 
   // Get available actions for current stage
   getAvailableActions(applicationId: string, userRole: string): ApplicationAction[] {
-    const application = this.applications.get(applicationId)
-    if (!application) return []
-
-    const currentStage = this.stages.get(application.currentStage)
-    if (!currentStage) return []
-
-    return currentStage.actions.filter(action => 
-      action.allowedRoles.includes(userRole)
-    )
+    // This method is now deprecated as actions are handled by the API
+    // Keeping for backward compatibility but functionality moved to API
+    return []
   }
 
   // Get stage information

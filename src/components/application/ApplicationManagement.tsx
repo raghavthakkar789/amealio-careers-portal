@@ -47,22 +47,24 @@ export default function ApplicationManagement({
   useEffect(() => {
     if (!session) return
 
-    const userApplications = applicationLifecycleService.getApplications(
-      userRole, 
-      session.user?.id
-    )
-    setApplications(userApplications)
-    setLoading(false)
+    const fetchApplications = async () => {
+      try {
+        const response = await fetch('/api/applications')
+        if (response.ok) {
+          const data = await response.json()
+          setApplications(data.applications)
+        } else {
+          toast.error('Failed to fetch applications')
+        }
+      } catch (error) {
+        console.error('Error fetching applications:', error)
+        toast.error('Failed to fetch applications')
+      } finally {
+        setLoading(false)
+      }
+    }
 
-    const unsubscribe = applicationLifecycleService.subscribe((allApplications) => {
-      const filteredApplications = applicationLifecycleService.getApplications(
-        userRole, 
-        session.user?.id
-      )
-      setApplications(filteredApplications)
-    })
-
-    return unsubscribe
+    fetchApplications()
   }, [session, userRole])
 
   const handleStageUpdate = async (
@@ -74,23 +76,32 @@ export default function ApplicationManagement({
     setActionLoading(applicationId)
     
     try {
-      const updatedApplication = applicationLifecycleService.updateApplicationStage(
-        applicationId,
-        action.targetStage,
-        action.id,
-        session.user?.id || 'unknown',
-        userRole
-      )
+      const response = await fetch(`/api/applications/${applicationId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: action.targetStage,
+          notes: `Application moved to ${action.targetStage.replace('_', ' ')}`
+        }),
+      })
 
-      if (updatedApplication) {
+      if (response.ok) {
         toast.success(`Application moved to ${action.targetStage.replace('_', ' ')}`)
         
-        // The activity service will be automatically notified by the lifecycle service
-        // No need to manually add activity here
+        // Refresh applications list
+        const refreshResponse = await fetch('/api/applications')
+        if (refreshResponse.ok) {
+          const data = await refreshResponse.json()
+          setApplications(data.applications)
+        }
       } else {
-        toast.error('Failed to update application stage')
+        const error = await response.json()
+        toast.error(error.error || 'Failed to update application stage')
       }
     } catch (error) {
+      console.error('Error updating application:', error)
       toast.error('Failed to update application stage')
     } finally {
       setActionLoading(null)
@@ -167,8 +178,35 @@ export default function ApplicationManagement({
               </div>
             ) : (
               applications.map((application, index) => {
-                const currentStage = applicationLifecycleService.getStage(application.currentStage)
-                const availableActions = applicationLifecycleService.getAvailableActions(application.id, userRole)
+                // For now, we'll show basic actions based on user role
+                const availableActions = userRole === 'HR' || userRole === 'ADMIN' ? [
+                  { 
+                    id: 'APPROVE', 
+                    name: 'Approve', 
+                    description: 'Approve this application',
+                    targetStage: 'APPROVED',
+                    allowedRoles: ['HR', 'ADMIN'],
+                    confirmationRequired: true,
+                    confirmationMessage: 'Are you sure you want to approve this application?'
+                  },
+                  { 
+                    id: 'REJECT', 
+                    name: 'Reject', 
+                    description: 'Reject this application',
+                    targetStage: 'REJECTED',
+                    allowedRoles: ['HR', 'ADMIN'],
+                    confirmationRequired: true,
+                    confirmationMessage: 'Are you sure you want to reject this application?'
+                  },
+                  { 
+                    id: 'INTERVIEW', 
+                    name: 'Schedule Interview', 
+                    description: 'Schedule an interview for this application',
+                    targetStage: 'INTERVIEW_SCHEDULED',
+                    allowedRoles: ['HR', 'ADMIN'],
+                    confirmationRequired: false
+                  }
+                ] : []
 
                 return (
                   <motion.div
@@ -186,14 +224,14 @@ export default function ApplicationManagement({
                           </div>
                           <div>
                             <h3 className="text-xl font-semibold text-text-high">
-                              {application.applicantName}
+                              {application.applicant ? `${application.applicant.firstName} ${application.applicant.lastName}` : 'Unknown Applicant'}
                             </h3>
-                            <p className="text-text-mid">{application.applicantEmail}</p>
+                            <p className="text-text-mid">{application.applicant?.email || 'No email'}</p>
                           </div>
-                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(application.currentStage)}`}>
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(application.status)}`}>
                             <span className="flex items-center gap-1">
-                              {getStatusIcon(application.currentStage)}
-                              {currentStage?.name || application.currentStage}
+                              {getStatusIcon(application.status)}
+                              {application.status}
                             </span>
                           </span>
                         </div>
@@ -205,7 +243,7 @@ export default function ApplicationManagement({
                           </div>
                           <div>
                             <p className="text-sm text-text-mid">Department</p>
-                            <p className="font-medium text-text-high">{application.department}</p>
+                            <p className="font-medium text-text-high">{application.job?.department?.name || 'Unknown'}</p>
                           </div>
                           <div>
                             <p className="text-sm text-text-mid">Expected Salary</p>
@@ -214,31 +252,17 @@ export default function ApplicationManagement({
                           <div>
                             <p className="text-sm text-text-mid">Applied Date</p>
                             <p className="font-medium text-text-high">
-                              {new Date(application.appliedDate).toLocaleDateString()}
+                              {new Date(application.submittedAt).toLocaleDateString()}
                             </p>
                           </div>
                         </div>
 
-                        {/* Application History */}
-                        {application.history.length > 0 && (
+                        {/* Application Notes */}
+                        {application.notes && (
                           <div className="mb-4">
-                            <p className="text-sm text-text-mid mb-3">Recent Activity</p>
-                            <div className="space-y-2">
-                              {application.history.slice(-2).map((entry) => (
-                                <div key={entry.id} className="bg-bg-800 p-2 rounded border border-border">
-                                  <div className="flex items-center justify-between text-xs">
-                                    <span className="text-text-mid">
-                                      {entry.fromStage} → {entry.toStage}
-                                    </span>
-                                    <span className="text-text-mid">
-                                      {new Date(entry.timestamp).toLocaleDateString()}
-                                    </span>
-                                  </div>
-                                  <p className="text-text-high text-sm mt-1">
-                                    {entry.action} by {entry.performedByRole}
-                                  </p>
-                                </div>
-                              ))}
+                            <p className="text-sm text-text-mid mb-2">Notes</p>
+                            <div className="bg-bg-800 p-3 rounded border border-border">
+                              <p className="text-sm text-text-high">{application.notes}</p>
                             </div>
                           </div>
                         )}

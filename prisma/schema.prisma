@@ -46,6 +46,12 @@ enum InterviewStatus {
   NO_SHOW
 }
 
+enum HRRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model Department {
   id          String   @id @default(cuid())
   name        String   @unique
@@ -67,6 +73,7 @@ model User {
   firstName     String
   lastName      String
   role          UserRole @default(APPLICANT)
+  isActive      Boolean  @default(true)
   emailVerified DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -239,4 +246,25 @@ model SystemSetting {
   updatedAt         DateTime @updatedAt
 
   @@map("system_settings")
+}
+
+model HRRequest {
+  id                String          @id @default(cuid())
+  firstName         String
+  lastName          String
+  email             String          @unique
+  phoneNumber       String?
+  department        String?
+  reason            String?
+  status            HRRequestStatus @default(PENDING)
+  requestedBy       String          // ID of the HR who requested
+  requestedByName   String          // Name of the HR who requested
+  approvedBy        String?         // ID of the Admin who approved
+  approvedByName    String?         // Name of the Admin who approved
+  rejectionReason   String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  approvedAt        DateTime?
+
+  @@map("hr_requests")
 }

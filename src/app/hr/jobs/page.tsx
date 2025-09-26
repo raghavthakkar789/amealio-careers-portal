@@ -138,41 +138,43 @@ export default function HRJobManagementPage() {
     setLoading(true)
     
     try {
-      // Mock API call - replace with actual API
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      const selectedDepartment = departments.find(d => d.id === jobForm.departmentId)
-      const newJob: Job = {
-        id: `job-${Date.now()}`,
-        title: jobForm.title,
-        department: {
-          id: jobForm.departmentId,
-          name: selectedDepartment?.name || 'Unknown Department'
+      const response = await fetch('/api/jobs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        summary: jobForm.summary,
-        employmentTypes: jobForm.employmentTypes,
-        requiredSkills: jobForm.requiredSkills,
-        applicationDeadline: jobForm.hasDeadline ? jobForm.applicationDeadline : undefined,
-        isActive: jobForm.isActive,
-        isDraft: jobForm.isDraft,
-        createdAt: new Date().toISOString().split('T')[0],
-        updatedAt: new Date().toISOString().split('T')[0],
-        _count: { applications: 0 },
-        jobDescription: {
-          description: jobDescriptionForm.description,
-          responsibilities: jobDescriptionForm.responsibilities,
-          requirements: jobDescriptionForm.requirements,
-          benefits: jobDescriptionForm.benefits,
-          location: jobDescriptionForm.location,
-          remoteWork: jobDescriptionForm.remoteWork
-        }
+        body: JSON.stringify({
+          title: jobForm.title,
+          departmentId: jobForm.departmentId,
+          summary: jobForm.summary,
+          employmentTypes: jobForm.employmentTypes,
+          requiredSkills: jobForm.requiredSkills,
+          applicationDeadline: jobForm.hasDeadline ? jobForm.applicationDeadline : null,
+          isActive: jobForm.isActive,
+          isDraft: jobForm.isDraft,
+          jobDescription: {
+            description: jobDescriptionForm.description,
+            responsibilities: jobDescriptionForm.responsibilities,
+            requirements: jobDescriptionForm.requirements,
+            benefits: jobDescriptionForm.benefits,
+            location: jobDescriptionForm.location,
+            remoteWork: jobDescriptionForm.remoteWork
+          }
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setJobs(prev => [data.job, ...prev])
+        setShowCreateForm(false)
+        resetForms()
+        toast.success('Job created successfully!')
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to create job')
       }
-      
-      setJobs(prev => [newJob, ...prev])
-      setShowCreateForm(false)
-      resetForms()
-      toast.success('Job created successfully!')
-    } catch {
+    } catch (error) {
+      console.error('Error creating job:', error)
       toast.error('Failed to create job')
     } finally {
       setLoading(false)
@@ -186,40 +188,43 @@ export default function HRJobManagementPage() {
     setLoading(true)
     
     try {
-      // Mock API call - replace with actual API
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      const selectedDepartment = departments.find(d => d.id === jobForm.departmentId)
-      const updatedJob: Job = {
-        ...editingJob,
-        title: jobForm.title,
-        department: {
-          id: jobForm.departmentId,
-          name: selectedDepartment?.name || 'Unknown Department'
+      const response = await fetch(`/api/jobs/${editingJob.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        summary: jobForm.summary,
-        employmentTypes: jobForm.employmentTypes,
-        requiredSkills: jobForm.requiredSkills,
-        applicationDeadline: jobForm.hasDeadline ? jobForm.applicationDeadline : undefined,
-        isActive: jobForm.isActive,
-        isDraft: jobForm.isDraft,
-        updatedAt: new Date().toISOString().split('T')[0],
-        jobDescription: {
-          ...editingJob.jobDescription,
-          description: jobDescriptionForm.description,
-          responsibilities: jobDescriptionForm.responsibilities,
-          requirements: jobDescriptionForm.requirements,
-          benefits: jobDescriptionForm.benefits,
-          location: jobDescriptionForm.location,
-          remoteWork: jobDescriptionForm.remoteWork
-        }
+        body: JSON.stringify({
+          title: jobForm.title,
+          departmentId: jobForm.departmentId,
+          summary: jobForm.summary,
+          employmentTypes: jobForm.employmentTypes,
+          requiredSkills: jobForm.requiredSkills,
+          applicationDeadline: jobForm.hasDeadline ? jobForm.applicationDeadline : null,
+          isActive: jobForm.isActive,
+          isDraft: jobForm.isDraft,
+          jobDescription: {
+            description: jobDescriptionForm.description,
+            responsibilities: jobDescriptionForm.responsibilities,
+            requirements: jobDescriptionForm.requirements,
+            benefits: jobDescriptionForm.benefits,
+            location: jobDescriptionForm.location,
+            remoteWork: jobDescriptionForm.remoteWork
+          }
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setJobs(prev => prev.map(job => job.id === editingJob.id ? data.job : job))
+        setEditingJob(null)
+        resetForms()
+        toast.success('Job updated successfully!')
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to update job')
       }
-      
-      setJobs(prev => prev.map(job => job.id === editingJob.id ? updatedJob : job))
-      setEditingJob(null)
-      resetForms()
-      toast.success('Job updated successfully!')
-    } catch {
+    } catch (error) {
+      console.error('Error updating job:', error)
       toast.error('Failed to update job')
     } finally {
       setLoading(false)
@@ -248,12 +253,19 @@ export default function HRJobManagementPage() {
     setLoading(true)
     
     try {
-      // Mock API call - replace with actual API
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      setJobs(prev => prev.filter(job => job.id !== jobId))
-      toast.success('Job deleted successfully!')
-    } catch {
+      const response = await fetch(`/api/jobs/${jobId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        setJobs(prev => prev.filter(job => job.id !== jobId))
+        toast.success('Job deleted successfully!')
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to delete job')
+      }
+    } catch (error) {
+      console.error('Error deleting job:', error)
       toast.error('Failed to delete job')
     } finally {
       setLoading(false)
@@ -264,18 +276,30 @@ export default function HRJobManagementPage() {
     setLoading(true)
     
     try {
-      // Mock API call - replace with actual API
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      setJobs(prev => prev.map(job => 
-        job.id === jobId 
-          ? { ...job, isActive: !job.isActive, updatedAt: new Date().toISOString().split('T')[0] }
-          : job
-      ))
-      
       const job = jobs.find(j => j.id === jobId)
-      toast.success(`Job ${job?.isActive ? 'deactivated' : 'activated'} successfully!`)
-    } catch {
+      const response = await fetch(`/api/jobs/${jobId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          isActive: !job?.isActive
+        }),
+      })
+
+      if (response.ok) {
+        setJobs(prev => prev.map(job => 
+          job.id === jobId 
+            ? { ...job, isActive: !job.isActive, updatedAt: new Date().toISOString().split('T')[0] }
+            : job
+        ))
+        toast.success(`Job ${job?.isActive ? 'deactivated' : 'activated'} successfully!`)
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to update job status')
+      }
+    } catch (error) {
+      console.error('Error updating job status:', error)
       toast.error('Failed to update job status')
     } finally {
       setLoading(false)

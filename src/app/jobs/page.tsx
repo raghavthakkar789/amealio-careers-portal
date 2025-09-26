@@ -33,83 +33,31 @@ export default function JobsPage() {
   const { data: session, status } = useSession()
 
   useEffect(() => {
-    // Simulate API call - replace with actual API call
     const fetchJobs = async () => {
       try {
-        // Mock data for now
-        const mockJobs: Job[] = [
-          {
-            id: '1',
-            title: 'Senior Software Engineer',
-            department: 'ENGINEERING',
-            employmentTypes: ['FULL_TIME'],
-            location: 'Bangalore, India',
-            remoteWork: true,
-            createdAt: '2024-01-15T10:00:00Z',
-            requiredSkills: ['React', 'Node.js', 'TypeScript', 'PostgreSQL'],
-            summary: 'Join our engineering team to build scalable web applications.',
-          },
-          {
-            id: '2',
-            title: 'Product Manager',
-            department: 'MARKETING',
-            employmentTypes: ['FULL_TIME'],
-            location: 'Mumbai, India',
-            remoteWork: false,
-            createdAt: '2024-01-14T10:00:00Z',
-            requiredSkills: ['Product Strategy', 'Agile', 'User Research'],
-            summary: 'Lead product development and strategy for our platform.',
-          },
-          {
-            id: '3',
-            title: 'Sales Representative',
-            department: 'SALES',
-            employmentTypes: ['FULL_TIME', 'PART_TIME'],
-            location: 'Delhi, India',
-            remoteWork: false,
-            createdAt: '2024-01-13T10:00:00Z',
-            requiredSkills: ['Sales', 'CRM', 'Communication'],
-            summary: 'Drive revenue growth through strategic sales initiatives.',
-          },
-          {
-            id: '4',
-            title: 'UX Designer',
-            department: 'MARKETING',
-            employmentTypes: ['FULL_TIME'],
-            location: 'Hyderabad, India',
-            remoteWork: true,
-            createdAt: '2024-01-12T10:00:00Z',
-            requiredSkills: ['Figma', 'User Research', 'Prototyping'],
-            summary: 'Create exceptional user experiences for our products.',
-          },
-          {
-            id: '5',
-            title: 'Data Scientist',
-            department: 'ENGINEERING',
-            employmentTypes: ['FULL_TIME'],
-            location: 'Pune, India',
-            remoteWork: false,
-            createdAt: '2024-01-11T10:00:00Z',
-            requiredSkills: ['Python', 'Machine Learning', 'SQL'],
-            summary: 'Build data-driven solutions and insights.',
-          },
-          {
-            id: '6',
-            title: 'HR Coordinator',
-            department: 'HR',
-            employmentTypes: ['FULL_TIME'],
-            location: 'Chennai, India',
-            remoteWork: true,
-            createdAt: '2024-01-10T10:00:00Z',
-            requiredSkills: ['HRIS', 'Recruitment', 'Employee Relations'],
-            summary: 'Support our HR operations and employee experience.',
-          },
-        ]
-        
-        setJobs(mockJobs)
-        setLoading(false)
+        const response = await fetch('/api/jobs')
+        if (response.ok) {
+          const data = await response.json()
+          // Transform the data to match the expected interface
+          const transformedJobs = data.jobs.map((job: any) => ({
+            id: job.id,
+            title: job.title,
+            department: job.department?.name || 'Unknown',
+            employmentTypes: job.employmentTypes || [],
+            location: job.jobDescription?.location || 'Not specified',
+            remoteWork: job.jobDescription?.remoteWork || false,
+            createdAt: job.createdAt,
+            requiredSkills: job.requiredSkills || [],
+            summary: job.summary || '',
+            applicationDeadline: job.applicationDeadline
+          }))
+          setJobs(transformedJobs)
+        } else {
+          console.error('Failed to fetch jobs')
+        }
       } catch (error) {
         console.error('Error fetching jobs:', error)
+      } finally {
         setLoading(false)
       }
     }
@@ -125,7 +73,7 @@ export default function JobsPage() {
     return matchesSearch && matchesDepartment && matchesLocation
   })
 
-  const departments = ['ENGINEERING', 'MARKETING', 'SALES', 'HR', 'FINANCE', 'OPERATIONS']
+  const departments = Array.from(new Set(jobs.map(job => job.department).filter(Boolean)))
   const locations = Array.from(new Set(jobs.map(job => job.location).filter(Boolean)))
 
   if (loading) {

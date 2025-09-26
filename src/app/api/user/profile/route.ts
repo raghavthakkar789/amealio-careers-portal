@@ -15,10 +15,13 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { linkedinProfile } = body
+    const { linkedinProfile, linkedinUrl, portfolioUrl, firstName, lastName, phoneNumber, address } = body
+
+    // Use linkedinProfile, linkedinUrl, or portfolioUrl (whichever is provided)
+    const finalLinkedinProfile = linkedinProfile || linkedinUrl || portfolioUrl
 
     // Validate LinkedIn URL format (optional validation)
-    if (linkedinProfile && !linkedinProfile.includes('linkedin.com')) {
+    if (finalLinkedinProfile && !finalLinkedinProfile.includes('linkedin.com')) {
       return NextResponse.json(
         { message: 'Please provide a valid LinkedIn profile URL' },
         { status: 400 }
@@ -29,7 +32,11 @@ export async function PATCH(request: NextRequest) {
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
       data: {
-        linkedinProfile: linkedinProfile || null,
+        linkedinProfile: finalLinkedinProfile || null,
+        firstName: firstName || undefined,
+        lastName: lastName || undefined,
+        phoneNumber: phoneNumber || undefined,
+        address: address || undefined,
       },
       select: {
         id: true,
@@ -38,6 +45,7 @@ export async function PATCH(request: NextRequest) {
         email: true,
         linkedinProfile: true,
         phoneNumber: true,
+        address: true,
         profileImage: true,
       }
     })
@@ -80,6 +88,7 @@ export async function GET() {
         email: true,
         linkedinProfile: true,
         phoneNumber: true,
+        address: true,
         profileImage: true,
         createdAt: true,
       }

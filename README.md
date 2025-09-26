@@ -105,6 +105,8 @@ npm run db:migrate
 npm run db:seed
 ```
 
+npm run db:studio
+
 ### 5. Start the development server
 ```bash
 npm run dev

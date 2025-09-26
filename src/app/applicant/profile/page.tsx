@@ -68,41 +68,44 @@ export default function ProfilePage() {
       router.push('/hr/dashboard')
     }
 
-    // Mock data - replace with actual API call
-    setTimeout(() => {
-      setProfile({
-        id: session.user?.id || '1',
-        name: session.user?.name || 'Arjun Sharma',
-        email: session.user?.email || 'john.doe@example.com',
-        phone: '+1 (555) 123-4567',
-        location: 'San Francisco, CA',
-        currentPosition: 'Senior Software Engineer',
-        company: 'Tech Corp',
-        experience: '5+ years',
-        education: 'Bachelor of Computer Science',
-        skills: ['React', 'Node.js', 'TypeScript', 'Python', 'AWS'],
-        bio: 'Passionate software engineer with 5+ years of experience building scalable web applications. I love working with modern technologies and contributing to open source projects.',
-        resumeUrl: '/resumes/john-doe-resume.pdf',
-        linkedinUrl: 'https://linkedin.com/in/johndoe',
-        portfolioUrl: 'https://johndoe.dev'
-      })
-      setFormData({
-        name: session.user?.name || 'Arjun Sharma',
-        email: session.user?.email || 'john.doe@example.com',
-        phone: '+1 (555) 123-4567',
-        location: 'San Francisco, CA',
-        currentPosition: 'Senior Software Engineer',
-        company: 'Tech Corp',
-        experience: '5+ years',
-        education: 'Bachelor of Computer Science',
-        skills: ['React', 'Node.js', 'TypeScript', 'Python', 'AWS'],
-        bio: 'Passionate software engineer with 5+ years of experience building scalable web applications. I love working with modern technologies and contributing to open source projects.',
-        resumeUrl: '/resumes/john-doe-resume.pdf',
-        linkedinUrl: 'https://linkedin.com/in/johndoe',
-        portfolioUrl: 'https://johndoe.dev'
-      })
-      setLoading(false)
-    }, 1000)
+    // Fetch user profile from API
+    const fetchProfile = async () => {
+      try {
+        const response = await fetch('/api/user/profile')
+        if (response.ok) {
+          const data = await response.json()
+          const user = data.user
+          const profileData = {
+            id: user.id,
+            name: `${user.firstName} ${user.lastName}`,
+            email: user.email,
+            phone: user.phoneNumber || '',
+            location: user.address || 'Bangalore, India', // Use address from database
+            currentPosition: 'Software Engineer', // Default position
+            company: 'Tech Corp', // Default company
+            experience: '3 years', // Default experience
+            education: 'B.Tech Computer Science', // Default education
+            skills: ['React', 'Node.js', 'TypeScript', 'PostgreSQL'], // Default skills
+            bio: 'Passionate software engineer with experience in full-stack development.', // Default bio
+            resumeUrl: user.profileImage || '/resumes/default-resume.pdf',
+            resumeFileName: 'resume.pdf',
+            linkedinUrl: user.linkedinProfile || '',
+            portfolioUrl: user.linkedinProfile || ''
+          }
+          setProfile(profileData)
+          setFormData(profileData)
+        } else {
+          toast.error('Failed to fetch profile')
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error)
+        toast.error('Failed to fetch profile')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProfile()
   }, [session, status, router])
 
   const handleInputChange = (field: string, value: string) => {
@@ -169,13 +172,31 @@ export default function ProfilePage() {
   const handleSave = async () => {
     setSaving(true)
     try {
-      // Mock API call - replace with actual API
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      setProfile(prev => prev ? { ...prev, ...formData } : null)
-      setIsEditing(false)
-      toast.success('Profile updated successfully!')
-    } catch {
+      const response = await fetch('/api/user/profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firstName: formData.name?.split(' ')[0] || '',
+          lastName: formData.name?.split(' ').slice(1).join(' ') || '',
+          phoneNumber: formData.phone || '',
+          address: formData.location || '',
+          linkedinProfile: formData.linkedinUrl || formData.portfolioUrl || ''
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setProfile(prev => prev ? { ...prev, ...formData } : null)
+        setIsEditing(false)
+        toast.success('Profile updated successfully!')
+      } else {
+        const error = await response.json()
+        toast.error(error.message || 'Failed to update profile')
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error)
       toast.error('Failed to update profile. Please try again.')
     } finally {
       setSaving(false)

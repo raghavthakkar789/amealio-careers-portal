@@ -68,7 +68,32 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
         const response = await fetch(`/api/jobs/${resolvedParams.id}`)
         if (response.ok) {
           const jobData = await response.json()
-          setJob(jobData)
+          // Transform the job data to match the expected interface
+          const transformedJob = {
+            id: jobData.id,
+            title: jobData.title,
+            description: jobData.description || '',
+            summary: jobData.summary || '',
+            requirements: jobData.jobDescription?.requirements || [],
+            responsibilities: jobData.jobDescription?.responsibilities || [],
+            benefits: jobData.jobDescription?.benefits || [],
+            requiredSkills: jobData.requiredSkills || [],
+            location: jobData.jobDescription?.location || 'Not specified',
+            employmentType: jobData.employmentTypes?.[0] || 'FULL_TIME',
+            department: jobData.department?.name || 'Unknown',
+            experience: jobData.jobDescription?.experience || 'Not specified',
+            applicationDeadline: jobData.applicationDeadline,
+            postedAt: jobData.createdAt,
+            createdAt: jobData.createdAt,
+            remoteWork: jobData.jobDescription?.remoteWork || false,
+            createdBy: jobData.createdBy,
+            company: {
+              name: 'Amealio',
+              logo: '/logo.png',
+              description: 'Leading technology company'
+            }
+          }
+          setJob(transformedJob)
         } else {
           toast.error('Job not found')
           router.push('/jobs')
@@ -241,7 +266,7 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
               <div className="card">
                 <h2 className="text-2xl font-bold text-text-primary mb-4">Key Responsibilities</h2>
                 <ul className="space-y-3">
-                  {job.responsibilities.map((responsibility: string, index: number) => (
+                  {(job.responsibilities || []).map((responsibility: string, index: number) => (
                     <li key={index} className="flex items-start">
                       <CheckCircleIcon className="w-5 h-5 text-primary-400 mr-3 mt-0.5 flex-shrink-0" />
                       <span className="text-text-secondary">{responsibility}</span>
@@ -254,7 +279,7 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
               <div className="card">
                 <h2 className="text-2xl font-bold text-text-primary mb-4">Requirements</h2>
                 <ul className="space-y-3">
-                  {job.requirements.map((requirement: string, index: number) => (
+                  {(job.requirements || []).map((requirement: string, index: number) => (
                     <li key={index} className="flex items-start">
                       <StarIcon className="w-5 h-5 text-primary-400 mr-3 mt-0.5 flex-shrink-0" />
                       <span className="text-text-secondary">{requirement}</span>
@@ -267,7 +292,7 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
               <div className="card">
                 <h2 className="text-2xl font-bold text-text-primary mb-4">Benefits & Perks</h2>
                 <ul className="space-y-3">
-                  {job.benefits.map((benefit: string, index: number) => (
+                  {(job.benefits || []).map((benefit: string, index: number) => (
                     <li key={index} className="flex items-start">
                       <StarIcon className="w-5 h-5 text-primary-400 mr-3 mt-0.5 flex-shrink-0" />
                       <span className="text-text-secondary">{benefit}</span>
@@ -321,7 +346,7 @@ export default function JobDetailsPage({ params }: JobDetailsPageProps) {
                 <div className="card">
                   <h3 className="text-xl font-semibold text-text-primary mb-4">Required Skills</h3>
                   <div className="flex flex-wrap gap-2">
-                    {job.requiredSkills.map((skill: string, index: number) => (
+                    {(job.requiredSkills || []).map((skill: string, index: number) => (
                       <span
                         key={index}
                         className="px-3 py-1 bg-gray-700 text-gray-300 text-sm rounded-md border border-gray-600"

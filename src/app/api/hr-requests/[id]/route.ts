@@ -47,7 +47,7 @@ export async function PUT(
           address: '',
           role: 'HR',
           password: password, // In production, this should be hashed
-          isActive: true
+          // isActive: true // Commented out account verification requirement
         }
       })
 

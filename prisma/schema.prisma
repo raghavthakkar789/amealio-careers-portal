@@ -74,7 +74,7 @@ model User {
   lastName      String
   role          UserRole @default(APPLICANT)
   isActive      Boolean  @default(true)
-  emailVerified DateTime?
+  // emailVerified DateTime? // Commented out email verification field
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -147,6 +147,11 @@ model Application {
   additionalFiles   String[]
   coverLetter       String?
   expectedSalary    String?           @default("No base")
+  experience        String?
+  education         String?
+  skills            String?
+  availability      String?
+  references        String?
   status            ApplicationStatus @default(PENDING)
   submittedAt       DateTime          @default(now())
   updatedAt         DateTime          @updatedAt

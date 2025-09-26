@@ -96,16 +96,28 @@ export async function PUT(
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
-    const body = await request.json()
-    const { status, notes, interviewDate, interviewTime, interviewMode } = body
+    // Handle FormData for application updates
+    const formData = await request.formData()
+    const coverLetter = formData.get('coverLetter') as string
+    const experience = formData.get('experience') as string
+    const education = formData.get('education') as string
+    const skills = formData.get('skills') as string
+    const availability = formData.get('availability') as string
+    const expectedSalary = formData.get('expectedSalary') as string
+    const references = formData.get('references') as string
+    const resumeFile = formData.get('resume') as File
 
     // Update application
     const updatedApplication = await prisma.application.update({
       where: { id },
       data: {
-        status: status || application.status,
-        // Note: interview fields would need to be added to the schema
-        // For now, we'll just update the basic fields
+        coverLetter: coverLetter || application.coverLetter,
+        expectedSalary: expectedSalary || application.expectedSalary,
+        experience: experience || application.experience,
+        education: education || application.education,
+        skills: skills || application.skills,
+        availability: availability || application.availability,
+        references: references || application.references,
       },
       include: {
         applicant: {

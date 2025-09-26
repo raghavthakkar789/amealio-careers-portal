@@ -21,7 +21,7 @@ async function main() {
       firstName: 'Rajesh',
       lastName: 'Kumar',
       role: 'ADMIN',
-      emailVerified: new Date(),
+      // emailVerified: new Date(), // Commented out email verification
       dateOfBirth: new Date('1990-01-01'),
       phoneNumber: '+91 98765 43210',
       address: '123 MG Road, Mumbai, Maharashtra 400001',
@@ -38,7 +38,7 @@ async function main() {
       firstName: 'Priya',
       lastName: 'Singh',
       role: 'HR',
-      emailVerified: new Date(),
+      // emailVerified: new Date(), // Commented out email verification
       dateOfBirth: new Date('1985-05-15'),
       phoneNumber: '+91 98765 43211',
       address: '456 Brigade Road, Bangalore, Karnataka 560001',
@@ -55,7 +55,7 @@ async function main() {
       firstName: 'Arjun',
       lastName: 'Sharma',
       role: 'APPLICANT',
-      emailVerified: new Date(),
+      // emailVerified: new Date(), // Commented out email verification
       dateOfBirth: new Date('1995-08-20'),
       phoneNumber: '+91 98765 43212',
       address: '789 Connaught Place, New Delhi, Delhi 110001',

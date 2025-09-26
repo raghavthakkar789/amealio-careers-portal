@@ -8,21 +8,23 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const user = session.user
     let whereClause: any = {}
 
-    if (user.role === 'ADMIN') {
-      // Admin can see all jobs
-      whereClause = {}
-    } else if (user.role === 'HR') {
-      // HR can see jobs they created
-      whereClause.createdById = user.id
-    } else if (user.role === 'APPLICANT') {
-      // Applicants can only see active, non-draft jobs
+    if (session) {
+      const user = session.user
+      if (user.role === 'ADMIN') {
+        // Admin can see all jobs
+        whereClause = {}
+      } else if (user.role === 'HR') {
+        // HR can see jobs they created
+        whereClause.createdById = user.id
+      } else if (user.role === 'APPLICANT') {
+        // Applicants can only see active, non-draft jobs
+        whereClause.isActive = true
+        whereClause.isDraft = false
+      }
+    } else {
+      // Public access - only show active, non-draft jobs
       whereClause.isActive = true
       whereClause.isDraft = false
     }

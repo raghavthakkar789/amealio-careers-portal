@@ -1,6 +1,7 @@
 import { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { prisma } from '@/lib/prisma'
+import bcrypt from 'bcryptjs'
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -15,21 +16,36 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
-        // Check database for user
-        const user = await prisma.user.findUnique({
-          where: { 
-            email: credentials.email,
-            isActive: true
+        try {
+          // Check database for user
+          const user = await prisma.user.findUnique({
+            where: { 
+              email: credentials.email,
+              // isActive: true // Commented out account verification requirement
+            }
+          })
+          
+          if (!user) {
+            console.log('User not found:', credentials.email)
+            return null
           }
-        })
-
-        if (user && user.password === credentials.password) {
+          
+          const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
+          if (!isPasswordValid) {
+            console.log('Invalid password for user:', credentials.email)
+            return null
+          }
+          
+          console.log('Login successful for user:', user.email)
           return {
             id: user.id,
             email: user.email,
             name: `${user.firstName} ${user.lastName}`,
             role: user.role,
+            linkedinProfile: user.linkedinProfile || undefined,
           }
+        } catch (error) {
+          console.error('Login error:', error)
         }
 
         return null
@@ -44,6 +60,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.role = user.role
         token.id = user.id
+        token.linkedinProfile = user.linkedinProfile
       }
       return token
     },
@@ -51,6 +68,7 @@ export const authOptions: NextAuthOptions = {
       if (token) {
         session.user.role = token.role
         session.user.id = token.id
+        session.user.linkedinProfile = token.linkedinProfile
       }
       return session
     }

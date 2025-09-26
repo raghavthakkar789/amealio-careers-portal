@@ -51,6 +51,7 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
     references: '',
     linkedinProfile: '',
   })
+  const [isLinkedInEditMode, setIsLinkedInEditMode] = useState(false)
 
   // Fetch job details
   useEffect(() => {
@@ -59,7 +60,20 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
         const response = await fetch(`/api/jobs/${resolvedParams.id}`)
         if (response.ok) {
           const jobData = await response.json()
-          setJob(jobData)
+          // Transform the job data to match the expected interface
+          const transformedJob = {
+            id: jobData.id,
+            title: jobData.title,
+            department: jobData.department?.name || 'Unknown',
+            location: jobData.jobDescription?.location || 'Not specified',
+            remoteWork: jobData.jobDescription?.remoteWork || false,
+            description: jobData.description || '',
+            requirements: jobData.jobDescription?.requirements || [],
+            responsibilities: jobData.jobDescription?.responsibilities || [],
+            benefits: jobData.jobDescription?.benefits || [],
+            applicationDeadline: jobData.applicationDeadline
+          }
+          setJob(transformedJob)
         } else {
           toast.error('Job not found')
           router.push('/jobs')
@@ -85,27 +99,13 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
     }
   }, [job?.applicationDeadline])
 
-  // Fetch user profile to pre-populate LinkedIn field
+  // Pre-populate LinkedIn field from session
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      try {
-        const response = await fetch('/api/user/profile')
-        if (response.ok) {
-          const data = await response.json()
-          if (data.user?.linkedinProfile) {
-            setFormData(prev => ({
-              ...prev,
-              linkedinProfile: data.user.linkedinProfile
-            }))
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching user profile:', error)
-      }
-    }
-
-    if (session) {
-      fetchUserProfile()
+    if (session?.user?.linkedinProfile) {
+      setFormData(prev => ({
+        ...prev,
+        linkedinProfile: session.user.linkedinProfile || ''
+      }))
     }
   }, [session])
 
@@ -323,7 +323,7 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
                   <div>
                     <h4 className="font-medium text-text-primary mb-2">Requirements</h4>
                     <ul className="text-text-secondary text-sm space-y-1">
-                      {job.requirements.map((req: string, index: number) => (
+                      {(job.requirements || []).map((req: string, index: number) => (
                         <li key={index} className="flex items-start">
                           <span className="text-primary-400 mr-2">•</span>
                           {req}
@@ -335,7 +335,7 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
                   <div>
                     <h4 className="font-medium text-text-primary mb-2">Responsibilities</h4>
                     <ul className="text-text-secondary text-sm space-y-1">
-                      {job.responsibilities.map((resp: string, index: number) => (
+                      {(job.responsibilities || []).map((resp: string, index: number) => (
                         <li key={index} className="flex items-start">
                           <span className="text-primary-400 mr-2">•</span>
                           {resp}
@@ -347,7 +347,7 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
                   <div>
                     <h4 className="font-medium text-text-primary mb-2">Benefits</h4>
                     <ul className="text-text-secondary text-sm space-y-1">
-                      {job.benefits.map((benefit: string, index: number) => (
+                      {(job.benefits || []).map((benefit: string, index: number) => (
                         <li key={index} className="flex items-start">
                           <span className="text-primary-400 mr-2">•</span>
                           {benefit}
@@ -527,15 +527,88 @@ export default function JobApplicationPage({ params }: JobApplicationPageProps) 
 
                   {/* LinkedIn Profile */}
                   <div>
-                    <label className="form-label">LinkedIn Profile</label>
-                    <Input
-                      value={formData.linkedinProfile}
-                      onChange={(e) => setFormData(prev => ({ ...prev, linkedinProfile: e.target.value }))}
-                      placeholder="https://linkedin.com/in/your-profile"
-                      type="url"
-                      disabled={isDeadlinePassed}
-                      className="input-field"
-                    />
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="form-label">LinkedIn Profile</label>
+                      {session?.user?.linkedinProfile && !isLinkedInEditMode && (
+                        <button
+                          type="button"
+                          onClick={() => setIsLinkedInEditMode(true)}
+                          className="text-sm text-primary hover:text-primary-600 transition-colors"
+                          disabled={isDeadlinePassed}
+                        >
+                          Edit
+                        </button>
+                      )}
+                    </div>
+                    
+                    {session?.user?.linkedinProfile && !isLinkedInEditMode ? (
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-gray-600">Using your registered LinkedIn profile:</p>
+                            <a 
+                              href={formData.linkedinProfile} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-primary hover:text-primary-600 text-sm font-medium"
+                            >
+                              {formData.linkedinProfile}
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <Input
+                        value={formData.linkedinProfile}
+                        onChange={(e) => setFormData(prev => ({ ...prev, linkedinProfile: e.target.value }))}
+                        placeholder="https://linkedin.com/in/your-profile"
+                        type="url"
+                        disabled={isDeadlinePassed}
+                        className="input-field"
+                      />
+                    )}
+                    
+                    {isLinkedInEditMode && (
+                      <div className="mt-2 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsLinkedInEditMode(false)
+                            setFormData(prev => ({
+                              ...prev,
+                              linkedinProfile: session?.user?.linkedinProfile || ''
+                            }))
+                          }}
+                          className="text-sm text-gray-600 hover:text-gray-800 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsLinkedInEditMode(false)
+                            // Update user profile with new LinkedIn URL
+                            fetch('/api/user/profile', {
+                              method: 'PATCH',
+                              headers: {
+                                'Content-Type': 'application/json',
+                              },
+                              body: JSON.stringify({
+                                linkedinProfile: formData.linkedinProfile,
+                              }),
+                            }).then(() => {
+                              toast.success('LinkedIn profile updated')
+                            }).catch(() => {
+                              toast.error('Failed to update LinkedIn profile')
+                            })
+                          }}
+                          className="text-sm text-primary hover:text-primary-600 transition-colors"
+                        >
+                          Save
+                        </button>
+                      </div>
+                    )}
+                    
                     <p className="text-xs text-text-mid mt-1">
                       Share your LinkedIn profile to showcase your professional background
                     </p>

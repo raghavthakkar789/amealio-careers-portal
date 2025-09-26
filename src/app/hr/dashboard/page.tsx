@@ -104,8 +104,13 @@ export default function HRDashboard() {
     )
   }
 
+  useEffect(() => {
+    if (!session || session.user?.role !== 'HR') {
+      router.push('/login')
+    }
+  }, [session, router])
+
   if (!session || session.user?.role !== 'HR') {
-    router.push('/login')
     return null
   }
 

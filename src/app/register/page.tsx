@@ -9,7 +9,7 @@ import { toast } from 'react-hot-toast'
 import Link from 'next/link'
 import { validateEmail, validatePhone } from '@/lib/utils'
 import { getSession, signOut } from 'next-auth/react'
-import { ArrowRightOnRectangleIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { ArrowRightOnRectangleIcon, ArrowLeftIcon, UserIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline'
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -19,9 +19,12 @@ export default function RegisterPage() {
     password: '',
     confirmPassword: '',
     phoneNumber: '',
+    linkedinProfile: ''
   })
   const [loading, setLoading] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+  const [isValidating, setIsValidating] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -38,41 +41,102 @@ export default function RegisterPage() {
     toast.success('Logged out successfully')
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [name]: value
     }))
+    
+    // Clear validation error for this field
+    if (validationErrors[name]) {
+      setValidationErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }))
+    }
+  }
+
+  const validateField = async (name: string, value: string) => {
+    setIsValidating(true)
+    const errors: Record<string, string> = {}
+
+    switch (name) {
+      case 'email':
+        if (value && !validateEmail(value)) {
+          errors.email = 'Please enter a valid email address'
+        } else if (value) {
+          // Check if email already exists
+          try {
+            const response = await fetch(`/api/auth/check-email?email=${encodeURIComponent(value)}`)
+            if (response.ok) {
+              const data = await response.json()
+              if (data.exists) {
+                errors.email = 'This email is already registered'
+              }
+            }
+          } catch (error) {
+            console.error('Error checking email:', error)
+          }
+        }
+        break
+      case 'phoneNumber':
+        if (value && !validatePhone(value)) {
+          errors.phoneNumber = 'Please enter a valid phone number'
+        }
+        break
+      case 'password':
+        if (value && value.length < 8) {
+          errors.password = 'Password must be at least 8 characters long'
+        }
+        break
+      case 'confirmPassword':
+        if (value && value !== formData.password) {
+          errors.confirmPassword = 'Passwords do not match'
+        }
+        break
+    }
+
+    setValidationErrors(prev => ({ ...prev, ...errors }))
+    setIsValidating(false)
   }
 
   const validateForm = () => {
-    if (!formData.firstName || !formData.lastName) {
-      toast.error('First and last name are required')
-      return false
+    const errors: Record<string, string> = {}
+
+    if (!formData.firstName.trim()) {
+      errors.firstName = 'First name is required'
     }
 
-    if (!validateEmail(formData.email)) {
-      toast.error('Please enter a valid email address')
-      return false
+    if (!formData.lastName.trim()) {
+      errors.lastName = 'Last name is required'
     }
 
-    if (formData.password.length < 8) {
-      toast.error('Password must be at least 8 characters long')
-      return false
+    if (!formData.email.trim()) {
+      errors.email = 'Email is required'
+    } else if (!validateEmail(formData.email)) {
+      errors.email = 'Please enter a valid email address'
     }
 
-    if (formData.password !== formData.confirmPassword) {
-      toast.error('Passwords do not match')
-      return false
+    if (!formData.password) {
+      errors.password = 'Password is required'
+    } else if (formData.password.length < 8) {
+      errors.password = 'Password must be at least 8 characters long'
     }
 
+    if (!formData.confirmPassword) {
+      errors.confirmPassword = 'Please confirm your password'
+    } else if (formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match'
+    }
 
     if (formData.phoneNumber && !validatePhone(formData.phoneNumber)) {
-      toast.error('Please enter a valid phone number')
-      return false
+      errors.phoneNumber = 'Please enter a valid phone number'
     }
 
-    return true
+
+    setValidationErrors(errors)
+    return Object.keys(errors).length === 0
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -94,7 +158,7 @@ export default function RegisterPage() {
       const data = await response.json()
 
       if (response.ok) {
-        toast.success('Registration successful! Please check your email to verify your account.')
+        toast.success('Registration successful! You can now log in to your account.')
         router.push('/login')
       } else {
         toast.error(data.message || 'Registration failed')
@@ -175,6 +239,17 @@ export default function RegisterPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Applicant Information */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center">
+                <UserIcon className="w-5 h-5 mr-2 text-blue-600" />
+                <div>
+                  <h3 className="font-medium text-blue-800">Applicant Account</h3>
+                  <p className="text-sm text-blue-600">You are registering as a job applicant</p>
+                </div>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label htmlFor="firstName" className="form-label">
@@ -188,8 +263,14 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   placeholder="Enter your first name"
                   required
-                  className="input-field"
+                  className={`input-field ${validationErrors.firstName ? 'border-red-500' : ''}`}
                 />
+                {validationErrors.firstName && (
+                  <p className="text-red-500 text-sm mt-1 flex items-center">
+                    <XCircleIcon className="w-4 h-4 mr-1" />
+                    {validationErrors.firstName}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -204,8 +285,14 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   placeholder="Enter your last name"
                   required
-                  className="input-field"
+                  className={`input-field ${validationErrors.lastName ? 'border-red-500' : ''}`}
                 />
+                {validationErrors.lastName && (
+                  <p className="text-red-500 text-sm mt-1 flex items-center">
+                    <XCircleIcon className="w-4 h-4 mr-1" />
+                    {validationErrors.lastName}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -219,10 +306,23 @@ export default function RegisterPage() {
                 type="email"
                 value={formData.email}
                 onChange={handleChange}
+                onBlur={(e) => validateField('email', e.target.value)}
                 placeholder="Enter your email address"
                 required
-                className="input-field"
+                className={`input-field ${validationErrors.email ? 'border-red-500' : ''}`}
               />
+              {validationErrors.email && (
+                <p className="text-red-500 text-sm mt-1 flex items-center">
+                  <XCircleIcon className="w-4 h-4 mr-1" />
+                  {validationErrors.email}
+                </p>
+              )}
+              {formData.email && !validationErrors.email && (
+                <p className="text-green-500 text-sm mt-1 flex items-center">
+                  <CheckCircleIcon className="w-4 h-4 mr-1" />
+                  Email is available
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -236,13 +336,21 @@ export default function RegisterPage() {
                   type="password"
                   value={formData.password}
                   onChange={handleChange}
+                  onBlur={(e) => validateField('password', e.target.value)}
                   placeholder="Create a password"
                   required
-                  className="input-field"
+                  className={`input-field ${validationErrors.password ? 'border-red-500' : ''}`}
                 />
-                <p className="text-xs text-text-mid mt-1">
-                  Must be at least 8 characters long
-                </p>
+                {validationErrors.password ? (
+                  <p className="text-red-500 text-sm mt-1 flex items-center">
+                    <XCircleIcon className="w-4 h-4 mr-1" />
+                    {validationErrors.password}
+                  </p>
+                ) : (
+                  <p className="text-xs text-text-mid mt-1">
+                    Must be at least 8 characters long
+                  </p>
+                )}
               </div>
 
               <div>
@@ -255,10 +363,23 @@ export default function RegisterPage() {
                   type="password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
+                  onBlur={(e) => validateField('confirmPassword', e.target.value)}
                   placeholder="Confirm your password"
                   required
-                  className="input-field"
+                  className={`input-field ${validationErrors.confirmPassword ? 'border-red-500' : ''}`}
                 />
+                {validationErrors.confirmPassword && (
+                  <p className="text-red-500 text-sm mt-1 flex items-center">
+                    <XCircleIcon className="w-4 h-4 mr-1" />
+                    {validationErrors.confirmPassword}
+                  </p>
+                )}
+                {formData.confirmPassword && !validationErrors.confirmPassword && formData.password === formData.confirmPassword && (
+                  <p className="text-green-500 text-sm mt-1 flex items-center">
+                    <CheckCircleIcon className="w-4 h-4 mr-1" />
+                    Passwords match
+                  </p>
+                )}
               </div>
             </div>
 
@@ -272,7 +393,29 @@ export default function RegisterPage() {
                 type="tel"
                 value={formData.phoneNumber}
                 onChange={handleChange}
+                onBlur={(e) => validateField('phoneNumber', e.target.value)}
                 placeholder="Enter your phone number"
+                className={`input-field ${validationErrors.phoneNumber ? 'border-red-500' : ''}`}
+              />
+              {validationErrors.phoneNumber && (
+                <p className="text-red-500 text-sm mt-1 flex items-center">
+                  <XCircleIcon className="w-4 h-4 mr-1" />
+                  {validationErrors.phoneNumber}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="linkedinProfile" className="form-label">
+                LinkedIn Profile
+              </label>
+              <Input
+                id="linkedinProfile"
+                name="linkedinProfile"
+                type="url"
+                value={formData.linkedinProfile}
+                onChange={handleChange}
+                placeholder="https://linkedin.com/in/yourprofile"
                 className="input-field"
               />
             </div>

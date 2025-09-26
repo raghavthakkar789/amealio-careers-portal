@@ -12,6 +12,7 @@ export async function POST(request: NextRequest) {
       email,
       password,
       phoneNumber,
+      linkedinProfile,
     } = body
 
     // Validation
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12)
 
-    // Create user
+    // Create user (always as APPLICANT)
     const user = await prisma.user.create({
       data: {
         firstName,
@@ -60,6 +61,7 @@ export async function POST(request: NextRequest) {
         password: hashedPassword,
         phoneNumber,
         role: 'APPLICANT',
+        linkedinProfile: linkedinProfile || null,
       }
     })
 

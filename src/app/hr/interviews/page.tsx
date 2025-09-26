@@ -216,34 +216,39 @@ export default function HRInterviewsPage() {
   const handleScheduleInterview = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      // Mock API call - replace with actual API
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      const newInterview: Interview = {
-        id: Date.now().toString(),
-        ...scheduleForm,
-        status: 'SCHEDULED'
-      }
-      
-      setInterviews(prev => [...prev, newInterview])
-      setShowScheduleModal(false)
-      setScheduleForm({
-        applicantName: '',
-        applicantEmail: '',
-        jobTitle: '',
-        department: '',
-        interviewDate: '',
-        interviewTime: '',
-        duration: 60,
-        type: 'VIDEO',
-        location: '',
-        meetingLink: '',
-        interviewer: '',
-        notes: ''
+      const response = await fetch('/api/interviews', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(scheduleForm),
       })
-      
-      toast.success('Interview scheduled successfully!')
-    } catch {
+
+      if (response.ok) {
+        const data = await response.json()
+        setInterviews(prev => [...prev, data.interview])
+        setShowScheduleModal(false)
+        setScheduleForm({
+          applicantName: '',
+          applicantEmail: '',
+          jobTitle: '',
+          department: '',
+          interviewDate: '',
+          interviewTime: '',
+          duration: 60,
+          type: 'VIDEO',
+          location: '',
+          meetingLink: '',
+          interviewer: '',
+          notes: ''
+        })
+        toast.success('Interview scheduled successfully!')
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to schedule interview')
+      }
+    } catch (error) {
+      console.error('Error scheduling interview:', error)
       toast.error('Failed to schedule interview')
     }
   }

@@ -181,13 +181,13 @@ export default function ApplicationManagement({
                 // For now, we'll show basic actions based on user role
                 const availableActions = userRole === 'HR' || userRole === 'ADMIN' ? [
                   { 
-                    id: 'APPROVE', 
-                    name: 'Approve', 
-                    description: 'Approve this application',
-                    targetStage: 'APPROVED',
+                    id: 'ACCEPT', 
+                    name: 'Accept', 
+                    description: 'Accept this application',
+                    targetStage: 'ACCEPTED',
                     allowedRoles: ['HR', 'ADMIN'],
                     confirmationRequired: true,
-                    confirmationMessage: 'Are you sure you want to approve this application?'
+                    confirmationMessage: 'Are you sure you want to accept this application?'
                   },
                   { 
                     id: 'REJECT', 
@@ -203,6 +203,14 @@ export default function ApplicationManagement({
                     name: 'Schedule Interview', 
                     description: 'Schedule an interview for this application',
                     targetStage: 'INTERVIEW_SCHEDULED',
+                    allowedRoles: ['HR', 'ADMIN'],
+                    confirmationRequired: false
+                  },
+                  { 
+                    id: 'REVIEW', 
+                    name: 'Under Review', 
+                    description: 'Move application to review stage',
+                    targetStage: 'UNDER_REVIEW',
                     allowedRoles: ['HR', 'ADMIN'],
                     confirmationRequired: false
                   }

@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
         email: true,
         phoneNumber: true,
         role: true,
-        isActive: true,
+        // isActive: true, // Commented out account verification requirement
         createdAt: true
       },
       orderBy: {

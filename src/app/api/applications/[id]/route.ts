@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { applicationStatusService } from '@/lib/application-status-service'
 
 // GET /api/applications/[id] - Get specific application
 export async function GET(
@@ -96,7 +97,33 @@ export async function PUT(
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
-    // Handle FormData for application updates
+    const contentType = request.headers.get('content-type')
+    
+    // Handle status updates (JSON)
+    if (contentType?.includes('application/json')) {
+      const body = await request.json()
+      const { status, action, notes } = body
+
+      if (status && action) {
+        // Update application status using the new service
+        const updatedApplication = await applicationStatusService.updateApplicationStatus({
+          applicationId: id,
+          newStatus: status,
+          action,
+          performedBy: session.user.id,
+          performedByName: session.user.name || 'Unknown User',
+          performedByRole: session.user.role as 'APPLICANT' | 'HR' | 'ADMIN',
+          notes
+        })
+
+        return NextResponse.json({ 
+          application: updatedApplication,
+          message: 'Application status updated successfully' 
+        })
+      }
+    }
+
+    // Handle FormData for application content updates
     const formData = await request.formData()
     const coverLetter = formData.get('coverLetter') as string
     const experience = formData.get('experience') as string
@@ -107,7 +134,7 @@ export async function PUT(
     const references = formData.get('references') as string
     const resumeFile = formData.get('resume') as File
 
-    // Update application
+    // Update application content
     const updatedApplication = await prisma.application.update({
       where: { id },
       data: {

@@ -94,6 +94,7 @@ model User {
   adminReviews  InterviewReview[] @relation("AdminReviewer")
   notifications Notification[]
   hrJobs        Job[] @relation("HRCreator")
+  applicationHistory ApplicationHistory[] @relation("ApplicationHistoryPerformer")
 
   @@map("users")
 }
@@ -163,6 +164,7 @@ model Application {
   jobId             String
   interviews        Interview[]
   notifications     Notification[]
+  history           ApplicationHistory[]
 
   @@map("applications")
 }
@@ -251,6 +253,25 @@ model SystemSetting {
   updatedAt         DateTime @updatedAt
 
   @@map("system_settings")
+}
+
+model ApplicationHistory {
+  id                String            @id @default(cuid())
+  applicationId     String
+  fromStatus        ApplicationStatus?
+  toStatus          ApplicationStatus
+  action            String            // e.g., "REVIEW", "SCHEDULE_INTERVIEW", "HIRE"
+  performedBy       String            // User ID who performed the action
+  performedByName   String            // Name of the user who performed the action
+  performedByRole   UserRole          // Role of the user who performed the action
+  notes             String?           // Additional notes about the status change
+  createdAt         DateTime          @default(now())
+
+  // Relations
+  application       Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  performer         User              @relation("ApplicationHistoryPerformer", fields: [performedBy], references: [id])
+
+  @@map("application_history")
 }
 
 model HRRequest {

@@ -223,6 +223,7 @@ export default function LoginPage() {
                     setPassword('admin123')
                   }}
                   className="block w-full p-2 bg-bg-850 hover:bg-bg-900 rounded border border-border transition-colors hover:border-primary/50"
+                  suppressHydrationWarning
                 >
                   <strong>Admin:</strong> admin@amealio.com / admin123
                 </button>
@@ -232,6 +233,7 @@ export default function LoginPage() {
                     setPassword('hr123')
                   }}
                   className="block w-full p-2 bg-bg-850 hover:bg-bg-900 rounded border border-border transition-colors hover:border-primary/50"
+                  suppressHydrationWarning
                 >
                   <strong>HR:</strong> hr@amealio.com / hr123
                 </button>
@@ -241,6 +243,7 @@ export default function LoginPage() {
                     setPassword('user123')
                   }}
                   className="block w-full p-2 bg-bg-850 hover:bg-bg-900 rounded border border-border transition-colors hover:border-primary/50"
+                  suppressHydrationWarning
                 >
                   <strong>Applicant:</strong> user@amealio.com / user123
                 </button>

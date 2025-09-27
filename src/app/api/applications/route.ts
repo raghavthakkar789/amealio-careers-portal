@@ -2,11 +2,20 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { applicationStatusService } from '@/lib/application-status-service'
 
 // GET /api/applications - Get applications based on user role
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
+    
+    console.log('Session in applications API:', session ? {
+      user: {
+        id: session.user?.id,
+        email: session.user?.email,
+        role: session.user?.role
+      }
+    } : 'null')
     
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -33,39 +42,21 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const applications = await prisma.application.findMany({
-      where: whereClause,
-      include: {
-        applicant: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true
-          }
-        },
-        job: {
-          select: {
-            id: true,
-            title: true,
-            department: {
-              select: {
-                name: true
-              }
-            }
-          }
-        }
-      },
-      orderBy: {
-        submittedAt: 'desc'
-      }
-    })
+    // Use the new service to get applications with history
+    const applications = await applicationStatusService.getApplicationsWithHistory(user.role as 'APPLICANT' | 'HR' | 'ADMIN', user.id)
 
     return NextResponse.json({ applications })
 
   } catch (error) {
     console.error('Error fetching applications:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    })
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }
 

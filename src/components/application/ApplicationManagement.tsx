@@ -17,13 +17,16 @@ import {
   UserIcon,
   BriefcaseIcon,
   ArrowPathIcon,
-  ArrowLeftIcon
+  ArrowLeftIcon,
+  UserCircleIcon
 } from '@heroicons/react/24/outline'
 import { 
-  applicationLifecycleService,
-  ApplicationState,
-  ApplicationAction
-} from '@/lib/application-lifecycle-service'
+  applicationStatusService,
+  ApplicationWithHistory,
+  StatusTransition
+} from '@/lib/application-status-service'
+import { useApplicationUpdates } from '@/hooks/useApplicationUpdates'
+import ApplicantProfileModal from './ApplicantProfileModal'
 
 interface ApplicationManagementProps {
   userRole: 'APPLICANT' | 'HR' | 'ADMIN'
@@ -40,36 +43,58 @@ export default function ApplicationManagement({
 }: ApplicationManagementProps) {
   const { data: session } = useSession()
   const router = useRouter()
-  const [applications, setApplications] = useState<ApplicationState[]>([])
+  const [applications, setApplications] = useState<ApplicationWithHistory[]>([])
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [selectedApplicationId, setSelectedApplicationId] = useState<string | null>(null)
+  const [showProfileModal, setShowProfileModal] = useState(false)
+
+  // Real-time updates
+  const { isConnected } = useApplicationUpdates({
+    onStatusUpdate: (applicationId, update) => {
+      // Refresh applications when status updates
+      fetchApplications()
+      toast.success(`Application status updated to ${update.newStatus}`)
+    }
+  })
+
+  const fetchApplications = async () => {
+    try {
+      const response = await fetch('/api/applications')
+      if (response.ok) {
+        const data = await response.json()
+        setApplications(data.applications || [])
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        console.error('API Error:', response.status, errorData)
+        toast.error(errorData.error || 'Failed to fetch applications')
+      }
+    } catch (error) {
+      console.error('Error fetching applications:', error)
+      toast.error('Network error: Failed to fetch applications')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    if (!session) return
-
-    const fetchApplications = async () => {
-      try {
-        const response = await fetch('/api/applications')
-        if (response.ok) {
-          const data = await response.json()
-          setApplications(data.applications)
-        } else {
-          toast.error('Failed to fetch applications')
-        }
-      } catch (error) {
-        console.error('Error fetching applications:', error)
-        toast.error('Failed to fetch applications')
-      } finally {
-        setLoading(false)
-      }
+    if (!session) {
+      console.log('No session available')
+      return
     }
-
+    console.log('Session available, fetching applications:', {
+      user: {
+        id: session.user?.id,
+        email: session.user?.email,
+        role: session.user?.role
+      }
+    })
     fetchApplications()
   }, [session, userRole])
 
   const handleStageUpdate = async (
     applicationId: string, 
-    action: ApplicationAction
+    transition: StatusTransition
   ) => {
     if (!session) return
 
@@ -82,22 +107,18 @@ export default function ApplicationManagement({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          status: action.targetStage,
-          notes: `Application moved to ${action.targetStage.replace('_', ' ')}`
+          status: transition.to,
+          action: transition.action,
+          notes: transition.description
         }),
       })
 
       if (response.ok) {
-        toast.success(`Application moved to ${action.targetStage.replace('_', ' ')}`)
-        
-        // Refresh applications list
-        const refreshResponse = await fetch('/api/applications')
-        if (refreshResponse.ok) {
-          const data = await refreshResponse.json()
-          setApplications(data.applications)
-        }
+        toast.success(`Application moved to ${transition.to.replace('_', ' ')}`)
+        // Real-time updates will handle the refresh
       } else {
         const error = await response.json()
+        console.error('API Error:', error)
         toast.error(error.error || 'Failed to update application stage')
       }
     } catch (error) {
@@ -108,16 +129,24 @@ export default function ApplicationManagement({
     }
   }
 
-  const getStatusColor = (stageId: string): string => {
-    const stage = applicationLifecycleService.getStage(stageId)
-    return stage?.color || 'bg-gray-100 text-gray-800'
+  const handleViewProfile = (applicationId: string) => {
+    setSelectedApplicationId(applicationId)
+    setShowProfileModal(true)
   }
 
-  const getStatusIcon = (stageId: string) => {
-    const stage = applicationLifecycleService.getStage(stageId)
-    const iconName = stage?.icon || 'DocumentTextIcon'
+  const handleCloseProfileModal = () => {
+    setShowProfileModal(false)
+    setSelectedApplicationId(null)
+  }
+
+  const getStatusDisplay = (status: string) => {
+    return applicationStatusService.getStatusDisplay(status as any)
+  }
+
+  const getStatusIcon = (status: string) => {
+    const display = getStatusDisplay(status)
     
-    switch (iconName) {
+    switch (display.icon) {
       case 'ClockIcon':
         return <ClockIcon className="w-4 h-4" />
       case 'EyeIcon':
@@ -178,43 +207,12 @@ export default function ApplicationManagement({
               </div>
             ) : (
               applications.map((application, index) => {
-                // For now, we'll show basic actions based on user role
-                const availableActions = userRole === 'HR' || userRole === 'ADMIN' ? [
-                  { 
-                    id: 'ACCEPT', 
-                    name: 'Accept', 
-                    description: 'Accept this application',
-                    targetStage: 'ACCEPTED',
-                    allowedRoles: ['HR', 'ADMIN'],
-                    confirmationRequired: true,
-                    confirmationMessage: 'Are you sure you want to accept this application?'
-                  },
-                  { 
-                    id: 'REJECT', 
-                    name: 'Reject', 
-                    description: 'Reject this application',
-                    targetStage: 'REJECTED',
-                    allowedRoles: ['HR', 'ADMIN'],
-                    confirmationRequired: true,
-                    confirmationMessage: 'Are you sure you want to reject this application?'
-                  },
-                  { 
-                    id: 'INTERVIEW', 
-                    name: 'Schedule Interview', 
-                    description: 'Schedule an interview for this application',
-                    targetStage: 'INTERVIEW_SCHEDULED',
-                    allowedRoles: ['HR', 'ADMIN'],
-                    confirmationRequired: false
-                  },
-                  { 
-                    id: 'REVIEW', 
-                    name: 'Under Review', 
-                    description: 'Move application to review stage',
-                    targetStage: 'UNDER_REVIEW',
-                    allowedRoles: ['HR', 'ADMIN'],
-                    confirmationRequired: false
-                  }
-                ] : []
+                // Get available transitions based on current status and user role
+                const availableTransitions = session?.user?.role ? 
+                  applicationStatusService.getAvailableTransitions(application.status, session.user.role as 'APPLICANT' | 'HR' | 'ADMIN') : []
+                
+                // Filter out transitions that would result in the same status
+                const validTransitions = availableTransitions.filter(transition => transition.to !== application.status)
 
                 return (
                   <motion.div
@@ -236,10 +234,10 @@ export default function ApplicationManagement({
                             </h3>
                             <p className="text-text-mid">{application.applicant?.email || 'No email'}</p>
                           </div>
-                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(application.status)}`}>
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusDisplay(application.status).color}`}>
                             <span className="flex items-center gap-1">
                               {getStatusIcon(application.status)}
-                              {application.status}
+                              {getStatusDisplay(application.status).label}
                             </span>
                           </span>
                         </div>
@@ -265,20 +263,46 @@ export default function ApplicationManagement({
                           </div>
                         </div>
 
-                        {/* Application Notes */}
-                        {application.notes && (
+                        {/* Application History */}
+                        {application.history && application.history.length > 0 && (
                           <div className="mb-4">
-                            <p className="text-sm text-text-mid mb-2">Notes</p>
+                            <p className="text-sm text-text-mid mb-2">Recent Activity</p>
                             <div className="bg-bg-800 p-3 rounded border border-border">
-                              <p className="text-sm text-text-high">{application.notes}</p>
+                              <div className="space-y-2">
+                                {application.history.slice(0, 3).map((historyItem) => (
+                                  <div key={historyItem.id} className="flex items-center gap-2 text-sm">
+                                    <span className="text-text-mid">
+                                      {new Date(historyItem.createdAt).toLocaleDateString()}
+                                    </span>
+                                    <span className="text-text-high">
+                                      {historyItem.performedByName} ({historyItem.performedByRole}) moved application from {historyItem.fromStatus || 'N/A'} to {historyItem.toStatus}
+                                    </span>
+                                    {historyItem.notes && (
+                                      <span className="text-text-mid">- {historyItem.notes}</span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           </div>
                         )}
                       </div>
 
                       <div className="flex flex-col gap-2 ml-4">
+                        {/* Show View Profile button only for HR and ADMIN */}
+                        {(userRole === 'HR' || userRole === 'ADMIN') && (
+                          <Button
+                            onClick={() => handleViewProfile(application.id)}
+                            variant="secondary"
+                            className="btn-secondary"
+                          >
+                            <UserCircleIcon className="w-4 h-4 mr-2" />
+                            View Profile
+                          </Button>
+                        )}
+                        
                         <Button
-                          onClick={() => window.open(`/jobs/${application.jobId}`, '_blank')}
+                          onClick={() => window.open(`/jobs/${application.job.id}`, '_blank')}
                           variant="secondary"
                           className="btn-secondary"
                         >
@@ -286,16 +310,16 @@ export default function ApplicationManagement({
                           View Job
                         </Button>
                         
-                        {availableActions.map((action) => (
+                        {validTransitions.map((transition) => (
                           <Button
-                            key={action.id}
+                            key={transition.action}
                             onClick={() => {
-                              if (action.confirmationRequired) {
-                                if (confirm(action.confirmationMessage || 'Are you sure?')) {
-                                  handleStageUpdate(application.id, action)
+                              if (transition.requiresConfirmation) {
+                                if (confirm(transition.confirmationMessage || 'Are you sure?')) {
+                                  handleStageUpdate(application.id, transition)
                                 }
                               } else {
-                                handleStageUpdate(application.id, action)
+                                handleStageUpdate(application.id, transition)
                               }
                             }}
                             disabled={actionLoading === application.id}
@@ -306,7 +330,7 @@ export default function ApplicationManagement({
                             ) : (
                               <>
                                 <ArrowPathIcon className="w-4 h-4 mr-2" />
-                                {action.name}
+                                {transition.description}
                               </>
                             )}
                           </Button>
@@ -320,6 +344,15 @@ export default function ApplicationManagement({
           </div>
         </motion.div>
       </div>
+      
+      {/* Applicant Profile Modal */}
+      {selectedApplicationId && (
+        <ApplicantProfileModal
+          isOpen={showProfileModal}
+          onClose={handleCloseProfileModal}
+          applicationId={selectedApplicationId}
+        />
+      )}
     </div>
   )
 }

@@ -25,7 +25,8 @@ import {
   ArrowTrendingUpIcon,
   ShieldCheckIcon,
   UserGroupIcon,
-  KeyIcon
+  KeyIcon,
+  BriefcaseIcon
 } from '@heroicons/react/24/outline'
 
 export default function AdminDashboard() {
@@ -322,6 +323,8 @@ export default function AdminDashboard() {
               { id: 'applicants', label: 'Applicant Profiles', icon: UsersIcon, color: 'from-emerald-500 to-emerald-600' },
               { id: 'hr-management', label: 'HR Management', icon: UserPlusIcon, color: 'from-amber-500 to-amber-600' },
               { id: 'hr-requests', label: 'HR Requests', icon: UserGroupIcon, color: 'from-violet-500 to-violet-600' },
+              { id: 'admin-management', label: 'Admin Management', icon: ShieldCheckIcon, color: 'from-red-500 to-red-600' },
+              { id: 'oversight', label: 'System Oversight', icon: ChartBarIcon, color: 'from-indigo-500 to-indigo-600' },
               { id: 'analytics', label: 'Analytics', icon: ArrowTrendingUpIcon, color: 'from-rose-500 to-rose-600' }
             ].map(tab => (
               <button
@@ -714,6 +717,101 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* System Oversight Tab */}
+          {activeTab === 'oversight' && (
+            <div className="space-y-6">
+              <div className="card">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-text-primary">System Oversight</h2>
+                  <Button
+                    onClick={() => router.push('/admin/oversight')}
+                    className="btn-primary"
+                  >
+                    <ChartBarIcon className="w-4 h-4 mr-2" />
+                    Open Oversight Dashboard
+                  </Button>
+                </div>
+                <p className="text-text-secondary mb-6">
+                  Complete system oversight with master control over all applicants, applications, HR performance, and job management.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-bg-800 p-4 rounded-lg border border-border">
+                    <div className="flex items-center gap-3 mb-2">
+                      <UsersIcon className="w-6 h-6 text-primary" />
+                      <h3 className="font-semibold text-text-high">Applicant Management</h3>
+                    </div>
+                    <p className="text-sm text-text-mid">View all applicants with complete profiles and application history</p>
+                  </div>
+                  <div className="bg-bg-800 p-4 rounded-lg border border-border">
+                    <div className="flex items-center gap-3 mb-2">
+                      <DocumentTextIcon className="w-6 h-6 text-primary" />
+                      <h3 className="font-semibold text-text-high">Application Control</h3>
+                    </div>
+                    <p className="text-sm text-text-mid">Manage all applications with status tracking and rejection controls</p>
+                  </div>
+                  <div className="bg-bg-800 p-4 rounded-lg border border-border">
+                    <div className="flex items-center gap-3 mb-2">
+                      <UserGroupIcon className="w-6 h-6 text-primary" />
+                      <h3 className="font-semibold text-text-high">HR Performance</h3>
+                    </div>
+                    <p className="text-sm text-text-mid">Monitor HR team performance and review metrics</p>
+                  </div>
+                  <div className="bg-bg-800 p-4 rounded-lg border border-border">
+                    <div className="flex items-center gap-3 mb-2">
+                      <BriefcaseIcon className="w-6 h-6 text-primary" />
+                      <h3 className="font-semibold text-text-high">Job Management</h3>
+                    </div>
+                    <p className="text-sm text-text-mid">Complete job control with create, update, and delete operations</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Admin Management Tab */}
+          {activeTab === 'admin-management' && (
+            <div className="space-y-6">
+              <div className="card">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-text-primary">Admin Management</h2>
+                  <Button
+                    onClick={() => router.push('/admin/admin-management')}
+                    className="btn-primary"
+                  >
+                    <ShieldCheckIcon className="w-4 h-4 mr-2" />
+                    Manage Admins
+                  </Button>
+                </div>
+                <p className="text-text-secondary mb-6">
+                  Create and manage system administrators. Add new admins, edit existing admin accounts, and maintain system security.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-bg-800 p-4 rounded-lg border border-border">
+                    <div className="flex items-center gap-3 mb-2">
+                      <ShieldCheckIcon className="w-6 h-6 text-primary" />
+                      <h3 className="font-semibold text-text-high">System Access</h3>
+                    </div>
+                    <p className="text-sm text-text-mid">Full system access and control</p>
+                  </div>
+                  <div className="bg-bg-800 p-4 rounded-lg border border-border">
+                    <div className="flex items-center gap-3 mb-2">
+                      <UserPlusIcon className="w-6 h-6 text-primary" />
+                      <h3 className="font-semibold text-text-high">User Management</h3>
+                    </div>
+                    <p className="text-sm text-text-mid">Create and manage user accounts</p>
+                  </div>
+                  <div className="bg-bg-800 p-4 rounded-lg border border-border">
+                    <div className="flex items-center gap-3 mb-2">
+                      <KeyIcon className="w-6 h-6 text-primary" />
+                      <h3 className="font-semibold text-text-high">Security Control</h3>
+                    </div>
+                    <p className="text-sm text-text-mid">Manage system security settings</p>
+                  </div>
                 </div>
               </div>
             </div>

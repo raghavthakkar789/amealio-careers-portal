@@ -229,6 +229,16 @@ export default function LoginPage() {
                 </button>
                 <button
                   onClick={() => {
+                    setEmail('admin2@amealio.com')
+                    setPassword('admin123')
+                  }}
+                  className="block w-full p-2 bg-bg-850 hover:bg-bg-900 rounded border border-border transition-colors hover:border-primary/50"
+                  suppressHydrationWarning
+                >
+                  <strong>Admin 2:</strong> admin2@amealio.com / admin123
+                </button>
+                <button
+                  onClick={() => {
                     setEmail('hr@amealio.com')
                     setPassword('hr123')
                   }}
@@ -239,6 +249,26 @@ export default function LoginPage() {
                 </button>
                 <button
                   onClick={() => {
+                    setEmail('hr2@amealio.com')
+                    setPassword('hr123')
+                  }}
+                  className="block w-full p-2 bg-bg-850 hover:bg-bg-900 rounded border border-border transition-colors hover:border-primary/50"
+                  suppressHydrationWarning
+                >
+                  <strong>HR 2:</strong> hr2@amealio.com / hr123
+                </button>
+                <button
+                  onClick={() => {
+                    setEmail('hr3@amealio.com')
+                    setPassword('hr123')
+                  }}
+                  className="block w-full p-2 bg-bg-850 hover:bg-bg-900 rounded border border-border transition-colors hover:border-primary/50"
+                  suppressHydrationWarning
+                >
+                  <strong>HR 3:</strong> hr3@amealio.com / hr123
+                </button>
+                <button
+                  onClick={() => {
                     setEmail('user@amealio.com')
                     setPassword('user123')
                   }}
@@ -246,6 +276,46 @@ export default function LoginPage() {
                   suppressHydrationWarning
                 >
                   <strong>Applicant:</strong> user@amealio.com / user123
+                </button>
+                <button
+                  onClick={() => {
+                    setEmail('applicant2@amealio.com')
+                    setPassword('user123')
+                  }}
+                  className="block w-full p-2 bg-bg-850 hover:bg-bg-900 rounded border border-border transition-colors hover:border-primary/50"
+                  suppressHydrationWarning
+                >
+                  <strong>Applicant 2:</strong> applicant2@amealio.com / user123
+                </button>
+                <button
+                  onClick={() => {
+                    setEmail('applicant3@amealio.com')
+                    setPassword('user123')
+                  }}
+                  className="block w-full p-2 bg-bg-850 hover:bg-bg-900 rounded border border-border transition-colors hover:border-primary/50"
+                  suppressHydrationWarning
+                >
+                  <strong>Applicant 3:</strong> applicant3@amealio.com / user123
+                </button>
+                <button
+                  onClick={() => {
+                    setEmail('applicant4@amealio.com')
+                    setPassword('user123')
+                  }}
+                  className="block w-full p-2 bg-bg-850 hover:bg-bg-900 rounded border border-border transition-colors hover:border-primary/50"
+                  suppressHydrationWarning
+                >
+                  <strong>Applicant 4:</strong> applicant4@amealio.com / user123
+                </button>
+                <button
+                  onClick={() => {
+                    setEmail('applicant5@amealio.com')
+                    setPassword('user123')
+                  }}
+                  className="block w-full p-2 bg-bg-850 hover:bg-bg-900 rounded border border-border transition-colors hover:border-primary/50"
+                  suppressHydrationWarning
+                >
+                  <strong>Applicant 5:</strong> applicant5@amealio.com / user123
                 </button>
               </div>
             </div>

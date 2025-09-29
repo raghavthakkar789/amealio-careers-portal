@@ -34,6 +34,16 @@ export default function HRDashboard() {
   const [showAddHR, setShowAddHR] = useState(false)
   const [loading, setLoading] = useState(false)
   const [departments, setDepartments] = useState<Array<{id: string, name: string}>>([])
+  const [hrProfile, setHrProfile] = useState<{department?: {id: string, name: string}} | null>(null)
+  const [hrTeam, setHrTeam] = useState<Array<{
+    id: string,
+    firstName: string,
+    lastName: string,
+    email: string,
+    phoneNumber: string | null,
+    createdAt: string,
+    departments: Array<{id: string, name: string}>
+  }>>([])
 
   // HR Request form state
   const [hrRequestForm, setHrRequestForm] = useState({
@@ -67,23 +77,38 @@ export default function HRDashboard() {
     applicationDeadline: '',
   })
 
-  // Fetch departments on component mount
+  // Fetch departments and HR profile on component mount
   useEffect(() => {
-    const fetchDepartments = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch('/api/departments')
-        if (response.ok) {
-          const data = await response.json()
-          setDepartments(data.departments.map((dept: any) => ({
+        // Fetch departments
+        const departmentsResponse = await fetch('/api/departments')
+        if (departmentsResponse.ok) {
+          const departmentsData = await departmentsResponse.json()
+          setDepartments(departmentsData.departments.map((dept: { id: string; name: string }) => ({
             id: dept.id,
             name: dept.name
           })))
         }
+
+        // Fetch HR profile with department info
+        const profileResponse = await fetch('/api/hr/profile')
+        if (profileResponse.ok) {
+          const profileData = await profileResponse.json()
+          setHrProfile(profileData.user)
+        }
+
+        // Fetch HR team with department info
+        const teamResponse = await fetch('/api/hr/team')
+        if (teamResponse.ok) {
+          const teamData = await teamResponse.json()
+          setHrTeam(teamData.hrUsers)
+        }
       } catch (error) {
-        console.error('Error fetching departments:', error)
+        console.error('Error fetching data:', error)
       }
     }
-    fetchDepartments()
+    fetchData()
   }, [])
 
   // Job description form state
@@ -96,6 +121,12 @@ export default function HRDashboard() {
     remoteWork: false,
   })
 
+  useEffect(() => {
+    if (!session || session.user?.role !== 'HR') {
+      router.push('/login')
+    }
+  }, [session, router])
+
   if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-bg-850">
@@ -103,12 +134,6 @@ export default function HRDashboard() {
       </div>
     )
   }
-
-  useEffect(() => {
-    if (!session || session.user?.role !== 'HR') {
-      router.push('/login')
-    }
-  }, [session, router])
 
   if (!session || session.user?.role !== 'HR') {
     return null
@@ -288,6 +313,13 @@ export default function HRDashboard() {
                   <h1 className="text-5xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent mb-4">
               HR Dashboard
             </h1>
+                  <div className="mt-4 flex items-center justify-center gap-2">
+                    <BuildingOfficeIcon className="w-5 h-5 text-primary" />
+                    <span className="text-lg font-medium text-text-high">
+                      Department: {hrProfile?.department?.name || 'No department assigned'}
+                    </span>
+                  </div>
+                  <br />
                   <p className="text-xl text-text-mid max-w-2xl mx-auto">
                     Welcome back, {session.user?.name}! Manage recruitment, track applications, and streamline hiring processes.
                   </p>
@@ -500,11 +532,100 @@ export default function HRDashboard() {
             </div>
           </motion.div>
 
-          {/* Recent Activity & Notifications */}
+          {/* HR Team Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.5 }}
+            className="mb-8"
+          >
+            <div className="card">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-gradient-to-r from-violet-500 to-violet-600 rounded-lg flex items-center justify-center">
+                  <UserGroupIcon className="w-5 h-5 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-text-high">
+                  HR Team
+                </h2>
+              </div>
+              {/* Show department names for all HRs */}
+              <div className="mb-4">
+                <span className="font-semibold text-text-high mr-2">Departments:</span>
+                {hrTeam.length > 0 ? (
+                  <span className="text-text-mid">
+                    {Array.from(
+                      new Set(
+                        hrTeam
+                          .flatMap(hr =>
+                            hr.departments && hr.departments.length > 0
+                              ? hr.departments.map(dept => dept.name)
+                              : []
+                          )
+                      )
+                    ).join(', ') || 'No departments assigned'}
+                  </span>
+                ) : (
+                  <span className="text-text-mid">No HRs found</span>
+                )}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {hrTeam.map((hr) => (
+                  <div key={hr.id} className="p-4 bg-gradient-to-r from-bg-800 to-bg-850 rounded-xl border border-border hover:shadow-medium transition-all duration-300">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 bg-gradient-to-r from-primary to-purple-600 rounded-full flex items-center justify-center">
+                        <span className="text-white font-bold text-sm">
+                          {hr.firstName.charAt(0)}{hr.lastName.charAt(0)}
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-text-high">
+                          {hr.firstName} {hr.lastName}
+                        </h4>
+                        <p className="text-sm text-text-mid">{hr.email}</p>
+                      </div>
+                    </div>
+                    
+                    {hr.departments && hr.departments.length > 0 ? (
+                      <div className="mb-2">
+                        <div className="flex items-center gap-2 mb-1">
+                          <BuildingOfficeIcon className="w-4 h-4 text-primary" />
+                          <span className="text-sm font-medium text-text-high">Departments:</span>
+                          
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {hr.departments.map((dept, index) => (
+                            <span
+                              key={dept.id}
+                              className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20"
+                            >
+                              {dept.name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mb-2">
+                        <div className="flex items-center gap-2 mb-1">
+                          <BuildingOfficeIcon className="w-4 h-4 text-text-mid" />
+                          <span className="text-sm font-medium text-text-mid">No departments assigned</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="text-xs text-text-mid">
+                      Joined: {new Date(hr.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Recent Activity & Notifications */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
             className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8"
           >
             {/* Recent Applications */}

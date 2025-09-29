@@ -75,8 +75,31 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    // Create a job in the specified department to establish HR-department relationship
+    if (department) {
+      // Find the department by name to get its ID
+      const departmentRecord = await prisma.department.findFirst({
+        where: { name: department }
+      })
+      
+      if (departmentRecord) {
+        await prisma.job.create({
+          data: {
+            title: `HR Management - ${department}`,
+            summary: `HR management role for ${department} department`,
+            departmentId: departmentRecord.id,
+            createdById: user.id,
+            employmentTypes: ['FULL_TIME'],
+            requiredSkills: ['HR Management', 'Recruitment'],
+            applicationDeadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+            isActive: false // This is just for establishing the relationship, not an active job posting
+          }
+        })
+      }
+    }
+
     // Remove password from response
-    const { password: _, ...userWithoutPassword } = user
+    const { password: _password, ...userWithoutPassword } = user
 
     return NextResponse.json(
       { 
@@ -88,8 +111,15 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('HR user creation error:', error)
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    })
     return NextResponse.json(
-      { message: 'Internal server error' },
+      { 
+        message: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }

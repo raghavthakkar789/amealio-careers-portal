@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 // GET /api/interviews - Get interviews based on user role
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions)
     
@@ -13,7 +13,20 @@ export async function GET(request: NextRequest) {
     }
 
     const user = session.user
-    let whereClause: any = {}
+    let whereClause: {
+      application?: {
+        job: {
+          createdById: string
+        }
+      }
+      applicantId?: string
+      candidateId?: string
+      reviews?: {
+        some: {
+          hrReviewerId: string
+        }
+      }
+    } = {}
 
     if (user.role === 'ADMIN') {
       // Admin can see all interviews

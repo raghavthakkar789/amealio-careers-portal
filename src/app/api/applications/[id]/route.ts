@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { applicationStatusService } from '@/lib/application-status-service'
+import { promises as fs } from 'fs'
+import path from 'path'
 
 // GET /api/applications/[id] - Get specific application
 export async function GET(
@@ -134,6 +136,48 @@ export async function PUT(
     const references = formData.get('references') as string
     const resumeFile = formData.get('resume') as File
 
+    // Handle file uploads
+    const uploadsDir = path.join(process.cwd(), 'uploads')
+    
+    // Ensure uploads directory exists
+    try {
+      await fs.access(uploadsDir)
+    } catch {
+      await fs.mkdir(uploadsDir, { recursive: true })
+    }
+
+    let resumeUrl = application.resumeUrl
+    let additionalFiles = application.additionalFiles
+    
+    // Handle resume file update
+    if (resumeFile && resumeFile.size > 0) {
+      const resumeFileName = `${application.applicantId}_${Date.now()}_resume.${resumeFile.name.split('.').pop()}`
+      const resumePath = path.join(uploadsDir, resumeFileName)
+      
+      const resumeBuffer = await resumeFile.arrayBuffer()
+      await fs.writeFile(resumePath, Buffer.from(resumeBuffer))
+      resumeUrl = resumeFileName
+    }
+
+    // Handle additional files update
+    const newAdditionalFiles: string[] = []
+    for (let i = 0; i < 10; i++) { // Support up to 10 additional files
+      const additionalFile = formData.get(`additionalFile_${i}`) as File
+      if (additionalFile && additionalFile.size > 0) {
+        const additionalFileName = `${application.applicantId}_${Date.now()}_additional_${i}.${additionalFile.name.split('.').pop()}`
+        const additionalPath = path.join(uploadsDir, additionalFileName)
+        
+        const additionalBuffer = await additionalFile.arrayBuffer()
+        await fs.writeFile(additionalPath, Buffer.from(additionalBuffer))
+        newAdditionalFiles.push(additionalFileName)
+      }
+    }
+    
+    // If new additional files were uploaded, replace the existing ones
+    if (newAdditionalFiles.length > 0) {
+      additionalFiles = newAdditionalFiles
+    }
+
     // Update application content
     const updatedApplication = await prisma.application.update({
       where: { id },
@@ -145,6 +189,8 @@ export async function PUT(
         skills: skills || application.skills,
         availability: availability || application.availability,
         references: references || application.references,
+        resumeUrl,
+        additionalFiles,
       },
       include: {
         applicant: {
@@ -227,7 +273,15 @@ export async function DELETE(
 }
 
 // Helper function to check application access
-async function checkApplicationAccess(user: any, application: any): Promise<boolean> {
+async function checkApplicationAccess(user: {
+  id: string
+  role: string
+}, application: {
+  applicantId: string
+  job: {
+    createdById: string
+  }
+}): Promise<boolean> {
   if (user.role === 'ADMIN') {
     return true // Admin has access to all applications
   }

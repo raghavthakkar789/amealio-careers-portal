@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 
 // GET /api/admin/admins - Get all admins
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions)
     
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { firstName, lastName, email, password, role } = body
+    const { firstName, lastName, email, password } = body
 
     // Validate required fields
     if (!firstName || !lastName || !email || !password) {

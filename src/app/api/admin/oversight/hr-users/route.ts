@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 // GET /api/admin/oversight/hr-users - Get all HR users with performance metrics
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions)
     
@@ -86,9 +86,9 @@ export async function GET(request: NextRequest) {
     })
 
     // Calculate performance metrics for each HR user
-    const hrUsersWithMetrics = hrUsers.map((hr: any) => {
+    const hrUsersWithMetrics = hrUsers.map((hr) => {
       // Calculate applications reviewed
-      const applicationsReviewed = hr.hrJobs?.reduce((total: number, job: any) => {
+      const applicationsReviewed = hr.hrJobs?.reduce((total: number, job: { applications: { length: number } }) => {
         return total + job.applications.length
       }, 0) || 0
 
@@ -96,8 +96,8 @@ export async function GET(request: NextRequest) {
       let totalReviewTime = 0
       let reviewCount = 0
       
-      hr.hrJobs?.forEach((job: any) => {
-        job.applications.forEach((app: any) => {
+      hr.hrJobs?.forEach((job: { applications: { status: string; updatedAt: Date | string; submittedAt: Date | string }[] }) => {
+        job.applications.forEach((app: { status: string; updatedAt: Date | string; submittedAt: Date | string }) => {
           if (app.status === 'REJECTED' || app.status === 'HIRED' || app.status === 'ACCEPTED') {
             const reviewTime = Math.floor(
               (new Date(app.updatedAt).getTime() - new Date(app.submittedAt).getTime()) / (1000 * 60 * 60 * 24)

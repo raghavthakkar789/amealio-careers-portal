@@ -123,7 +123,7 @@ export default function HRJobManagementPage() {
       const response = await fetch('/api/departments')
       if (response.ok) {
         const data = await response.json()
-        setDepartments(data.departments.map((dept: any) => ({
+        setDepartments(data.departments.map((dept: { id: string; name: string }) => ({
           id: dept.id,
           name: dept.name
         })))
@@ -220,8 +220,13 @@ export default function HRJobManagementPage() {
         resetForms()
         toast.success('Job updated successfully!')
       } else {
-        const error = await response.json()
-        toast.error(error.error || 'Failed to update job')
+        try {
+          const error = await response.json()
+          toast.error(error.error || 'Failed to update job')
+        } catch (jsonError) {
+          console.error('Failed to parse error response:', jsonError)
+          toast.error('Failed to update job')
+        }
       }
     } catch (error) {
       console.error('Error updating job:', error)
@@ -295,8 +300,13 @@ export default function HRJobManagementPage() {
         ))
         toast.success(`Job ${job?.isActive ? 'deactivated' : 'activated'} successfully!`)
       } else {
-        const error = await response.json()
-        toast.error(error.error || 'Failed to update job status')
+        try {
+          const error = await response.json()
+          toast.error(error.error || 'Failed to update job status')
+        } catch (jsonError) {
+          console.error('Failed to parse error response:', jsonError)
+          toast.error('Failed to update job status')
+        }
       }
     } catch (error) {
       console.error('Error updating job status:', error)
@@ -385,13 +395,19 @@ export default function HRJobManagementPage() {
 
   const startEdit = (job: Job) => {
     setEditingJob(job)
+    
+    // Format deadline for input field (YYYY-MM-DD)
+    const formattedDeadline = job.applicationDeadline 
+      ? new Date(job.applicationDeadline).toISOString().split('T')[0]
+      : ''
+    
     setJobForm({
       title: job.title,
       departmentId: job.department.id,
       summary: job.summary,
       employmentTypes: job.employmentTypes,
       requiredSkills: job.requiredSkills,
-      applicationDeadline: job.applicationDeadline || '',
+      applicationDeadline: formattedDeadline,
       hasDeadline: !!job.applicationDeadline,
       isActive: job.isActive,
       isDraft: job.isDraft
@@ -437,8 +453,8 @@ export default function HRJobManagementPage() {
     const diffTime = deadline.getTime() - now.getTime()
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
     
-    if (diffDays < 0) {
-      return <span className="text-red-500 text-sm">Expired</span>
+    if (diffDays <= 0) {
+      return <span className="text-red-500 text-sm">{deadline.toLocaleDateString()}</span>
     } else if (diffDays <= 7) {
       return <span className="text-orange-500 text-sm">{diffDays} days left</span>
     } else {
@@ -830,20 +846,22 @@ export default function HRJobManagementPage() {
                 <div className="space-y-3">
                   <label className="flex items-center gap-2">
                     <input
-                      type="checkbox"
-                      checked={jobForm.isActive}
-                      onChange={(e) => setJobForm(prev => ({ ...prev, isActive: e.target.checked }))}
-                      className="rounded"
+                      type="radio"
+                      name="jobStatus"
+                      checked={jobForm.isActive && !jobForm.isDraft}
+                      onChange={() => setJobForm(prev => ({ ...prev, isActive: true, isDraft: false }))}
+                      className="text-primary"
                     />
                     <span className="text-text-mid">Active (visible to applicants)</span>
                   </label>
                   
                   <label className="flex items-center gap-2">
                     <input
-                      type="checkbox"
+                      type="radio"
+                      name="jobStatus"
                       checked={jobForm.isDraft}
-                      onChange={(e) => setJobForm(prev => ({ ...prev, isDraft: e.target.checked }))}
-                      className="rounded"
+                      onChange={() => setJobForm(prev => ({ ...prev, isActive: false, isDraft: true }))}
+                      className="text-primary"
                     />
                     <span className="text-text-mid">Save as draft (not visible to applicants)</span>
                   </label>

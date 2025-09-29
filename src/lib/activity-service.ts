@@ -51,7 +51,17 @@ class ActivityService {
   }
 
   // Add activity from application stage change
-  addApplicationStageActivity(historyEntry: any, applicationTitle: string) {
+  addApplicationStageActivity(historyEntry: {
+    id: string
+    action: string
+    toStage: string
+    performedBy: string
+    performedByRole: string
+    notes?: string
+    applicationId?: string
+    fromStage?: string
+    timestamp?: string
+  }, applicationTitle: string) {
     const activityType = this.getActivityTypeFromAction(historyEntry.action)
     const activityTitle = this.getActivityTitleFromAction(historyEntry.action)
     const activityDescription = this.getActivityDescriptionFromAction(historyEntry, applicationTitle)
@@ -126,7 +136,17 @@ class ActivityService {
     }
   }
 
-  private getActivityDescriptionFromAction(historyEntry: any, applicationTitle: string): string {
+  private getActivityDescriptionFromAction(historyEntry: {
+    id: string
+    action: string
+    toStage: string
+    performedBy: string
+    performedByRole: string
+    notes?: string
+    applicationId?: string
+    fromStage?: string
+    timestamp?: string
+  }, applicationTitle: string): string {
     const { action, toStage, performedByRole, notes } = historyEntry
     
     let description = ''

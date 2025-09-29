@@ -339,19 +339,24 @@ class ApplicationStatusService {
   // Get all applications with history for a user
   async getApplicationsWithHistory(userRole: UserRole, userId?: string): Promise<ApplicationWithHistory[]> {
     try {
-      let whereClause: any = {}
+      let whereClause: {
+        job?: {
+          createdById: string
+        }
+        applicantId?: string
+      } = {}
 
       if (userRole === 'ADMIN') {
         // Admin can see all applications
         whereClause = {}
-      } else if (userRole === 'HR') {
+      } else if (userRole === 'HR' && userId) {
         // HR can see applications for jobs they created
         whereClause = {
           job: {
             createdById: userId
           }
         }
-      } else if (userRole === 'APPLICANT') {
+      } else if (userRole === 'APPLICANT' && userId) {
         // Applicants can only see their own applications
         whereClause = {
           applicantId: userId

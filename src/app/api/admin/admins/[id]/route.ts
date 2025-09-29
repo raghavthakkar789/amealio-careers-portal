@@ -92,7 +92,12 @@ export async function PUT(
     }
 
     // Prepare update data
-    const updateData: any = {
+    const updateData: {
+      firstName: string
+      lastName: string
+      email: string
+      password?: string
+    } = {
       firstName,
       lastName,
       email

@@ -141,7 +141,7 @@ export default function CulturePage() {
             transition={{ duration: 0.4, delay: 0.2, ease: "easeOut" }}
             className="text-2xl text-text-mid max-w-4xl mx-auto mb-8"
           >
-            Join a mission-driven team that's revolutionizing how people connect through food, technology, and shared experiences.
+            Join a mission-driven team that&apos;s revolutionizing how people connect through food, technology, and shared experiences.
           </motion.p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <motion.div
@@ -203,7 +203,7 @@ export default function CulturePage() {
                 transition={{ duration: 0.4, delay: 0.2, ease: "easeOut" }}
                 className="text-xl leading-relaxed max-w-4xl mx-auto mb-8 text-white"
               >
-                We're building a future where AI-powered personalization meets genuine human connection — helping people find the perfect dish, place, or moment, and making every experience more meaningful.
+                We&apos;re building a future where AI-powered personalization meets genuine human connection — helping people find the perfect dish, place, or moment, and making every experience more meaningful.
               </motion.p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
                 <motion.div 
@@ -254,7 +254,7 @@ export default function CulturePage() {
             transition={{ duration: 0.4, delay: 0.1, ease: "easeOut" }}
             className="text-4xl font-bold text-text-high text-center mb-12"
           >
-            Why You'll Love Working Here
+            Why You&apos;ll Love Working Here
           </motion.h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {perks.map((perk, index) => (
@@ -419,10 +419,10 @@ export default function CulturePage() {
                   </p>
                   <div className="space-y-4 text-text-secondary mb-6">
                     <p className="text-sm leading-relaxed">
-                      "With 25 years in technology and travels to 70+ countries, I've seen how food brings people together across cultures. At amealio, we're not just building an app – we're creating bridges between technology and human connection."
+                      &quot;With 25 years in technology and travels to 70+ countries, I&apos;ve seen how food brings people together across cultures. At amealio, we&apos;re not just building an app – we&apos;re creating bridges between technology and human connection.&quot;
                     </p>
                     <p className="text-sm leading-relaxed">
-                      "Every meal becomes more than food – it becomes an experience worth remembering."
+                      &quot;Every meal becomes more than food – it becomes an experience worth remembering.&quot;
                     </p>
                   </div>
                   <Link
@@ -473,10 +473,10 @@ export default function CulturePage() {
                   </p>
                   <div className="space-y-4 text-text-secondary mb-6">
                     <p className="text-sm leading-relaxed">
-                      "Building a strong, passionate team is at the heart of everything we do. We're creating an AI-powered platform that connects people through food, joy, and community."
+                      &quot;Building a strong, passionate team is at the heart of everything we do. We&apos;re creating an AI-powered platform that connects people through food, joy, and community.&quot;
                     </p>
                     <p className="text-sm leading-relaxed">
-                      "If you're inspired to be part of a mission where every meal becomes a memory, we'd love to hear from you."
+                      &quot;If you&apos;re inspired to be part of a mission where every meal becomes a memory, we&apos;d love to hear from you.&quot;
                     </p>
                   </div>
                   <Link

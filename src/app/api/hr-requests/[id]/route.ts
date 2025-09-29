@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import bcrypt from 'bcryptjs'
 
 // PUT /api/hr-requests/[id] - Approve or reject HR request
 export async function PUT(
@@ -37,6 +38,20 @@ export async function PUT(
         return NextResponse.json({ error: 'Password required for approval' }, { status: 400 })
       }
 
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 12)
+
+      // Check if user already exists
+      const existingUser = await prisma.user.findUnique({
+        where: { email: hrRequest.email }
+      })
+
+      if (existingUser) {
+        return NextResponse.json({ 
+          error: 'User with this email already exists' 
+        }, { status: 400 })
+      }
+
       // Create new HR user
       const newHR = await prisma.user.create({
         data: {
@@ -46,10 +61,33 @@ export async function PUT(
           phoneNumber: hrRequest.phoneNumber || '',
           address: '',
           role: 'HR',
-          password: password, // In production, this should be hashed
+          password: hashedPassword,
           // isActive: true // Commented out account verification requirement
         }
       })
+
+      // Create a job in the specified department to establish HR-department relationship
+      if (hrRequest.department) {
+        // Find the department by name to get its ID
+        const department = await prisma.department.findFirst({
+          where: { name: hrRequest.department }
+        })
+        
+        if (department) {
+          await prisma.job.create({
+            data: {
+              title: `HR Management - ${hrRequest.department}`,
+              summary: `HR management role for ${hrRequest.department} department`,
+              departmentId: department.id,
+              createdById: newHR.id,
+              employmentTypes: ['FULL_TIME'],
+              requiredSkills: ['HR Management', 'Recruitment'],
+              applicationDeadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+              isActive: false // This is just for establishing the relationship, not an active job posting
+            }
+          })
+        }
+      }
 
       // Update HR request status
       const updatedRequest = await prisma.hRRequest.update({
@@ -89,7 +127,14 @@ export async function PUT(
 
   } catch (error) {
     console.error('Error updating HR request:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    })
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }
 

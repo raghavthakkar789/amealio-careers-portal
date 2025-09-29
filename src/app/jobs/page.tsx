@@ -39,7 +39,17 @@ export default function JobsPage() {
         if (response.ok) {
           const data = await response.json()
           // Transform the data to match the expected interface
-          const transformedJobs = data.jobs.map((job: any) => ({
+          const transformedJobs = data.jobs.map((job: {
+            id: string
+            title: string
+            department?: { name: string }
+            employmentTypes: string[]
+            jobDescription?: { location?: string; remoteWork?: boolean }
+            createdAt: string
+            requiredSkills?: string[]
+            summary?: string
+            applicationDeadline?: string
+          }) => ({
             id: job.id,
             title: job.title,
             department: job.department?.name || 'Unknown',

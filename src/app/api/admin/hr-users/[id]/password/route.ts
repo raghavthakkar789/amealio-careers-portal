@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import bcrypt from 'bcryptjs'
 
 // PUT /api/admin/hr-users/[id]/password - Change HR user password
 export async function PUT(
@@ -38,12 +39,13 @@ export async function PUT(
       return NextResponse.json({ error: 'User is not an HR member' }, { status: 400 })
     }
 
-    // Update password
-    // Note: In production, this should be hashed using bcrypt or similar
+    // Hash password before storing
+    const hashedPassword = await bcrypt.hash(password.trim(), 12)
+    
     await prisma.user.update({
       where: { id },
       data: {
-        password: password.trim()
+        password: hashedPassword
       }
     })
 

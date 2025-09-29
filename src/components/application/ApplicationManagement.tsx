@@ -140,7 +140,7 @@ export default function ApplicationManagement({
   }
 
   const getStatusDisplay = (status: string) => {
-    return applicationStatusService.getStatusDisplay(status as any)
+    return applicationStatusService.getStatusDisplay(status as 'PENDING' | 'UNDER_REVIEW' | 'INTERVIEW_SCHEDULED' | 'INTERVIEW_COMPLETED' | 'ACCEPTED' | 'REJECTED' | 'HIRED')
   }
 
   const getStatusIcon = (status: string) => {
@@ -289,8 +289,9 @@ export default function ApplicationManagement({
                       </div>
 
                       <div className="flex flex-col gap-2 ml-4">
-                        {/* Show View Profile button only for HR and ADMIN */}
-                        {(userRole === 'HR' || userRole === 'ADMIN') && (
+                        {/* Show View Profile button for HR, ADMIN, and APPLICANT (own applications) */}
+                        {(userRole === 'HR' || userRole === 'ADMIN' || 
+                          (userRole === 'APPLICANT' && application.applicant?.id === session?.user?.id)) && (
                           <Button
                             onClick={() => handleViewProfile(application.id)}
                             variant="secondary"

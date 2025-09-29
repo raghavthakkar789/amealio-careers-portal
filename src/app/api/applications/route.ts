@@ -3,9 +3,11 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { applicationStatusService } from '@/lib/application-status-service'
+import { promises as fs } from 'fs'
+import path from 'path'
 
 // GET /api/applications - Get applications based on user role
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions)
     
@@ -22,7 +24,12 @@ export async function GET(request: NextRequest) {
     }
 
     const user = session.user
-    let whereClause: any = {}
+    let whereClause: {
+      job?: {
+        createdById: string
+      }
+      applicantId?: string
+    } = {}
 
     // Filter applications based on user role
     if (user.role === 'ADMIN') {
@@ -120,10 +127,40 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Job not found or inactive' }, { status: 404 })
     }
 
-    // Handle file upload (for now, just store filename)
+    // Handle file uploads
+    const uploadsDir = path.join(process.cwd(), 'uploads')
+    
+    // Ensure uploads directory exists
+    try {
+      await fs.access(uploadsDir)
+    } catch {
+      await fs.mkdir(uploadsDir, { recursive: true })
+    }
+
     let resumeUrl = 'resume.pdf' // Default
+    const additionalFiles: string[] = []
+    
+    // Handle resume file
     if (resumeFile && resumeFile.size > 0) {
-      resumeUrl = `${applicantId}_${Date.now()}_resume.pdf`
+      const resumeFileName = `${applicantId}_${Date.now()}_resume.${resumeFile.name.split('.').pop()}`
+      const resumePath = path.join(uploadsDir, resumeFileName)
+      
+      const resumeBuffer = await resumeFile.arrayBuffer()
+      await fs.writeFile(resumePath, Buffer.from(resumeBuffer))
+      resumeUrl = resumeFileName
+    }
+
+    // Handle additional files
+    for (let i = 0; i < 10; i++) { // Support up to 10 additional files
+      const additionalFile = formData.get(`additionalFile_${i}`) as File
+      if (additionalFile && additionalFile.size > 0) {
+        const additionalFileName = `${applicantId}_${Date.now()}_additional_${i}.${additionalFile.name.split('.').pop()}`
+        const additionalPath = path.join(uploadsDir, additionalFileName)
+        
+        const additionalBuffer = await additionalFile.arrayBuffer()
+        await fs.writeFile(additionalPath, Buffer.from(additionalBuffer))
+        additionalFiles.push(additionalFileName)
+      }
     }
 
     // Create new application
@@ -148,7 +185,7 @@ export async function POST(request: NextRequest) {
         jobTitle: job.title,
         employmentType: 'FULL_TIME', // Default, can be made dynamic
         resumeUrl,
-        additionalFiles: [], // TODO: Handle additional files
+        additionalFiles: additionalFiles,
         coverLetter: coverLetter || '',
         expectedSalary: expectedSalary || 'No base',
         experience: experience || '',

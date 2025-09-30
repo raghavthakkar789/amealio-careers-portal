@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 // GET /api/hr-requests - Get HR requests based on user role
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -46,7 +45,7 @@ export async function GET() {
 // POST /api/hr-requests - Create new HR request
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     
     if (!session || session.user?.role !== 'HR') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

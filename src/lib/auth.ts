@@ -1,12 +1,12 @@
-import { NextAuthOptions } from 'next-auth'
-import CredentialsProvider from 'next-auth/providers/credentials'
+import NextAuth from 'next-auth'
+import Credentials from 'next-auth/providers/credentials'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 
-export const authOptions: NextAuthOptions = {
+export const { handlers, auth, signIn, signOut } = NextAuth({
   debug: process.env.NODE_ENV === 'development',
   providers: [
-    CredentialsProvider({
+    Credentials({
       name: 'credentials',
       credentials: {
         email: { label: 'Email', type: 'email' },
@@ -21,7 +21,7 @@ export const authOptions: NextAuthOptions = {
           // Check database for user
           const user = await prisma.user.findUnique({
             where: { 
-              email: credentials.email,
+              email: credentials.email as string,
               // isActive: true // Commented out account verification requirement
             }
           })
@@ -31,7 +31,7 @@ export const authOptions: NextAuthOptions = {
             return null
           }
           
-          const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
+          const isPasswordValid = await bcrypt.compare(credentials.password as string, user.password)
           if (!isPasswordValid) {
             console.log('Invalid password for user:', credentials.email)
             return null
@@ -59,9 +59,11 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = user.role
-        token.id = user.id
-        token.linkedinProfile = user.linkedinProfile
+        token.role = user.role as string
+        token.id = user.id as string
+        if (user.linkedinProfile) {
+          token.linkedinProfile = user.linkedinProfile
+        }
       }
       return token
     },
@@ -78,4 +80,4 @@ export const authOptions: NextAuthOptions = {
     signIn: '/login',
   },
   secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-for-development',
-}
+})

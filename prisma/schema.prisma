@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,6 +5,226 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model Department {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  jobs        Job[]
+
+  @@map("departments")
+}
+
+model User {
+  id                 String               @id @default(cuid())
+  email              String               @unique
+  password           String
+  firstName          String
+  lastName           String
+  role               UserRole             @default(APPLICANT)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  dateOfBirth        DateTime?
+  phoneNumber        String?
+  address            String?
+  linkedinProfile    String?
+  profileImage       String?
+  isActive           Boolean              @default(true)
+  applicationHistory ApplicationHistory[] @relation("ApplicationHistoryPerformer")
+  applications       Application[]
+  adminReviews       InterviewReview[]    @relation("AdminReviewer")
+  hrReviews          InterviewReview[]    @relation("HRReviewer")
+  interviews         Interview[]
+  hrJobs             Job[]                @relation("HRCreator")
+  notifications      Notification[]
+
+  @@map("users")
+}
+
+model Job {
+  id                  String           @id @default(cuid())
+  title               String
+  departmentId        String
+  summary             String?
+  employmentTypes     EmploymentType[]
+  applicationDeadline DateTime?
+  requiredSkills      String[]
+  isActive            Boolean          @default(true)
+  isDraft             Boolean          @default(false)
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  createdById         String
+  applications        Application[]
+  jobDescription      JobDescription?
+  createdBy           User             @relation("HRCreator", fields: [createdById], references: [id])
+  department          Department       @relation(fields: [departmentId], references: [id])
+
+  @@map("jobs")
+}
+
+model JobDescription {
+  id               String   @id @default(cuid())
+  jobId            String   @unique
+  description      String
+  responsibilities String[]
+  requirements     String[]
+  benefits         String[]
+  location         String?
+  remoteWork       Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  job              Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@map("job_descriptions")
+}
+
+model Application {
+  id              String               @id @default(cuid())
+  jobTitle        String
+  employmentType  EmploymentType
+  resumeUrl       String
+  additionalFiles String[]
+  coverLetter     String?
+  status          ApplicationStatus    @default(PENDING)
+  submittedAt     DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  applicantId     String
+  jobId           String
+  expectedSalary  String?              @default("No base")
+  availability    String?
+  education       String?
+  experience      String?
+  references      String?
+  skills          String?
+  history         ApplicationHistory[]
+  applicant       User                 @relation(fields: [applicantId], references: [id])
+  job             Job                  @relation(fields: [jobId], references: [id])
+  interviews      Interview[]
+  notifications   Notification[]
+
+  @@map("applications")
+}
+
+model Interview {
+  id            String            @id @default(cuid())
+  scheduledAt   DateTime
+  interviewType InterviewType
+  meetingLink   String?
+  location      String?
+  status        InterviewStatus   @default(SCHEDULED)
+  notes         String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  applicationId String
+  candidateId   String
+  reviews       InterviewReview[]
+  application   Application       @relation(fields: [applicationId], references: [id])
+  candidate     User              @relation(fields: [candidateId], references: [id])
+  notifications Notification[]
+
+  @@map("interviews")
+}
+
+model InterviewReview {
+  id              String    @id @default(cuid())
+  technicalSkills Int
+  communication   Int
+  culturalFit     Int
+  overallRating   Int
+  comments        String
+  recommendation  String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  interviewId     String
+  hrReviewerId    String
+  adminReviewerId String?
+  adminReviewer   User?     @relation("AdminReviewer", fields: [adminReviewerId], references: [id])
+  hrReviewer      User      @relation("HRReviewer", fields: [hrReviewerId], references: [id])
+  interview       Interview @relation(fields: [interviewId], references: [id])
+
+  @@map("interview_reviews")
+}
+
+model Notification {
+  id            String       @id @default(cuid())
+  title         String
+  message       String
+  type          String
+  isRead        Boolean      @default(false)
+  createdAt     DateTime     @default(now())
+  userId        String
+  applicationId String?
+  interviewId   String?
+  application   Application? @relation(fields: [applicationId], references: [id])
+  interview     Interview?   @relation(fields: [interviewId], references: [id])
+  user          User         @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}
+
+model EmailTemplate {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  subject   String
+  body      String
+  variables String[]
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("email_templates")
+}
+
+model SystemSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("system_settings")
+}
+
+model ApplicationHistory {
+  id              String             @id @default(cuid())
+  applicationId   String
+  fromStatus      ApplicationStatus?
+  toStatus        ApplicationStatus
+  action          String
+  performedBy     String
+  performedByName String
+  performedByRole UserRole
+  notes           String?
+  createdAt       DateTime           @default(now())
+  application     Application        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  performer       User               @relation("ApplicationHistoryPerformer", fields: [performedBy], references: [id])
+
+  @@map("application_history")
+}
+
+model HRRequest {
+  id              String          @id @default(cuid())
+  firstName       String
+  lastName        String
+  email           String          @unique
+  phoneNumber     String?
+  department      String?
+  reason          String?
+  status          HRRequestStatus @default(PENDING)
+  requestedBy     String
+  requestedByName String
+  approvedBy      String?
+  approvedByName  String?
+  rejectionReason String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  approvedAt      DateTime?
+
+  @@map("hr_requests")
 }
 
 enum UserRole {
@@ -50,247 +267,4 @@ enum HRRequestStatus {
   PENDING
   APPROVED
   REJECTED
-}
-
-model Department {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  description String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  jobs        Job[]
-
-  @@map("departments")
-}
-
-model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  password      String
-  firstName     String
-  lastName      String
-  role          UserRole @default(APPLICANT)
-  isActive      Boolean  @default(true)
-  // emailVerified DateTime? // Commented out email verification field
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  // Applicant specific fields
-  dateOfBirth   DateTime?
-  phoneNumber   String?
-  address       String?
-  linkedinProfile String?
-  
-  // Profile image
-  profileImage  String?
-
-  // Relations
-  applications  Application[]
-  interviews    Interview[]
-  hrReviews     InterviewReview[] @relation("HRReviewer")
-  adminReviews  InterviewReview[] @relation("AdminReviewer")
-  notifications Notification[]
-  hrJobs        Job[] @relation("HRCreator")
-  applicationHistory ApplicationHistory[] @relation("ApplicationHistoryPerformer")
-
-  @@map("users")
-}
-
-model Job {
-  id                String           @id @default(cuid())
-  title             String
-  departmentId      String
-  summary           String?
-  employmentTypes   EmploymentType[]
-  applicationDeadline DateTime?
-  requiredSkills    String[]
-  isActive          Boolean          @default(true)
-  isDraft           Boolean          @default(false)
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-
-  // Relations
-  department        Department       @relation(fields: [departmentId], references: [id])
-  applications      Application[]
-  jobDescription    JobDescription?
-  createdBy         User             @relation("HRCreator", fields: [createdById], references: [id])
-  createdById       String
-
-  @@map("jobs")
-}
-
-model JobDescription {
-  id                String           @id @default(cuid())
-  jobId             String           @unique
-  description       String
-  responsibilities  String[]
-  requirements      String[]
-  benefits          String[]
-  location          String?
-  remoteWork        Boolean          @default(false)
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-
-  // Relations
-  job               Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
-
-  @@map("job_descriptions")
-}
-
-model Application {
-  id                String            @id @default(cuid())
-  jobTitle          String
-  employmentType    EmploymentType
-  resumeUrl         String
-  additionalFiles   String[]
-  coverLetter       String?
-  expectedSalary    String?           @default("No base")
-  experience        String?
-  education         String?
-  skills            String?
-  availability      String?
-  references        String?
-  status            ApplicationStatus @default(PENDING)
-  submittedAt       DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-
-  // Relations
-  applicant         User              @relation(fields: [applicantId], references: [id])
-  applicantId       String
-  job               Job               @relation(fields: [jobId], references: [id])
-  jobId             String
-  interviews        Interview[]
-  notifications     Notification[]
-  history           ApplicationHistory[]
-
-  @@map("applications")
-}
-
-model Interview {
-  id                String            @id @default(cuid())
-  scheduledAt       DateTime
-  interviewType     InterviewType
-  meetingLink       String?
-  location          String?
-  status            InterviewStatus   @default(SCHEDULED)
-  notes             String?
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-
-  // Relations
-  application       Application       @relation(fields: [applicationId], references: [id])
-  applicationId     String
-  candidate         User              @relation(fields: [candidateId], references: [id])
-  candidateId       String
-  reviews           InterviewReview[]
-  notifications     Notification[]
-
-  @@map("interviews")
-}
-
-model InterviewReview {
-  id                String   @id @default(cuid())
-  technicalSkills   Int      // 1-5 rating
-  communication     Int      // 1-5 rating
-  culturalFit       Int      // 1-5 rating
-  overallRating     Int      // 1-5 rating
-  comments          String
-  recommendation    String   // Proceed/Reject/Another Round
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  // Relations
-  interview         Interview @relation(fields: [interviewId], references: [id])
-  interviewId       String
-  hrReviewer        User      @relation("HRReviewer", fields: [hrReviewerId], references: [id])
-  hrReviewerId      String
-  adminReviewer     User?     @relation("AdminReviewer", fields: [adminReviewerId], references: [id])
-  adminReviewerId   String?
-
-  @@map("interview_reviews")
-}
-
-model Notification {
-  id                String   @id @default(cuid())
-  title             String
-  message           String
-  type              String   // email, in-app
-  isRead            Boolean  @default(false)
-  createdAt         DateTime @default(now())
-
-  // Relations
-  user              User     @relation(fields: [userId], references: [id])
-  userId            String
-  application       Application? @relation(fields: [applicationId], references: [id])
-  applicationId     String?
-  interview         Interview? @relation(fields: [interviewId], references: [id])
-  interviewId       String?
-
-  @@map("notifications")
-}
-
-model EmailTemplate {
-  id                String   @id @default(cuid())
-  name              String   @unique
-  subject           String
-  body              String
-  variables         String[] // Available template variables
-  isActive          Boolean  @default(true)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  @@map("email_templates")
-}
-
-model SystemSetting {
-  id                String   @id @default(cuid())
-  key               String   @unique
-  value             String
-  description       String?
-  updatedAt         DateTime @updatedAt
-
-  @@map("system_settings")
-}
-
-model ApplicationHistory {
-  id                String            @id @default(cuid())
-  applicationId     String
-  fromStatus        ApplicationStatus?
-  toStatus          ApplicationStatus
-  action            String            // e.g., "REVIEW", "SCHEDULE_INTERVIEW", "HIRE"
-  performedBy       String            // User ID who performed the action
-  performedByName   String            // Name of the user who performed the action
-  performedByRole   UserRole          // Role of the user who performed the action
-  notes             String?           // Additional notes about the status change
-  createdAt         DateTime          @default(now())
-
-  // Relations
-  application       Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  performer         User              @relation("ApplicationHistoryPerformer", fields: [performedBy], references: [id])
-
-  @@map("application_history")
-}
-
-model HRRequest {
-  id                String          @id @default(cuid())
-  firstName         String
-  lastName          String
-  email             String          @unique
-  phoneNumber       String?
-  department        String?
-  reason            String?
-  status            HRRequestStatus @default(PENDING)
-  requestedBy       String          // ID of the HR who requested
-  requestedByName   String          // Name of the HR who requested
-  approvedBy        String?         // ID of the Admin who approved
-  approvedByName    String?         // Name of the Admin who approved
-  rejectionReason   String?
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
-  approvedAt        DateTime?
-
-  @@map("hr_requests")
 }

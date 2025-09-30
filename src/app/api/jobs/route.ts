@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 // GET /api/jobs - Get jobs based on user role
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     
     let whereClause: {
       createdById?: string
@@ -42,6 +41,7 @@ export async function GET() {
       where: whereClause,
       include: {
         department: true,
+        jobDescription: true,
         createdBy: {
           select: {
             firstName: true,
@@ -71,7 +71,7 @@ export async function GET() {
 // POST /api/jobs - Create new job
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     
     if (!session || (session.user?.role !== 'HR' && session.user?.role !== 'ADMIN')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

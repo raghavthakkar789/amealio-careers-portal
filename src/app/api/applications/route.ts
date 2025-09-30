@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { applicationStatusService } from '@/lib/application-status-service'
 import { promises as fs } from 'fs'
@@ -9,7 +8,7 @@ import path from 'path'
 // GET /api/applications - Get applications based on user role
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     
     console.log('Session in applications API:', session ? {
       user: {
@@ -70,7 +69,7 @@ export async function GET() {
 // POST /api/applications - Create new application
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     
     console.log('Session:', session ? { 
       user: { 

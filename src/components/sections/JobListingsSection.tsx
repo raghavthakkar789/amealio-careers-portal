@@ -30,8 +30,15 @@ export function JobListingsSection() {
     const fetchJobs = async () => {
       try {
         const response = await fetch('/api/jobs')
+        
         if (response.ok) {
           const data = await response.json()
+          
+          if (!data.jobs || !Array.isArray(data.jobs)) {
+            console.error('Invalid jobs data structure:', data)
+            return
+          }
+          
           // Transform the data to match the expected interface
           const transformedJobs = data.jobs.map((job: {
             id: string
@@ -57,7 +64,7 @@ export function JobListingsSection() {
           }))
           setJobs(transformedJobs)
         } else {
-          console.error('Failed to fetch jobs')
+          console.error('Failed to fetch jobs - response not ok:', response.status, response.statusText)
         }
       } catch (error) {
         console.error('Error fetching jobs:', error)

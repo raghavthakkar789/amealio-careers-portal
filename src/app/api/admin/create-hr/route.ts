@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
+import { auth } from '@/lib/auth'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
-import { authOptions } from '@/lib/auth'
 import { validateEmail } from '@/lib/utils'
 
 export async function POST(request: NextRequest) {
   try {
     // Check if user is authenticated and is admin
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     
     if (!session || session.user?.role !== 'ADMIN') {
       return NextResponse.json(

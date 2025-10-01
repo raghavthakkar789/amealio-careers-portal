@@ -17,14 +17,12 @@ import {
   PencilIcon,
   TrashIcon,
   PlusIcon,
-  CheckCircleIcon,
   XCircleIcon,
   ClockIcon,
   StarIcon,
   ArrowLeftIcon,
   ShieldCheckIcon,
   UserCircleIcon,
-  CalendarIcon,
   CurrencyDollarIcon,
   AcademicCapIcon,
   MapPinIcon,
@@ -60,6 +58,34 @@ export default function AdminOversightPage() {
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [showJobModal, setShowJobModal] = useState(false)
   const [editingJob, setEditingJob] = useState<Job | null>(null)
+  const [newJobData, setNewJobData] = useState({
+    title: '',
+    departmentId: '',
+    summary: '',
+    employmentTypes: [] as string[],
+    requiredSkills: [] as string[],
+    applicationDeadline: '',
+    description: '',
+    responsibilities: [] as string[],
+    requirements: [] as string[],
+    benefits: [] as string[],
+    location: '',
+    remoteWork: false
+  })
+  
+  // Job Management states
+  const [jobSearchTerm, setJobSearchTerm] = useState('')
+  const [jobStatusFilter, setJobStatusFilter] = useState('')
+  const [jobDepartmentFilter, setJobDepartmentFilter] = useState('')
+  const [jobCurrentPage, setJobCurrentPage] = useState(1)
+  const [jobItemsPerPage] = useState(10)
+  
+  // Applications Management states
+  const [appSearchTerm, setAppSearchTerm] = useState('')
+  const [appStatusFilter, setAppStatusFilter] = useState('')
+  const [appDepartmentFilter, setAppDepartmentFilter] = useState('')
+  const [appCurrentPage, setAppCurrentPage] = useState(1)
+  const [appItemsPerPage] = useState(10)
 
   useEffect(() => {
     if (status === 'loading') return
@@ -195,6 +221,108 @@ export default function AdminOversightPage() {
     }
   }
 
+
+  const handleUpdateApplicationStatus = async (applicationId: string, newStatus: string, notes?: string) => {
+    try {
+      const response = await fetch(`/api/applications/${applicationId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: newStatus,
+          action: 'UPDATE_STATUS',
+          notes: notes || `Status updated to ${newStatus} by admin`
+        }),
+      })
+
+      if (response.ok) {
+        toast.success('Application status updated successfully')
+        fetchApplications()
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to update application status')
+      }
+    } catch (error) {
+      console.error('Error updating application status:', error)
+      toast.error('Failed to update application status')
+    }
+  }
+
+  const handleToggleJobStatus = async (jobId: string, currentStatus: boolean) => {
+    try {
+      const response = await fetch(`/api/jobs/${jobId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          isActive: !currentStatus
+        }),
+      })
+
+      if (response.ok) {
+        toast.success(`Job ${!currentStatus ? 'activated' : 'deactivated'} successfully`)
+        fetchJobs()
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to update job status')
+      }
+    } catch (error) {
+      console.error('Error updating job status:', error)
+      toast.error('Failed to update job status')
+    }
+  }
+
+  const handleEditJob = async (jobId: string, jobData: typeof newJobData) => {
+    try {
+      const response = await fetch(`/api/jobs/${jobId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(jobData),
+      })
+
+      if (response.ok) {
+        toast.success('Job updated successfully')
+        fetchJobs()
+        setShowJobModal(false)
+        setEditingJob(null)
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to update job')
+      }
+    } catch (error) {
+      console.error('Error updating job:', error)
+      toast.error('Failed to update job')
+    }
+  }
+
+  const handleCreateJob = async (jobData: typeof newJobData) => {
+    try {
+      const response = await fetch('/api/jobs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(jobData),
+      })
+
+      if (response.ok) {
+        toast.success('Job created successfully')
+        fetchJobs()
+        setShowJobModal(false)
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to create job')
+      }
+    } catch (error) {
+      console.error('Error creating job:', error)
+      toast.error('Failed to create job')
+    }
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'HIRED': return 'bg-green-100 text-green-800'
@@ -215,6 +343,98 @@ export default function AdminOversightPage() {
     return applications.filter(app => 
       ['PENDING', 'UNDER_REVIEW', 'INTERVIEW_SCHEDULED', 'INTERVIEW_COMPLETED'].includes(app.status)
     )
+  }
+
+  // Job Management functions
+  const getFilteredJobs = () => {
+    let filtered = [...jobs]
+
+    if (jobSearchTerm) {
+      filtered = filtered.filter(job => 
+        job.title?.toLowerCase().includes(jobSearchTerm.toLowerCase()) ||
+        job.department?.name?.toLowerCase().includes(jobSearchTerm.toLowerCase()) ||
+        job.createdBy?.firstName?.toLowerCase().includes(jobSearchTerm.toLowerCase()) ||
+        job.createdBy?.lastName?.toLowerCase().includes(jobSearchTerm.toLowerCase())
+      )
+    }
+
+    if (jobStatusFilter) {
+      if (jobStatusFilter === 'active') {
+        filtered = filtered.filter(job => job.isActive)
+      } else if (jobStatusFilter === 'inactive') {
+        filtered = filtered.filter(job => !job.isActive)
+      } else if (jobStatusFilter === 'draft') {
+        filtered = filtered.filter(job => job.isDraft)
+      }
+    }
+
+    if (jobDepartmentFilter) {
+      filtered = filtered.filter(job => job.department?.name === jobDepartmentFilter)
+    }
+
+    return filtered
+  }
+
+  const getPaginatedJobs = () => {
+    const filtered = getFilteredJobs()
+    const startIndex = (jobCurrentPage - 1) * jobItemsPerPage
+    const endIndex = startIndex + jobItemsPerPage
+    return filtered.slice(startIndex, endIndex)
+  }
+
+  const getTotalJobPages = () => {
+    return Math.ceil(getFilteredJobs().length / jobItemsPerPage)
+  }
+
+  const getUniqueDepartments = () => {
+    const departments = jobs.map(job => job.department?.name).filter(Boolean)
+    return Array.from(new Set(departments))
+  }
+
+  // Applications Management functions
+  const getFilteredApplications = () => {
+    let filtered = [...applications]
+
+    if (appSearchTerm) {
+      filtered = filtered.filter(app => 
+        app.applicant?.firstName?.toLowerCase().includes(appSearchTerm.toLowerCase()) ||
+        app.applicant?.lastName?.toLowerCase().includes(appSearchTerm.toLowerCase()) ||
+        app.jobTitle?.toLowerCase().includes(appSearchTerm.toLowerCase()) ||
+        app.job?.department?.name?.toLowerCase().includes(appSearchTerm.toLowerCase()) ||
+        app.applicant?.email?.toLowerCase().includes(appSearchTerm.toLowerCase())
+      )
+    }
+
+    if (appStatusFilter) {
+      filtered = filtered.filter(app => app.status === appStatusFilter)
+    }
+
+    if (appDepartmentFilter) {
+      filtered = filtered.filter(app => app.job?.department?.name === appDepartmentFilter)
+    }
+
+    return filtered
+  }
+
+  const getPaginatedApplications = () => {
+    const filtered = getFilteredApplications()
+    const startIndex = (appCurrentPage - 1) * appItemsPerPage
+    const endIndex = startIndex + appItemsPerPage
+    return filtered.slice(startIndex, endIndex)
+  }
+
+  const getTotalApplicationPages = () => {
+    return Math.ceil(getFilteredApplications().length / appItemsPerPage)
+  }
+
+  const getUniqueApplicationDepartments = () => {
+    const departments = applications.map(app => app.job?.department?.name).filter(Boolean)
+    return Array.from(new Set(departments))
+  }
+
+  const getUniqueApplicationStatuses = () => {
+    const statuses = applications.map(app => app.status).filter(Boolean)
+    return Array.from(new Set(statuses))
   }
 
   if (status === 'loading' || loading) {
@@ -263,7 +483,7 @@ export default function AdminOversightPage() {
               { id: 'applicants', label: 'All Applicants', icon: UsersIcon },
               { id: 'applications', label: 'Total Applications', icon: DocumentTextIcon },
               { id: 'pending', label: 'Pending Reviews', icon: ClockIcon },
-              { id: 'hired', label: 'Hired Reviews', icon: CheckCircleIcon },
+              { id: 'hired', label: 'Hired Reviews', icon: UserIcon },
               { id: 'rejected', label: 'Rejected Reviews', icon: XCircleIcon },
               { id: 'hr-performance', label: 'HR Performance', icon: UserGroupIcon },
               { id: 'job-management', label: 'Job Management', icon: BriefcaseIcon }
@@ -444,7 +664,54 @@ export default function AdminOversightPage() {
               className="space-y-6"
             >
               <div className="card">
-                <h3 className="text-xl font-semibold text-text-high mb-6">All Applications</h3>
+                {/* Search and Filters */}
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-semibold text-text-high">All Applications</h3>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="text"
+                      placeholder="Search applications..."
+                      value={appSearchTerm}
+                      onChange={(e) => {
+                        setAppSearchTerm(e.target.value)
+                        setAppCurrentPage(1)
+                      }}
+                      className="px-3 py-2 bg-bg-800 border border-border rounded-lg text-text-high placeholder-text-mid focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    <select
+                      value={appStatusFilter}
+                      onChange={(e) => {
+                        setAppStatusFilter(e.target.value)
+                        setAppCurrentPage(1)
+                      }}
+                      className="px-3 py-2 bg-bg-800 border border-border rounded-lg text-text-high focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                      <option value="">All Status</option>
+                      {getUniqueApplicationStatuses().map(status => (
+                        <option key={status} value={status}>
+                          {status.replace('_', ' ')}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={appDepartmentFilter}
+                      onChange={(e) => {
+                        setAppDepartmentFilter(e.target.value)
+                        setAppCurrentPage(1)
+                      }}
+                      className="px-10 py-2 bg-bg-800 border border-border rounded-lg text-text-high focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                      <option value="">All Departments</option>
+                      {getUniqueApplicationDepartments().map(dept => (
+                        <option key={dept} value={dept}>{dept}</option>
+                      ))}
+                    </select>
+                    <div className="text-sm text-text-mid">
+                      {getFilteredApplications().length} of {applications.length} applications
+                    </div>
+                  </div>
+                </div>
+
                 {applications.length === 0 ? (
                   <div className="text-center py-12">
                     <DocumentTextIcon className="w-16 h-16 text-text-mid mx-auto mb-4" />
@@ -464,7 +731,7 @@ export default function AdminOversightPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {applications.map((application, index) => (
+                        {getPaginatedApplications().map((application, index) => (
                           <motion.tr
                             key={application.id}
                             initial={{ opacity: 0, y: 20 }}
@@ -479,7 +746,7 @@ export default function AdminOversightPage() {
                                 </div>
                                 <div>
                                   <p className="font-medium text-text-high">
-                                    {application.jobTitle}
+                                  {application.applicant.firstName} {application.applicant.lastName}
                                   </p>
                                   <p className="text-sm text-text-mid">
                                     {application.expectedSalary || 'No salary specified'}
@@ -508,17 +775,19 @@ export default function AdminOversightPage() {
                                   View
                                 </Button>
                                 {!['REJECTED', 'HIRED'].includes(application.status) && (
-                                  <Button
-                                    onClick={() => {
-                                      const reason = prompt('Enter rejection reason:')
-                                      if (reason) handleRejectApplicant(application.id, reason)
-                                    }}
-                                    variant="secondary"
-                                    className="btn-secondary text-xs px-2 py-1 text-red-600 hover:text-red-700"
-                                  >
-                                    <XCircleIcon className="w-3 h-3 mr-1" />
-                                    Reject
-                                  </Button>
+                                  <>
+                                    <Button
+                                      onClick={() => {
+                                        const reason = prompt('Enter rejection reason:')
+                                        if (reason) handleRejectApplicant(application.id, reason)
+                                      }}
+                                      variant="secondary"
+                                      className="btn-secondary text-xs px-2 py-1 text-red-600 hover:text-red-700"
+                                    >
+                                      <XCircleIcon className="w-3 h-3 mr-1" />
+                                      Reject
+                                    </Button>
+                                  </>
                                 )}
                               </div>
                             </td>
@@ -526,6 +795,36 @@ export default function AdminOversightPage() {
                         ))}
                       </tbody>
                     </table>
+                    
+                    {/* Pagination */}
+                    {getTotalApplicationPages() > 1 && (
+                      <div className="flex items-center justify-between mt-6">
+                        <div className="text-sm text-text-mid">
+                          Showing {((appCurrentPage - 1) * appItemsPerPage) + 1} to {Math.min(appCurrentPage * appItemsPerPage, getFilteredApplications().length)} of {getFilteredApplications().length} results
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            onClick={() => setAppCurrentPage(prev => Math.max(1, prev - 1))}
+                            disabled={appCurrentPage === 1}
+                            variant="secondary"
+                            className="btn-secondary text-xs px-3 py-1"
+                          >
+                            Previous
+                          </Button>
+                          <span className="text-sm text-text-mid">
+                            Page {appCurrentPage} of {getTotalApplicationPages()}
+                          </span>
+                          <Button
+                            onClick={() => setAppCurrentPage(prev => Math.min(getTotalApplicationPages(), prev + 1))}
+                            disabled={appCurrentPage === getTotalApplicationPages()}
+                            variant="secondary"
+                            className="btn-secondary text-xs px-3 py-1"
+                          >
+                            Next
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -579,7 +878,7 @@ export default function AdminOversightPage() {
                                   </div>
                                   <div>
                                     <p className="font-medium text-text-high">
-                                      {application.jobTitle}
+                                      {application.applicant.firstName} {application.applicant.lastName}
                                     </p>
                                     <p className="text-sm text-text-mid">
                                       {application.expectedSalary || 'No salary specified'}
@@ -648,7 +947,7 @@ export default function AdminOversightPage() {
                 <h3 className="text-xl font-semibold text-text-high mb-6">Hired Applicants</h3>
                 {getApplicationsByStatus('HIRED').length === 0 ? (
                   <div className="text-center py-12">
-                    <CheckCircleIcon className="w-16 h-16 text-text-mid mx-auto mb-4" />
+                    <UserIcon className="w-16 h-16 text-text-mid mx-auto mb-4" />
                     <p className="text-text-mid">No hired applicants yet</p>
                   </div>
                 ) : (
@@ -675,11 +974,11 @@ export default function AdminOversightPage() {
                             <td className="py-3 px-4">
                               <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                                  <CheckCircleIcon className="w-5 h-5 text-white" />
+                                  <UserIcon className="w-5 h-5 text-white" />
                                 </div>
                                 <div>
                                   <p className="font-medium text-text-high">
-                                    {application.jobTitle}
+                                    {application.applicant.firstName} {application.applicant.lastName}
                                   </p>
                                   <p className="text-sm text-text-mid">
                                     {application.expectedSalary || 'No salary specified'}
@@ -755,7 +1054,7 @@ export default function AdminOversightPage() {
                                 </div>
                                 <div>
                                   <p className="font-medium text-text-high">
-                                    {application.jobTitle}
+                                      {application.applicant.firstName} {application.applicant.lastName}
                                   </p>
                                   <p className="text-sm text-text-mid">
                                     {application.expectedSalary || 'No salary specified'}
@@ -873,6 +1172,20 @@ export default function AdminOversightPage() {
                 <Button
                   onClick={() => {
                     setEditingJob(null)
+                    setNewJobData({
+                      title: '',
+                      departmentId: '',
+                      summary: '',
+                      employmentTypes: [],
+                      requiredSkills: [],
+                      applicationDeadline: '',
+                      description: '',
+                      responsibilities: [],
+                      requirements: [],
+                      benefits: [],
+                      location: '',
+                      remoteWork: false
+                    })
                     setShowJobModal(true)
                   }}
                   className="btn-primary"
@@ -883,6 +1196,51 @@ export default function AdminOversightPage() {
               </div>
               
               <div className="card">
+                {/* Search and Filters */}
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="text"
+                      placeholder="Search jobs..."
+                      value={jobSearchTerm}
+                      onChange={(e) => {
+                        setJobSearchTerm(e.target.value)
+                        setJobCurrentPage(1)
+                      }}
+                      className="px-3 py-2 bg-bg-800 border border-border rounded-lg text-text-high placeholder-text-mid focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    <select
+                      value={jobStatusFilter}
+                      onChange={(e) => {
+                        setJobStatusFilter(e.target.value)
+                        setJobCurrentPage(1)
+                      }}
+                      className="px-3 py-2 bg-bg-800 border border-border rounded-lg text-text-high focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                      <option value="">All Status</option>
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                      <option value="draft">Draft</option>
+                    </select>
+                    <select
+                      value={jobDepartmentFilter}
+                      onChange={(e) => {
+                        setJobDepartmentFilter(e.target.value)
+                        setJobCurrentPage(1)
+                      }}
+                      className="px-3 py-2 bg-bg-800 border border-border rounded-lg text-text-high focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                      <option value="">All Departments</option>
+                      {getUniqueDepartments().map(dept => (
+                        <option key={dept} value={dept}>{dept}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="text-sm text-text-mid">
+                    {getFilteredJobs().length} of {jobs.length} jobs
+                  </div>
+                </div>
+
                 {jobs.length === 0 ? (
                   <div className="text-center py-12">
                     <BriefcaseIcon className="w-16 h-16 text-text-mid mx-auto mb-4" />
@@ -902,7 +1260,7 @@ export default function AdminOversightPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {jobs.map((job, index) => (
+                        {getPaginatedJobs().map((job, index) => (
                           <motion.tr
                             key={job.id}
                             initial={{ opacity: 0, y: 20 }}
@@ -925,11 +1283,20 @@ export default function AdminOversightPage() {
                               </span>
                             </td>
                             <td className="py-3 px-4">
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                job.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                              }`}>
-                                {job.isActive ? 'Active' : 'Inactive'}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                  job.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {job.isActive ? 'Active' : 'Inactive'}
+                                </span>
+                                <Button
+                                  onClick={() => handleToggleJobStatus(job.id, job.isActive)}
+                                  variant="secondary"
+                                  className="btn-secondary text-xs px-2 py-1"
+                                >
+                                  {job.isActive ? 'Deactivate' : 'Activate'}
+                                </Button>
+                              </div>
                             </td>
                             <td className="py-3 px-4 text-text-mid">
                               {new Date(job.createdAt).toLocaleDateString()}
@@ -961,6 +1328,36 @@ export default function AdminOversightPage() {
                         ))}
                       </tbody>
                     </table>
+                    
+                    {/* Pagination */}
+                    {getTotalJobPages() > 1 && (
+                      <div className="flex items-center justify-between mt-6">
+                        <div className="text-sm text-text-mid">
+                          Showing {((jobCurrentPage - 1) * jobItemsPerPage) + 1} to {Math.min(jobCurrentPage * jobItemsPerPage, getFilteredJobs().length)} of {getFilteredJobs().length} results
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            onClick={() => setJobCurrentPage(prev => Math.max(1, prev - 1))}
+                            disabled={jobCurrentPage === 1}
+                            variant="secondary"
+                            className="btn-secondary text-xs px-3 py-1"
+                          >
+                            Previous
+                          </Button>
+                          <span className="text-sm text-text-mid">
+                            Page {jobCurrentPage} of {getTotalJobPages()}
+                          </span>
+                          <Button
+                            onClick={() => setJobCurrentPage(prev => Math.min(getTotalJobPages(), prev + 1))}
+                            disabled={jobCurrentPage === getTotalJobPages()}
+                            variant="secondary"
+                            className="btn-secondary text-xs px-3 py-1"
+                          >
+                            Next
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -976,6 +1373,139 @@ export default function AdminOversightPage() {
           onClose={handleCloseProfileModal}
           applicationId={selectedApplicationId}
         />
+      )}
+
+      {/* Job Modal */}
+      {showJobModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-bg-850 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-text-high">
+                {editingJob ? 'Edit Job' : 'Create New Job'}
+              </h3>
+              <Button
+                onClick={() => {
+                  setShowJobModal(false)
+                  setEditingJob(null)
+                }}
+                variant="secondary"
+                className="btn-secondary"
+              >
+                <XCircleIcon className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <form onSubmit={(e) => {
+              e.preventDefault()
+              if (editingJob) {
+                handleEditJob(editingJob.id, newJobData)
+              } else {
+                handleCreateJob(newJobData)
+              }
+            }} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-text-high mb-2">Job Title</label>
+                <input
+                  type="text"
+                  value={newJobData.title}
+                  onChange={(e) => setNewJobData({...newJobData, title: e.target.value})}
+                  className="w-full px-3 py-2 bg-bg-800 border border-border rounded-lg text-text-high focus:outline-none focus:ring-2 focus:ring-primary"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-high mb-2">Department</label>
+                <select
+                  value={newJobData.departmentId}
+                  onChange={(e) => setNewJobData({...newJobData, departmentId: e.target.value})}
+                  className="w-full px-3 py-2 bg-bg-800 border border-border rounded-lg text-text-high focus:outline-none focus:ring-2 focus:ring-primary"
+                  required
+                >
+                  <option value="">Select Department</option>
+                  <option value="HR">Human Resources</option>
+                  <option value="ENGINEERING">Engineering</option>
+                  <option value="MARKETING">Marketing</option>
+                  <option value="SALES">Sales</option>
+                  <option value="FINANCE">Finance</option>
+                  <option value="OPERATIONS">Operations</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-high mb-2">Summary</label>
+                <textarea
+                  value={newJobData.summary}
+                  onChange={(e) => setNewJobData({...newJobData, summary: e.target.value})}
+                  className="w-full px-3 py-2 bg-bg-800 border border-border rounded-lg text-text-high focus:outline-none focus:ring-2 focus:ring-primary"
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-high mb-2">Description</label>
+                <textarea
+                  value={newJobData.description}
+                  onChange={(e) => setNewJobData({...newJobData, description: e.target.value})}
+                  className="w-full px-3 py-2 bg-bg-800 border border-border rounded-lg text-text-high focus:outline-none focus:ring-2 focus:ring-primary"
+                  rows={4}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-high mb-2">Location</label>
+                <input
+                  type="text"
+                  value={newJobData.location}
+                  onChange={(e) => setNewJobData({...newJobData, location: e.target.value})}
+                  className="w-full px-3 py-2 bg-bg-800 border border-border rounded-lg text-text-high focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={newJobData.remoteWork}
+                    onChange={(e) => setNewJobData({...newJobData, remoteWork: e.target.checked})}
+                    className="rounded"
+                  />
+                  <span className="text-text-high">Remote Work Available</span>
+                </label>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-high mb-2">Application Deadline</label>
+                <input
+                  type="date"
+                  value={newJobData.applicationDeadline}
+                  onChange={(e) => setNewJobData({...newJobData, applicationDeadline: e.target.value})}
+                  className="w-full px-3 py-2 bg-bg-800 border border-border rounded-lg text-text-high focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <Button
+                  type="submit"
+                  className="btn-primary flex-1"
+                >
+                  {editingJob ? 'Update Job' : 'Create Job'}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setShowJobModal(false)
+                    setEditingJob(null)
+                  }}
+                  variant="secondary"
+                  className="btn-secondary flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   )

@@ -565,7 +565,7 @@ export default function HRDashboard() {
                     ).join(', ') || 'No departments assigned'}
                   </span>
                 ) : (
-                  <span className="text-text-mid">No HRs found</span>
+                  <span className="text-text-mid">Department not assigned so no HRs found.</span>
                 )}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

@@ -20,23 +20,15 @@ import {
   XMarkIcon
 } from '@heroicons/react/24/outline'
 
-interface Admin {
-  id: string
-  firstName: string
-  lastName: string
-  email: string
-  role: string
-  isActive: boolean
-  createdAt: string
-}
+import { AdminUser } from '@/types/admin'
 
 export default function AdminManagementPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [loading, setLoading] = useState(true)
-  const [admins, setAdmins] = useState<Admin[]>([])
+  const [admins, setAdmins] = useState<AdminUser[]>([])
   const [showAddForm, setShowAddForm] = useState(false)
-  const [editingAdmin, setEditingAdmin] = useState<Admin | null>(null)
+  const [editingAdmin, setEditingAdmin] = useState<AdminUser | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     firstName: '',
@@ -121,7 +113,7 @@ export default function AdminManagementPage() {
     }
   }
 
-  const handleEdit = (admin: Admin) => {
+  const handleEdit = (admin: AdminUser) => {
     setEditingAdmin(admin)
     setFormData({
       firstName: admin.firstName,

@@ -28,6 +28,16 @@ import {
   KeyIcon,
   BriefcaseIcon
 } from '@heroicons/react/24/outline'
+import { 
+  Applicant, 
+  HRUser, 
+  Application, 
+  Job, 
+  DashboardStats,
+  HRPerformanceMetrics,
+  DashboardApplicant,
+  DashboardHRUser
+} from '@/types/admin'
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession()
@@ -46,36 +56,30 @@ export default function AdminDashboard() {
       toast.error('Failed to logout. Please try again.')
     }
   }
-  const [applicants, setApplicants] = useState<Array<{
+  const [applicants, setApplicants] = useState<DashboardApplicant[]>([])
+  const [hrUsers, setHrUsers] = useState<DashboardHRUser[]>([])
+  const [pendingHRRequests, setPendingHRRequests] = useState<number>(0)
+  const [adminUsers, setAdminUsers] = useState<{
     id: string;
     name: string;
     email: string;
-    position: string;
-    status: string;
-    applicationDate: string;
-    interviewScore: number;
-    hrRecommendation: string;
-    backgroundCheck: string;
-    referenceCheck: string;
-    experience: string;
-    skills: string[];
-  }>>([])
-  const [hrUsers, setHrUsers] = useState<Array<{
-    id: string;
-    name: string;
-    email: string;
-    department: string;
     createdAt: string;
-    activeJobs: number;
-    totalHires: number;
-  }>>([])
-  const [analytics, setAnalytics] = useState({
+    isActive: boolean;
+  }[]>([])
+  const [analytics, setAnalytics] = useState<DashboardStats>({
+    totalUsers: 0,
+    totalJobs: 0,
     totalApplications: 0,
+    totalInterviews: 0,
+    pendingHRRequests: 0,
+    activeJobs: 0,
+    recentApplications: 0,
+    upcomingInterviews: 0,
     pendingReviews: 0,
     hired: 0,
     rejected: 0,
     averageTimeToHire: 0,
-    departmentStats: {} as Record<string, { applications: number; hired: number; pending: number }>
+    departmentStats: {}
   })
 
   // Authentication check
@@ -88,14 +92,73 @@ export default function AdminDashboard() {
     }
   }, [session, status, router])
 
-  // Mock data - replace with actual API calls
+  // Fetch real data from database
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
       try {
-        // Simulate API calls
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        
+        // Fetch HR users from database
+        const hrResponse = await fetch('/api/admin/hr-performance')
+        if (hrResponse.ok) {
+          const hrData = await hrResponse.json()
+          if (hrData.hrUsers && Array.isArray(hrData.hrUsers)) {
+            const transformedHrUsers = hrData.hrUsers.map((hr: {
+              id: string;
+              firstName: string;
+              lastName: string;
+              email: string;
+              createdAt: string;
+              jobsPosted: number;
+              hiresMade: number;
+            }) => ({
+              id: hr.id,
+              name: `${hr.firstName} ${hr.lastName}`,
+              email: hr.email,
+              department: 'HR', // Default department
+              createdAt: hr.createdAt,
+              activeJobs: hr.jobsPosted,
+              totalHires: hr.hiresMade
+            }))
+            setHrUsers(transformedHrUsers)
+          }
+        }
+
+        // Fetch pending HR requests count
+        const hrRequestsResponse = await fetch('/api/hr-requests')
+        if (hrRequestsResponse.ok) {
+          const hrRequestsData = await hrRequestsResponse.json()
+          if (hrRequestsData.requests && Array.isArray(hrRequestsData.requests)) {
+            const pendingCount = hrRequestsData.requests.filter((request: { status: string }) => 
+              request.status === 'PENDING'
+            ).length
+            setPendingHRRequests(pendingCount)
+          }
+        }
+
+        // Fetch admin users
+        const adminsResponse = await fetch('/api/admin/admins')
+        if (adminsResponse.ok) {
+          const adminsData = await adminsResponse.json()
+          if (adminsData.admins && Array.isArray(adminsData.admins)) {
+            const transformedAdmins = adminsData.admins.map((admin: {
+              id: string;
+              firstName: string;
+              lastName: string;
+              email: string;
+              createdAt: string;
+              isActive: boolean;
+            }) => ({
+              id: admin.id,
+              name: `${admin.firstName} ${admin.lastName}`,
+              email: admin.email,
+              createdAt: admin.createdAt,
+              isActive: admin.isActive
+            }))
+            setAdminUsers(transformedAdmins)
+          }
+        }
+
+        // Keep mock data for applicants for now
         setApplicants([
           {
             id: '1',
@@ -127,29 +190,15 @@ export default function AdminDashboard() {
           }
         ])
 
-        setHrUsers([
-          {
-            id: '1',
-            name: 'Sneha Gupta',
-            email: 'sarah@amealio.com',
-            department: 'HR',
-            createdAt: '2024-01-01',
-            activeJobs: 5,
-            totalHires: 12
-          },
-          {
-            id: '2',
-            name: 'Rahul Kumar',
-            email: 'mike@amealio.com',
-            department: 'HR',
-            createdAt: '2024-01-15',
-            activeJobs: 3,
-            totalHires: 8
-          }
-        ])
-
         setAnalytics({
+          totalUsers: 200,
+          totalJobs: 25,
           totalApplications: 156,
+          totalInterviews: 80,
+          pendingHRRequests: 5,
+          activeJobs: 20,
+          recentApplications: 15,
+          upcomingInterviews: 8,
           pendingReviews: 23,
           hired: 45,
           rejected: 88,
@@ -228,18 +277,31 @@ export default function AdminDashboard() {
       if (response.ok) {
         toast.success('HR user created successfully')
         
-        // Add to HR users list
-        const newHRUser = {
-          id: data.user.id,
-          name: `${formData.firstName} ${formData.lastName}`,
-          email: formData.email,
-          department: formData.department,
-
-          createdAt: new Date().toISOString().split('T')[0], // Use date only to avoid timezone issues
-          activeJobs: 0,
-          totalHires: 0
+        // Refresh HR users list to get updated data
+        const hrResponse = await fetch('/api/admin/hr-performance')
+        if (hrResponse.ok) {
+          const hrData = await hrResponse.json()
+          if (hrData.hrUsers && Array.isArray(hrData.hrUsers)) {
+            const transformedHrUsers = hrData.hrUsers.map((hr: {
+              id: string;
+              firstName: string;
+              lastName: string;
+              email: string;
+              createdAt: string;
+              jobsPosted: number;
+              hiresMade: number;
+            }) => ({
+              id: hr.id,
+              name: `${hr.firstName} ${hr.lastName}`,
+              email: hr.email,
+              department: 'HR',
+              createdAt: hr.createdAt,
+              activeJobs: hr.jobsPosted,
+              totalHires: hr.hiresMade
+            }))
+            setHrUsers(transformedHrUsers)
+          }
         }
-        setHrUsers(prev => [...prev, newHRUser])
       } else {
         toast.error(data.message || 'Failed to create HR user')
       }
@@ -318,13 +380,11 @@ export default function AdminDashboard() {
             className="flex gap-2 mb-8 border-b border-border"
           >
             {[
-              { id: 'overview', label: 'Overview', icon: ChartBarIcon, color: 'from-primary to-purple-600' },
+              { id: 'overview', label: 'System Overview & Oversight', icon: ChartBarIcon, color: 'from-primary to-purple-600' },
               { id: 'applications', label: 'All Applications', icon: DocumentTextIcon, color: 'from-blue-500 to-blue-600' },
               { id: 'applicants', label: 'Applicant Profiles', icon: UsersIcon, color: 'from-emerald-500 to-emerald-600' },
-              { id: 'hr-management', label: 'HR Management', icon: UserPlusIcon, color: 'from-amber-500 to-amber-600' },
-              { id: 'hr-requests', label: 'HR Requests', icon: UserGroupIcon, color: 'from-violet-500 to-violet-600' },
+              { id: 'hr-management', label: 'HR Management & Requests', icon: UserPlusIcon, color: 'from-amber-500 to-amber-600' },
               { id: 'admin-management', label: 'Admin Management', icon: ShieldCheckIcon, color: 'from-red-500 to-red-600' },
-              { id: 'oversight', label: 'System Oversight', icon: ChartBarIcon, color: 'from-indigo-500 to-indigo-600' },
               { id: 'analytics', label: 'Analytics', icon: ArrowTrendingUpIcon, color: 'from-rose-500 to-rose-600' }
             ].map(tab => (
               <button
@@ -405,31 +465,92 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
+              {/* System Oversight Section */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+                className="space-y-6"
+              >
+                <div className="card">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold text-text-primary">System Oversight</h2>
+                    <Button
+                      onClick={() => router.push('/admin/oversight')}
+                      className="btn-primary"
+                    >
+                      <ChartBarIcon className="w-4 h-4 mr-2" />
+                      Open Oversight Dashboard
+                    </Button>
+                  </div>
+                  <p className="text-text-secondary mb-6">
+                    Complete system oversight with master control over all applicants, applications, HR performance, and job management.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="bg-bg-800 p-4 rounded-lg border border-border">
+                      <div className="flex items-center gap-3 mb-2">
+                        <UsersIcon className="w-6 h-6 text-primary" />
+                        <h3 className="font-semibold text-text-high">Applicant Management</h3>
+                      </div>
+                      <p className="text-sm text-text-mid">View all applicants with complete profiles and application history</p>
+                    </div>
+                    <div className="bg-bg-800 p-4 rounded-lg border border-border">
+                      <div className="flex items-center gap-3 mb-2">
+                        <DocumentTextIcon className="w-6 h-6 text-primary" />
+                        <h3 className="font-semibold text-text-high">Application Control</h3>
+                      </div>
+                      <p className="text-sm text-text-mid">Manage all applications with status tracking and rejection controls</p>
+                    </div>
+                    <div className="bg-bg-800 p-4 rounded-lg border border-border">
+                      <div className="flex items-center gap-3 mb-2">
+                        <UserGroupIcon className="w-6 h-6 text-primary" />
+                        <h3 className="font-semibold text-text-high">HR Performance</h3>
+                      </div>
+                      <p className="text-sm text-text-mid">Monitor HR team performance and review metrics</p>
+                    </div>
+                    <div className="bg-bg-800 p-4 rounded-lg border border-border">
+                      <div className="flex items-center gap-3 mb-2">
+                        <BriefcaseIcon className="w-6 h-6 text-primary" />
+                        <h3 className="font-semibold text-text-high">Job Management</h3>
+                      </div>
+                      <p className="text-sm text-text-mid">Complete job control with create, update, and delete operations</p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
               {/* Department Stats */}
-              <div className="card">
-                <h2 className="text-2xl font-bold text-text-high mb-6">Department Statistics</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {Object.entries(analytics.departmentStats).map(([dept, stats]: [string, { applications: number; hired: number; pending: number }]) => (
-                    <div key={dept} className="bg-bg-850 p-4 rounded-lg border border-border hover:shadow-medium transition-all duration-200">
-                      <h3 className="font-semibold text-text-high mb-2">{dept}</h3>
-                      <div className="space-y-1 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-text-mid">Applications:</span>
-                          <span className="text-text-high">{stats.applications}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-text-mid">Hired:</span>
-                          <span className="text-emerald-600">{stats.hired}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-text-mid">Pending:</span>
-                          <span className="text-amber-600">{stats.pending}</span>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.6 }}
+                className="space-y-6"
+              >
+                <div className="card">
+                  <h2 className="text-2xl font-bold text-text-high mb-6">Department Statistics</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {Object.entries(analytics.departmentStats || {}).map(([dept, stats]: [string, { applications: number; hired: number; pending: number }]) => (
+                      <div key={dept} className="bg-bg-850 p-4 rounded-lg border border-border hover:shadow-medium transition-all duration-200">
+                        <h3 className="font-semibold text-text-high mb-2">{dept}</h3>
+                        <div className="space-y-1 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-text-mid">Applications:</span>
+                            <span className="text-text-high">{stats.applications}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-text-mid">Hired:</span>
+                            <span className="text-emerald-600">{stats.hired}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-text-mid">Pending:</span>
+                            <span className="text-amber-600">{stats.pending}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              </motion.div>
             </motion.div>
           )}
 
@@ -618,11 +739,11 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* HR Management Tab */}
+          {/* HR Management & Requests Tab */}
           {activeTab === 'hr-management' && (
             <div className="space-y-6">
               <div className="card">
-                <h2 className="text-2xl font-bold text-text-primary mb-6">HR Users Management</h2>
+                <h2 className="text-2xl font-bold text-text-primary mb-6">HR Management & Requests</h2>
                 
                 {/* Create HR User Form */}
                 <div className="bg-bg-850 p-6 rounded-lg border border-border mb-6">
@@ -684,94 +805,155 @@ export default function AdminDashboard() {
                   </form>
                 </div>
 
+                {/* HR Request System */}
+                <div className="bg-gradient-to-r from-violet-500/10 to-purple-600/10 p-6 rounded-lg border border-violet-500/20 mb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <UserGroupIcon className="w-8 h-8 text-violet-500" />
+                      <h3 className="text-lg font-semibold text-text-primary">HR Request System</h3>
+                      {pendingHRRequests > 0 && (
+                        <div className="bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                          {pendingHRRequests} Pending
+                        </div>
+                      )}
+                    </div>
+                    <Button
+                      onClick={() => router.push('/admin/hr-management')}
+                      className="btn-primary"
+                    >
+                      <UserGroupIcon className="w-4 h-4 mr-2" />
+                      Manage HR Requests
+                    </Button>
+                  </div>
+                  <p className="text-text-secondary mb-4">
+                    Review and manage HR requests submitted by existing HR team members. Approve or reject requests and assign passwords to new HR users.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="text-center">
+                      <div className="w-12 h-12 bg-violet-500/20 rounded-lg flex items-center justify-center mx-auto mb-2">
+                        <UserGroupIcon className="w-6 h-6 text-violet-500" />
+                      </div>
+                      <p className="text-sm text-text-secondary">HR members can request new team members</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="w-12 h-12 bg-amber-500/20 rounded-lg flex items-center justify-center mx-auto mb-2">
+                        <ClockIcon className="w-6 h-6 text-amber-500" />
+                      </div>
+                      <p className="text-sm text-text-secondary">Admin reviews and approves requests</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center mx-auto mb-2">
+                        <KeyIcon className="w-6 h-6 text-green-500" />
+                      </div>
+                      <p className="text-sm text-text-secondary">Admin assigns passwords to new HR users</p>
+                    </div>
+                  </div>
+                </div>
+
                 {/* HR Users List */}
                 <div className="space-y-4">
-                  {hrUsers.map((hrUser) => (
-                    <div key={hrUser.id} className="bg-bg-850 p-4 rounded-lg border border-border">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <h3 className="font-semibold text-text-primary">{hrUser.name}</h3>
-                          <p className="text-text-secondary text-sm">{hrUser.email}</p>
-                          <p className="text-text-secondary text-sm">
-                            Created: {new Date(hrUser.createdAt).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <div className="text-center">
-                            <p className="text-lg font-bold text-text-primary">{hrUser.activeJobs}</p>
-                            <p className="text-text-secondary text-sm">Active Jobs</p>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-text-primary">Existing HR Users</h3>
+                    <Button
+                      onClick={() => {
+                        const fetchHrUsers = async () => {
+                          try {
+                            // Fetch HR users
+                            const hrResponse = await fetch('/api/admin/hr-performance')
+                            if (hrResponse.ok) {
+                              const hrData = await hrResponse.json()
+                              if (hrData.hrUsers && Array.isArray(hrData.hrUsers)) {
+                                const transformedHrUsers = hrData.hrUsers.map((hr: {
+                                  id: string;
+                                  firstName: string;
+                                  lastName: string;
+                                  email: string;
+                                  createdAt: string;
+                                  jobsPosted: number;
+                                  hiresMade: number;
+                                }) => ({
+                                  id: hr.id,
+                                  name: `${hr.firstName} ${hr.lastName}`,
+                                  email: hr.email,
+                                  department: 'HR',
+                                  createdAt: hr.createdAt,
+                                  activeJobs: hr.jobsPosted,
+                                  totalHires: hr.hiresMade
+                                }))
+                                setHrUsers(transformedHrUsers)
+                              }
+                            }
+
+                            // Fetch pending HR requests count
+                            const hrRequestsResponse = await fetch('/api/hr-requests')
+                            if (hrRequestsResponse.ok) {
+                              const hrRequestsData = await hrRequestsResponse.json()
+                              if (hrRequestsData.requests && Array.isArray(hrRequestsData.requests)) {
+                                const pendingCount = hrRequestsData.requests.filter((request: { status: string }) => 
+                                  request.status === 'PENDING'
+                                ).length
+                                setPendingHRRequests(pendingCount)
+                              }
+                            }
+
+                            toast.success('HR data refreshed')
+                          } catch {
+                            toast.error('Failed to refresh HR data')
+                          }
+                        }
+                        fetchHrUsers()
+                      }}
+                      className="bg-bg-800 hover:bg-bg-850 text-text-high px-3 py-2 rounded-lg font-medium transition-colors border border-border"
+                    >
+                      <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
+                      Refresh
+                    </Button>
+                  </div>
+                  
+                  {hrUsers.length === 0 ? (
+                    <div className="bg-bg-850 p-8 rounded-lg border border-border text-center">
+                      <UserGroupIcon className="w-12 h-12 text-text-mid mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-text-primary mb-2">No HR Users Found</h3>
+                      <p className="text-text-secondary">Create your first HR user using the form above.</p>
+                    </div>
+                  ) : (
+                    hrUsers.map((hrUser) => (
+                      <div key={hrUser.id} className="bg-bg-850 p-4 rounded-lg border border-border">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <h3 className="font-semibold text-text-primary">{hrUser.name}</h3>
+                            <p className="text-text-secondary text-sm">{hrUser.email}</p>
+                            <p className="text-text-secondary text-sm">
+                              Created: {new Date(hrUser.createdAt).toLocaleDateString()}
+                            </p>
                           </div>
-                          <div className="text-center">
-                            <p className="text-lg font-bold text-text-primary">{hrUser.totalHires}</p>
-                            <p className="text-text-secondary text-sm">Total Hires</p>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button className="bg-bg-800 hover:bg-bg-850 text-text-high px-3 py-2 rounded-lg font-medium transition-colors border border-border">
-                              <PencilIcon className="w-4 h-4" />
-                            </Button>
-                            <Button className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-lg font-medium transition-colors">
-                              <TrashIcon className="w-4 h-4" />
-                            </Button>
+                          <div className="flex items-center gap-4">
+                            <div className="text-center">
+                              <p className="text-lg font-bold text-text-primary">{hrUser.activeJobs}</p>
+                              <p className="text-text-secondary text-sm">Active Jobs</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-lg font-bold text-text-primary">{hrUser.totalHires}</p>
+                              <p className="text-text-secondary text-sm">Total Hires</p>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button className="bg-bg-800 hover:bg-bg-850 text-text-high px-3 py-2 rounded-lg font-medium transition-colors border border-border">
+                                <PencilIcon className="w-4 h-4" />
+                              </Button>
+                              <Button className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-lg font-medium transition-colors">
+                                <TrashIcon className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </div>
             </div>
           )}
 
-          {/* System Oversight Tab */}
-          {activeTab === 'oversight' && (
-            <div className="space-y-6">
-              <div className="card">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-text-primary">System Oversight</h2>
-                  <Button
-                    onClick={() => router.push('/admin/oversight')}
-                    className="btn-primary"
-                  >
-                    <ChartBarIcon className="w-4 h-4 mr-2" />
-                    Open Oversight Dashboard
-                  </Button>
-                </div>
-                <p className="text-text-secondary mb-6">
-                  Complete system oversight with master control over all applicants, applications, HR performance, and job management.
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-bg-800 p-4 rounded-lg border border-border">
-                    <div className="flex items-center gap-3 mb-2">
-                      <UsersIcon className="w-6 h-6 text-primary" />
-                      <h3 className="font-semibold text-text-high">Applicant Management</h3>
-                    </div>
-                    <p className="text-sm text-text-mid">View all applicants with complete profiles and application history</p>
-                  </div>
-                  <div className="bg-bg-800 p-4 rounded-lg border border-border">
-                    <div className="flex items-center gap-3 mb-2">
-                      <DocumentTextIcon className="w-6 h-6 text-primary" />
-                      <h3 className="font-semibold text-text-high">Application Control</h3>
-                    </div>
-                    <p className="text-sm text-text-mid">Manage all applications with status tracking and rejection controls</p>
-                  </div>
-                  <div className="bg-bg-800 p-4 rounded-lg border border-border">
-                    <div className="flex items-center gap-3 mb-2">
-                      <UserGroupIcon className="w-6 h-6 text-primary" />
-                      <h3 className="font-semibold text-text-high">HR Performance</h3>
-                    </div>
-                    <p className="text-sm text-text-mid">Monitor HR team performance and review metrics</p>
-                  </div>
-                  <div className="bg-bg-800 p-4 rounded-lg border border-border">
-                    <div className="flex items-center gap-3 mb-2">
-                      <BriefcaseIcon className="w-6 h-6 text-primary" />
-                      <h3 className="font-semibold text-text-high">Job Management</h3>
-                    </div>
-                    <p className="text-sm text-text-mid">Complete job control with create, update, and delete operations</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Admin Management Tab */}
           {activeTab === 'admin-management' && (
@@ -790,7 +972,7 @@ export default function AdminDashboard() {
                 <p className="text-text-secondary mb-6">
                   Create and manage system administrators. Add new admins, edit existing admin accounts, and maintain system security.
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   <div className="bg-bg-800 p-4 rounded-lg border border-border">
                     <div className="flex items-center gap-3 mb-2">
                       <ShieldCheckIcon className="w-6 h-6 text-primary" />
@@ -813,56 +995,95 @@ export default function AdminDashboard() {
                     <p className="text-sm text-text-mid">Manage system security settings</p>
                   </div>
                 </div>
+
+                {/* Existing Admins List */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-text-primary">Existing Administrators</h3>
+                    <Button
+                      onClick={() => {
+                        const fetchAdmins = async () => {
+                          try {
+                            const adminsResponse = await fetch('/api/admin/admins')
+                            if (adminsResponse.ok) {
+                              const adminsData = await adminsResponse.json()
+                              if (adminsData.admins && Array.isArray(adminsData.admins)) {
+                                const transformedAdmins = adminsData.admins.map((admin: {
+                                  id: string;
+                                  firstName: string;
+                                  lastName: string;
+                                  email: string;
+                                  createdAt: string;
+                                  isActive: boolean;
+                                }) => ({
+                                  id: admin.id,
+                                  name: `${admin.firstName} ${admin.lastName}`,
+                                  email: admin.email,
+                                  createdAt: admin.createdAt,
+                                  isActive: admin.isActive
+                                }))
+                                setAdminUsers(transformedAdmins)
+                                toast.success('Admin list refreshed')
+                              }
+                            }
+                          } catch {
+                            toast.error('Failed to refresh admin list')
+                          }
+                        }
+                        fetchAdmins()
+                      }}
+                      className="bg-bg-800 hover:bg-bg-850 text-text-high px-3 py-2 rounded-lg font-medium transition-colors border border-border"
+                    >
+                      <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
+                      Refresh
+                    </Button>
+                  </div>
+                  
+                  {adminUsers.length === 0 ? (
+                    <div className="bg-bg-850 p-8 rounded-lg border border-border text-center">
+                      <ShieldCheckIcon className="w-12 h-12 text-text-mid mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-text-primary mb-2">No Administrators Found</h3>
+                      <p className="text-text-secondary">No admin users are currently registered in the system.</p>
+                    </div>
+                  ) : (
+                    adminUsers.map((admin) => (
+                      <div key={admin.id} className="bg-bg-850 p-4 rounded-lg border border-border">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <h3 className="font-semibold text-text-primary">{admin.name}</h3>
+                            <p className="text-text-secondary text-sm">{admin.email}</p>
+                            <p className="text-text-secondary text-sm">
+                              Created: {new Date(admin.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="text-center">
+                              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                admin.isActive 
+                                  ? 'bg-emerald-100 text-emerald-700' 
+                                  : 'bg-rose-100 text-rose-700'
+                              }`}>
+                                {admin.isActive ? 'Active' : 'Inactive'}
+                              </span>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button className="bg-bg-800 hover:bg-bg-850 text-text-high px-3 py-2 rounded-lg font-medium transition-colors border border-border">
+                                <PencilIcon className="w-4 h-4" />
+                              </Button>
+                              <Button className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-lg font-medium transition-colors">
+                                <TrashIcon className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
           )}
 
-          {/* HR Requests Tab */}
-          {activeTab === 'hr-requests' && (
-            <div className="space-y-6">
-              <div className="card">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-text-primary">HR Request Management</h2>
-                  <Button
-                    onClick={() => router.push('/admin/hr-management')}
-                    className="btn-primary"
-                  >
-                    <UserGroupIcon className="w-4 h-4 mr-2" />
-                    Manage HR Requests
-                  </Button>
-                </div>
-                <p className="text-text-secondary mb-6">
-                  Review and manage HR requests submitted by existing HR team members. Approve or reject requests and assign passwords to new HR users.
-                </p>
-                <div className="bg-gradient-to-r from-violet-500/10 to-purple-600/10 p-6 rounded-lg border border-violet-500/20">
-                  <div className="flex items-center gap-3 mb-4">
-                    <UserGroupIcon className="w-8 h-8 text-violet-500" />
-                    <h3 className="text-lg font-semibold text-text-primary">HR Request System</h3>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="text-center">
-                      <div className="w-12 h-12 bg-violet-500/20 rounded-lg flex items-center justify-center mx-auto mb-2">
-                        <UserGroupIcon className="w-6 h-6 text-violet-500" />
-                      </div>
-                      <p className="text-sm text-text-secondary">HR members can request new team members</p>
-                    </div>
-                    <div className="text-center">
-                      <div className="w-12 h-12 bg-amber-500/20 rounded-lg flex items-center justify-center mx-auto mb-2">
-                        <ClockIcon className="w-6 h-6 text-amber-500" />
-                      </div>
-                      <p className="text-sm text-text-secondary">Admin reviews and approves requests</p>
-                    </div>
-                    <div className="text-center">
-                      <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center mx-auto mb-2">
-                        <KeyIcon className="w-6 h-6 text-green-500" />
-                      </div>
-                      <p className="text-sm text-text-secondary">Admin assigns passwords to new HR users</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Analytics Tab */}
           {activeTab === 'analytics' && (

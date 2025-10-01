@@ -37,110 +37,15 @@ import {
   UserIcon
 } from '@heroicons/react/24/outline'
 import ApplicantProfileModal from '@/components/application/ApplicantProfileModal'
-
-interface Applicant {
-  id: string
-  firstName: string
-  lastName: string
-  email: string
-  phoneNumber: string | null
-  address: string | null
-  dateOfBirth: string | null
-  linkedinProfile: string | null
-  profileImage: string | null
-  createdAt: string
-  applications: Application[]
-}
-
-interface Application {
-  id: string
-  jobTitle: string
-  employmentType: string
-  status: string
-  submittedAt: string
-  updatedAt: string
-  expectedSalary: string | null
-  experience: string | null
-  education: string | null
-  skills: string | null
-  coverLetter: string | null
-  resumeUrl: string
-  additionalFiles: string[]
-  job: {
-    id: string
-    title: string
-    department: {
-      name: string
-    }
-  }
-  history: ApplicationHistory[]
-}
-
-interface ApplicationHistory {
-  id: string
-  fromStatus: string | null
-  toStatus: string
-  action: string
-  performedByName: string
-  performedByRole: string
-  notes: string | null
-  createdAt: string
-}
-
-interface HRUser {
-  id: string
-  firstName: string
-  lastName: string
-  email: string
-  phoneNumber: string | null
-  address: string | null
-  dateOfBirth: string | null
-  linkedinProfile: string | null
-  profileImage: string | null
-  createdAt: string
-  hrJobs: Job[]
-  hrReviews: InterviewReview[]
-  applicationsReviewed: number
-  averageReviewTime: number
-}
-
-interface Job {
-  id: string
-  title: string
-  department: {
-    name: string
-  }
-  summary: string | null
-  employmentTypes: string[]
-  applicationDeadline: string | null
-  requiredSkills: string[]
-  isActive: boolean
-  isDraft: boolean
-  createdAt: string
-  updatedAt: string
-  applications: Application[]
-  createdBy: {
-    firstName: string
-    lastName: string
-  }
-}
-
-interface InterviewReview {
-  id: string
-  technicalSkills: number
-  communication: number
-  culturalFit: number
-  overallRating: number
-  feedback: string | null
-  createdAt: string
-  candidate: {
-    firstName: string
-    lastName: string
-  }
-  application: {
-    jobTitle: string
-  }
-}
+import { 
+  Applicant, 
+  Application, 
+  ApplicationHistory, 
+  HRUser, 
+  Job, 
+  InterviewReview,
+  HRPerformanceMetrics 
+} from '@/types/admin'
 
 export default function AdminOversightPage() {
   const { data: session, status } = useSession()

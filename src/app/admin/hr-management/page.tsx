@@ -23,35 +23,7 @@ import {
   BuildingOfficeIcon
 } from '@heroicons/react/24/outline'
 
-interface HRRequest {
-  id: string
-  firstName: string
-  lastName: string
-  email: string
-  phoneNumber?: string
-  department?: string
-  reason?: string
-  status: 'PENDING' | 'APPROVED' | 'REJECTED'
-  requestedBy: string
-  requestedByName: string
-  approvedBy?: string
-  approvedByName?: string
-  rejectionReason?: string
-  createdAt: string
-  updatedAt: string
-  approvedAt?: string
-}
-
-interface HRUser {
-  id: string
-  firstName: string
-  lastName: string
-  email: string
-  phoneNumber: string
-  role: string
-  isActive: boolean
-  createdAt: string
-}
+import { HRRequest, HRUser } from '@/types/admin'
 
 export default function AdminHRManagementPage() {
   const { data: session, status } = useSession()

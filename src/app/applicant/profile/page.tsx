@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import CountryCodeSelector from '@/components/ui/CountryCodeSelector'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { toast } from 'react-hot-toast'
 import { FileAccess } from '@/components/ui/FileAccess'
@@ -29,6 +30,7 @@ interface UserProfile {
   name: string
   email: string
   phone?: string
+  countryCode?: string
   location?: string
   currentPosition?: string
   company?: string
@@ -80,6 +82,7 @@ export default function ProfilePage() {
             name: `${user.firstName} ${user.lastName}`,
             email: user.email,
             phone: user.phoneNumber || '',
+            countryCode: user.countryCode || '+1',
             location: user.address || 'Bangalore, India', // Use address from database
             currentPosition: 'Software Engineer', // Default position
             company: 'Tech Corp', // Default company
@@ -317,13 +320,21 @@ export default function ProfilePage() {
                     <PhoneIcon className="w-5 h-5 text-primary" />
                     <span className="text-text-mid">
                       {isEditing ? (
-                        <Input
-                          value={formData.phone || ''}
-                          onChange={(e) => handleInputChange('phone', e.target.value)}
-                          placeholder="Phone number"
-                        />
+                        <div className="flex gap-2">
+                          <CountryCodeSelector
+                            value={formData.countryCode || '+1'}
+                            onChange={(value) => handleInputChange('countryCode', value)}
+                            className="w-32"
+                          />
+                          <Input
+                            value={formData.phone || ''}
+                            onChange={(e) => handleInputChange('phone', e.target.value)}
+                            placeholder="1234567890"
+                            className="w-40"
+                          />
+                        </div>
                       ) : (
-                        profile.phone || 'Not provided'
+                        profile.countryCode && profile.phone ? `${profile.countryCode} ${profile.phone}` : 'Not provided'
                       )}
                     </span>
                   </div>

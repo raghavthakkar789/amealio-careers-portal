@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { validateEmail } from '@/lib/utils'
 
 // GET /api/admin/admins - Get all admins
 export async function GET() {
@@ -53,6 +54,11 @@ export async function POST(request: NextRequest) {
     // Validate required fields
     if (!firstName || !lastName || !email || !password) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    // Validate email format
+    if (!validateEmail(email)) {
+      return NextResponse.json({ error: 'Invalid email format' }, { status: 400 })
     }
 
     // Check if user already exists

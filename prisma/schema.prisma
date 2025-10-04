@@ -30,6 +30,7 @@ model User {
   updatedAt          DateTime             @updatedAt
   dateOfBirth        DateTime?
   phoneNumber        String?
+  countryCode        String?              @default("+1")
   address            String?
   linkedinProfile    String?
   profileImage       String?

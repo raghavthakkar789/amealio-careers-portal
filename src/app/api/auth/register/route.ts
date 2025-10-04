@@ -12,6 +12,7 @@ export async function POST(request: NextRequest) {
       email,
       password,
       phoneNumber,
+      countryCode,
       linkedinProfile,
     } = body
 
@@ -60,6 +61,7 @@ export async function POST(request: NextRequest) {
         email,
         password: hashedPassword,
         phoneNumber,
+        countryCode: countryCode || '+1',
         role: 'APPLICANT',
         linkedinProfile: linkedinProfile || null,
       }

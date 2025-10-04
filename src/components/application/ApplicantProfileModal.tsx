@@ -31,6 +31,7 @@ interface ApplicantDetails {
     fullName: string
     email: string
     phoneNumber: string | null
+    countryCode: string | null
     address: string | null
     dateOfBirth: string | null
     linkedinProfile: string | null
@@ -202,7 +203,12 @@ export default function ApplicantProfileModal({
                           <label className="block text-sm font-medium text-text-mid mb-1">Phone Number</label>
                           <div className="flex items-center gap-2">
                             <PhoneIcon className="w-4 h-4 text-text-mid" />
-                            <p className="text-text-high">{applicantDetails.personalInfo.phoneNumber}</p>
+                            <p className="text-text-high">
+                              {applicantDetails.personalInfo.countryCode && applicantDetails.personalInfo.phoneNumber 
+                                ? `${applicantDetails.personalInfo.countryCode} ${applicantDetails.personalInfo.phoneNumber}`
+                                : applicantDetails.personalInfo.phoneNumber
+                              }
+                            </p>
                           </div>
                         </div>
                       )}

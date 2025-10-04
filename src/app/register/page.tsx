@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import CountryCodeSelector from '@/components/ui/CountryCodeSelector'
 import { toast } from 'react-hot-toast'
 import Link from 'next/link'
 import { validateEmail, validatePhone } from '@/lib/utils'
@@ -19,6 +20,7 @@ export default function RegisterPage() {
     password: '',
     confirmPassword: '',
     phoneNumber: '',
+    countryCode: '+91',
     linkedinProfile: ''
   })
   const [loading, setLoading] = useState(false)
@@ -387,20 +389,34 @@ export default function RegisterPage() {
               <label htmlFor="phoneNumber" className="form-label">
                 Phone Number
               </label>
-              <Input
-                id="phoneNumber"
-                name="phoneNumber"
-                type="tel"
-                value={formData.phoneNumber}
-                onChange={handleChange}
-                onBlur={(e) => validateField('phoneNumber', e.target.value)}
-                placeholder="Enter your phone number"
-                className={`input-field ${validationErrors.phoneNumber ? 'border-red-500' : ''}`}
-              />
+              <div className="flex gap-2">
+                <CountryCodeSelector
+                  value={formData.countryCode}
+                  onChange={(value) => setFormData(prev => ({ ...prev, countryCode: value }))}
+                  className="w-32.5"
+                  allowTyping={true}
+                />
+                <Input
+                  id="phoneNumber"
+                  name="phoneNumber"
+                  type="tel"
+                  value={formData.phoneNumber}
+                  onChange={handleChange}
+                  onBlur={(e) => validateField('phoneNumber', e.target.value)}
+                  placeholder="1234567890"
+                  className={`input-field flex-1 ${validationErrors.phoneNumber ? 'border-red-500' : ''}`}
+                />
+              </div>
               {validationErrors.phoneNumber && (
                 <p className="text-red-500 text-sm mt-1 flex items-center">
                   <XCircleIcon className="w-4 h-4 mr-1" />
                   {validationErrors.phoneNumber}
+                </p>
+              )}
+              {formData.phoneNumber && formData.phoneNumber.replace(/\D/g, '').length !== 10 && (
+                <p className="text-xs text-red-500 mt-1 flex items-center">
+                  <XCircleIcon className="w-4 h-4 mr-1" />
+                  Contact number must be exactly 10 digits only.
                 </p>
               )}
             </div>

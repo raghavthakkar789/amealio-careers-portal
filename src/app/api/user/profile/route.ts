@@ -14,7 +14,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { linkedinProfile, linkedinUrl, portfolioUrl, firstName, lastName, phoneNumber, address } = body
+    const { linkedinProfile, linkedinUrl, portfolioUrl, firstName, lastName, phoneNumber, countryCode, address } = body
 
     // Use linkedinProfile, linkedinUrl, or portfolioUrl (whichever is provided)
     const finalLinkedinProfile = linkedinProfile || linkedinUrl || portfolioUrl
@@ -35,6 +35,7 @@ export async function PATCH(request: NextRequest) {
         firstName: firstName || undefined,
         lastName: lastName || undefined,
         phoneNumber: phoneNumber || undefined,
+        countryCode: countryCode || undefined,
         address: address || undefined,
       },
       select: {
@@ -44,6 +45,7 @@ export async function PATCH(request: NextRequest) {
         email: true,
         linkedinProfile: true,
         phoneNumber: true,
+        countryCode: true,
         address: true,
         profileImage: true,
       }
@@ -87,6 +89,7 @@ export async function GET() {
         email: true,
         linkedinProfile: true,
         phoneNumber: true,
+        countryCode: true,
         address: true,
         profileImage: true,
         createdAt: true,

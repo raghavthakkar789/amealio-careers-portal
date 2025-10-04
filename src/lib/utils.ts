@@ -49,8 +49,9 @@ export function validateEmail(email: string): boolean {
 }
 
 export function validatePhone(phone: string): boolean {
-  const phoneRegex = /^\+?[\d\s\-\(\)]{10,}$/
-  return phoneRegex.test(phone)
+  // Remove all non-digit characters and check if exactly 10 digits
+  const digitsOnly = phone.replace(/\D/g, '')
+  return digitsOnly.length === 10
 }
 
 export function calculateAge(birthDate: Date): number {

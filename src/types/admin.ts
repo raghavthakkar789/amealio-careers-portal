@@ -294,6 +294,16 @@ export interface DashboardStats {
   rejected?: number
   averageTimeToHire?: number
   departmentStats?: Record<string, { applications: number; hired: number; pending: number }>
+  // New stage-specific statistics
+  stageStats?: {
+    pending: number
+    underReview: number
+    interviewScheduled: number
+    interviewCompleted: number
+    accepted: number
+    hired: number
+    rejected: number
+  }
 }
 
 export interface HRPerformanceMetrics {

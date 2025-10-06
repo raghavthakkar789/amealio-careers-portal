@@ -48,6 +48,9 @@ export default function ApplicationManagement({
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [selectedApplicationId, setSelectedApplicationId] = useState<string | null>(null)
   const [showProfileModal, setShowProfileModal] = useState(false)
+  const [showRejectModal, setShowRejectModal] = useState(false)
+  const [rejectReason, setRejectReason] = useState('')
+  const [rejectTransition, setRejectTransition] = useState<StatusTransition | null>(null)
 
   // Real-time updates
   const { isConnected } = useApplicationUpdates({
@@ -93,8 +96,9 @@ export default function ApplicationManagement({
   }, [session, userRole])
 
   const handleStageUpdate = async (
-    applicationId: string, 
-    transition: StatusTransition
+    applicationId: string,
+    transition: StatusTransition,
+    notes?: string
   ) => {
     if (!session) return
 
@@ -109,7 +113,7 @@ export default function ApplicationManagement({
         body: JSON.stringify({
           status: transition.to,
           action: transition.action,
-          notes: transition.description
+          notes: notes || transition.description
         }),
       })
 
@@ -129,7 +133,29 @@ export default function ApplicationManagement({
     }
   }
 
+  const openRejectModal = (applicationId: string, transition: StatusTransition) => {
+    setSelectedApplicationId(applicationId)
+    setRejectTransition(transition)
+    setRejectReason('')
+    setShowRejectModal(true)
+  }
+
+  const submitReject = async () => {
+    if (!selectedApplicationId || !rejectTransition) return
+    await handleStageUpdate(selectedApplicationId, rejectTransition, rejectReason.trim())
+    setShowRejectModal(false)
+    setRejectReason('')
+    setRejectTransition(null)
+  }
+
   const handleViewProfile = (applicationId: string) => {
+    // For applicants viewing their own applications, redirect to profile page
+    if (userRole === 'APPLICANT') {
+      router.push('/applicant/profile')
+      return
+    }
+    
+    // For HR and ADMIN, show the modal
     setSelectedApplicationId(applicationId)
     setShowProfileModal(true)
   }
@@ -298,7 +324,7 @@ export default function ApplicationManagement({
                             className="btn-secondary"
                           >
                             <UserCircleIcon className="w-4 h-4 mr-2" />
-                            View Profile
+                            {userRole === 'APPLICANT' ? 'View My Profile' : 'View Profile'}
                           </Button>
                         )}
                         
@@ -315,6 +341,11 @@ export default function ApplicationManagement({
                           <Button
                             key={transition.action}
                             onClick={() => {
+                              // For rejection, open reason modal
+                              if (transition.to === 'REJECTED') {
+                                openRejectModal(application.id, transition)
+                                return
+                              }
                               if (transition.requiresConfirmation) {
                                 if (confirm(transition.confirmationMessage || 'Are you sure?')) {
                                   handleStageUpdate(application.id, transition)
@@ -353,6 +384,42 @@ export default function ApplicationManagement({
           onClose={handleCloseProfileModal}
           applicationId={selectedApplicationId}
         />
+      )}
+
+      {/* Reject Reason Modal */}
+      {showRejectModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-bg-850 rounded-lg p-6 w-full max-w-lg">
+            <h3 className="text-xl font-semibold text-text-high mb-4">Reject Application</h3>
+            <p className="text-text-mid mb-4">Please provide a brief reason for rejection. This will be visible to the applicant in Recent Activity and to Admin.</p>
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="Explain this decision briefly..."
+              className="w-full px-3 py-2 bg-bg-800 border border-border rounded-lg text-text-high focus:outline-none focus:ring-2 focus:ring-primary min-h-[120px]"
+            />
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <Button
+                onClick={() => {
+                  setShowRejectModal(false)
+                  setRejectReason('')
+                  setRejectTransition(null)
+                }}
+                variant="secondary"
+                className="btn-secondary"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={submitReject}
+                disabled={!rejectReason.trim()}
+                className="btn-primary"
+              >
+                Submit Rejection
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

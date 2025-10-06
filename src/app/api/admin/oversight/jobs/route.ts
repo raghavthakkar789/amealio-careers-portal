@@ -106,7 +106,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Create job with description in a transaction
-    const result = await prisma.$transaction(async (tx) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = await prisma.$transaction(async (tx: any) => {
       // Create the job
       const job = await tx.job.create({
         data: {

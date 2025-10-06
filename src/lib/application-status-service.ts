@@ -63,15 +63,16 @@ class ApplicationStatusService {
   }
 
   private initializeStatusTransitions() {
-    // Define all possible status transitions
+    // Define all possible status transitions according to the new workflow
     const transitions: StatusTransition[] = [
+      // PENDING stage transitions
       {
         from: 'PENDING',
         to: 'UNDER_REVIEW',
-        action: 'START_REVIEW',
+        action: 'ACCEPT_FOR_REVIEW',
         allowedRoles: ['HR', 'ADMIN'],
         requiresConfirmation: false,
-        description: 'Start reviewing the application'
+        description: 'Accept application for detailed review'
       },
       {
         from: 'PENDING',
@@ -82,6 +83,8 @@ class ApplicationStatusService {
         confirmationMessage: 'Are you sure you want to reject this application?',
         description: 'Reject the application'
       },
+      
+      // UNDER_REVIEW stage transitions
       {
         from: 'UNDER_REVIEW',
         to: 'INTERVIEW_SCHEDULED',
@@ -99,6 +102,8 @@ class ApplicationStatusService {
         confirmationMessage: 'Are you sure you want to reject this application after review?',
         description: 'Reject the application after review'
       },
+      
+      // INTERVIEW_SCHEDULED stage transitions
       {
         from: 'INTERVIEW_SCHEDULED',
         to: 'INTERVIEW_COMPLETED',
@@ -110,38 +115,42 @@ class ApplicationStatusService {
       {
         from: 'INTERVIEW_SCHEDULED',
         to: 'REJECTED',
-        action: 'REJECT_AFTER_INTERVIEW',
+        action: 'CANCEL_INTERVIEW',
         allowedRoles: ['HR', 'ADMIN'],
         requiresConfirmation: true,
-        confirmationMessage: 'Are you sure you want to reject this candidate after the interview?',
-        description: 'Reject the candidate after interview'
+        confirmationMessage: 'Are you sure you want to cancel this interview and reject the candidate?',
+        description: 'Cancel interview and reject candidate'
       },
+      
+      // INTERVIEW_COMPLETED stage transitions (ADMIN ONLY)
       {
         from: 'INTERVIEW_COMPLETED',
         to: 'ACCEPTED',
         action: 'ACCEPT_CANDIDATE',
-        allowedRoles: ['HR', 'ADMIN'],
+        allowedRoles: ['ADMIN'], // Only Admin can make final decision
         requiresConfirmation: true,
         confirmationMessage: 'Are you sure you want to accept this candidate?',
-        description: 'Accept the candidate'
+        description: 'Accept the candidate (Admin decision required)'
       },
       {
         from: 'INTERVIEW_COMPLETED',
         to: 'REJECTED',
         action: 'REJECT_AFTER_INTERVIEW_COMPLETION',
-        allowedRoles: ['HR', 'ADMIN'],
+        allowedRoles: ['ADMIN'], // Only Admin can make final decision
         requiresConfirmation: true,
         confirmationMessage: 'Are you sure you want to reject this candidate after interview completion?',
-        description: 'Reject the candidate after interview completion'
+        description: 'Reject the candidate after interview completion (Admin decision required)'
       },
+      
+      // ACCEPTED stage transitions (ADMIN ONLY)
       {
         from: 'ACCEPTED',
         to: 'HIRED',
         action: 'HIRE_CANDIDATE',
-        allowedRoles: ['HR', 'ADMIN'],
+        allowedRoles: ['ADMIN'], // Only Admin can hire
         requiresConfirmation: true,
         confirmationMessage: 'Are you sure you want to hire this candidate?',
-        description: 'Hire the candidate'
+        description: 'Hire the candidate (Admin only)'
       }
     ]
 
@@ -163,6 +172,36 @@ class ApplicationStatusService {
     return transitions.filter(transition => 
       transition.allowedRoles.includes(userRole)
     )
+  }
+
+  // Validate if a transition is allowed (prevents stage skipping)
+  validateTransition(fromStatus: ApplicationStatus, toStatus: ApplicationStatus, userRole: UserRole, action: string): boolean {
+    // Get available transitions for current status and user role
+    const availableTransitions = this.getAvailableTransitions(fromStatus, userRole)
+    
+    // Check if the requested transition exists and matches the action
+    const validTransition = availableTransitions.find(t => t.to === toStatus && t.action === action)
+    
+    if (!validTransition) {
+      return false
+    }
+
+    // Additional validation: Ensure no stage skipping
+    const statusOrder = ['PENDING', 'UNDER_REVIEW', 'INTERVIEW_SCHEDULED', 'INTERVIEW_COMPLETED', 'ACCEPTED', 'HIRED']
+    const fromIndex = statusOrder.indexOf(fromStatus)
+    const toIndex = statusOrder.indexOf(toStatus)
+    
+    // Allow REJECTED from any stage
+    if (toStatus === 'REJECTED') {
+      return true
+    }
+    
+    // Prevent skipping stages (except for REJECTED)
+    if (fromIndex !== -1 && toIndex !== -1 && toIndex > fromIndex + 1) {
+      return false
+    }
+    
+    return true
   }
 
   // Update application status with full audit trail
@@ -204,16 +243,16 @@ class ApplicationStatusService {
       throw new Error(`Application is already in ${newStatus} status`)
     }
 
-    // Validate transition
-    const availableTransitions = this.getAvailableTransitions(currentApplication.status, performedByRole)
-    const validTransition = availableTransitions.find(t => t.to === newStatus && t.action === action)
+    // Validate transition with enhanced checks
+    const isValidTransition = this.validateTransition(currentApplication.status, newStatus, performedByRole, action)
     
-    if (!validTransition) {
-      throw new Error(`Invalid status transition from ${currentApplication.status} to ${newStatus}`)
+    if (!isValidTransition) {
+      throw new Error(`Invalid status transition from ${currentApplication.status} to ${newStatus} for role ${performedByRole}. This transition is not allowed or violates the stage workflow.`)
     }
 
     // Update application status and create history record in a transaction
-    const result = await prisma.$transaction(async (tx) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = await prisma.$transaction(async (tx: any) => {
       // Update application status
       const updatedApplication = await tx.application.update({
         where: { id: applicationId },
@@ -420,18 +459,58 @@ class ApplicationStatusService {
   }
 
   // Get status display information
-  getStatusDisplay(status: ApplicationStatus): { color: string; icon: string; label: string } {
+  getStatusDisplay(status: ApplicationStatus): { color: string; icon: string; label: string; description: string } {
     const statusMap = {
-      PENDING: { color: 'bg-blue-100 text-blue-800', icon: 'DocumentTextIcon', label: 'Pending' },
-      UNDER_REVIEW: { color: 'bg-yellow-100 text-yellow-800', icon: 'EyeIcon', label: 'Under Review' },
-      INTERVIEW_SCHEDULED: { color: 'bg-purple-100 text-purple-800', icon: 'CalendarIcon', label: 'Interview Scheduled' },
-      INTERVIEW_COMPLETED: { color: 'bg-indigo-100 text-indigo-800', icon: 'CheckCircleIcon', label: 'Interview Completed' },
-      ACCEPTED: { color: 'bg-green-100 text-green-800', icon: 'CheckCircleIcon', label: 'Accepted' },
-      REJECTED: { color: 'bg-red-100 text-red-800', icon: 'XCircleIcon', label: 'Rejected' },
-      HIRED: { color: 'bg-emerald-100 text-emerald-800', icon: 'CheckCircleIcon', label: 'Hired' }
+      PENDING: { 
+        color: 'bg-blue-100 text-blue-800', 
+        icon: 'DocumentTextIcon', 
+        label: 'Application Submitted',
+        description: 'Your application has been received and is being processed'
+      },
+      UNDER_REVIEW: { 
+        color: 'bg-yellow-100 text-yellow-800', 
+        icon: 'EyeIcon', 
+        label: 'Under Review by HR Team',
+        description: 'HR team is evaluating your qualifications and experience'
+      },
+      INTERVIEW_SCHEDULED: { 
+        color: 'bg-purple-100 text-purple-800', 
+        icon: 'CalendarIcon', 
+        label: 'Interview Scheduled',
+        description: 'Interview has been scheduled - check your email for details'
+      },
+      INTERVIEW_COMPLETED: { 
+        color: 'bg-indigo-100 text-indigo-800', 
+        icon: 'CheckCircleIcon', 
+        label: 'Interview Completed - Pending Final Decision',
+        description: 'Interview completed, awaiting final decision from management'
+      },
+      ACCEPTED: { 
+        color: 'bg-green-100 text-green-800', 
+        icon: 'CheckCircleIcon', 
+        label: 'Congratulations! Offer Extended',
+        description: 'Your application has been accepted - welcome to the team!'
+      },
+      REJECTED: { 
+        color: 'bg-red-100 text-red-800', 
+        icon: 'XCircleIcon', 
+        label: 'Application Not Successful',
+        description: 'Thank you for your interest, but we have decided to move forward with other candidates'
+      },
+      HIRED: { 
+        color: 'bg-emerald-100 text-emerald-800', 
+        icon: 'CheckCircleIcon', 
+        label: 'Hired - Welcome to the Team!',
+        description: 'Congratulations! You have been hired and onboarding will begin soon'
+      }
     }
 
-    return statusMap[status] || { color: 'bg-gray-100 text-gray-800', icon: 'QuestionMarkCircleIcon', label: 'Unknown' }
+    return statusMap[status] || { 
+      color: 'bg-gray-100 text-gray-800', 
+      icon: 'QuestionMarkCircleIcon', 
+      label: 'Unknown Status',
+      description: 'Status information not available'
+    }
   }
 
   // Get notification title based on status and action
@@ -440,10 +519,10 @@ class ApplicationStatusService {
       PENDING: 'Application Received',
       UNDER_REVIEW: 'Application Under Review',
       INTERVIEW_SCHEDULED: 'Interview Scheduled',
-      INTERVIEW_COMPLETED: 'Interview Completed',
-      ACCEPTED: 'Application Accepted',
-      REJECTED: 'Application Update',
-      HIRED: 'Congratulations! You\'re Hired!'
+      INTERVIEW_COMPLETED: 'Interview Completed - Pending Final Decision',
+      ACCEPTED: 'Congratulations! Offer Extended',
+      REJECTED: 'Application Not Successful',
+      HIRED: 'Welcome to the Team!'
     }
 
     return titleMap[status] || 'Application Status Updated'
@@ -453,12 +532,12 @@ class ApplicationStatusService {
   private getNotificationMessage(status: ApplicationStatus, action: string, jobTitle: string): string {
     const messageMap: Record<ApplicationStatus, string> = {
       PENDING: `Your application for ${jobTitle} has been received and is being processed.`,
-      UNDER_REVIEW: `Your application for ${jobTitle} is now under review. We'll get back to you soon!`,
-      INTERVIEW_SCHEDULED: `Great news! We'd like to schedule an interview for your ${jobTitle} application. Check your email for details.`,
-      INTERVIEW_COMPLETED: `Your interview for ${jobTitle} has been completed. We'll review the results and get back to you.`,
-      ACCEPTED: `Congratulations! Your application for ${jobTitle} has been accepted. We'll be in touch with next steps.`,
-      REJECTED: `Thank you for your interest in ${jobTitle}. Unfortunately, we've decided to move forward with other candidates.`,
-      HIRED: `Welcome to the team! You've been hired for the ${jobTitle} position. We're excited to have you on board!`
+      UNDER_REVIEW: `Your application for ${jobTitle} is now under review by our HR team. We'll get back to you soon!`,
+      INTERVIEW_SCHEDULED: `Great news! We'd like to schedule an interview for your ${jobTitle} application. Check your email for details and add it to your calendar.`,
+      INTERVIEW_COMPLETED: `Your interview for ${jobTitle} has been completed. We're now reviewing the results and will make a final decision soon.`,
+      ACCEPTED: `Congratulations! Your application for ${jobTitle} has been accepted. We'll be in touch with next steps and onboarding details.`,
+      REJECTED: `Thank you for your interest in ${jobTitle}. Unfortunately, we've decided to move forward with other candidates at this time.`,
+      HIRED: `Welcome to the team! You've been hired for the ${jobTitle} position. We're excited to have you on board and will begin the onboarding process soon!`
     }
 
     return messageMap[status] || `Your application status for ${jobTitle} has been updated.`

@@ -57,6 +57,8 @@ export default function AdminOversightPage() {
   const [selectedApplicationId, setSelectedApplicationId] = useState<string | null>(null)
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [showJobModal, setShowJobModal] = useState(false)
+  const [showRejectModal, setShowRejectModal] = useState(false)
+  const [rejectReason, setRejectReason] = useState('')
   const [editingJob, setEditingJob] = useState<Job | null>(null)
   const [newJobData, setNewJobData] = useState({
     title: '',
@@ -219,6 +221,20 @@ export default function AdminOversightPage() {
       console.error('Error rejecting applicant:', error)
       toast.error('Failed to reject applicant')
     }
+  }
+
+  const openRejectModal = (applicationId: string) => {
+    setSelectedApplicationId(applicationId)
+    setRejectReason('')
+    setShowRejectModal(true)
+  }
+
+  const submitReject = async () => {
+    if (!selectedApplicationId || !rejectReason.trim()) return
+    await handleRejectApplicant(selectedApplicationId, rejectReason.trim())
+    setShowRejectModal(false)
+    setRejectReason('')
+    setSelectedApplicationId(null)
   }
 
 
@@ -776,11 +792,8 @@ export default function AdminOversightPage() {
                                 </Button>
                                 {!['REJECTED', 'HIRED'].includes(application.status) && (
                                   <>
-                                    <Button
-                                      onClick={() => {
-                                        const reason = prompt('Enter rejection reason:')
-                                        if (reason) handleRejectApplicant(application.id, reason)
-                                      }}
+                                <Button
+                                  onClick={() => openRejectModal(application.id)}
                                       variant="secondary"
                                       className="btn-secondary text-xs px-2 py-1 text-red-600 hover:text-red-700"
                                     >
@@ -912,10 +925,7 @@ export default function AdminOversightPage() {
                                     Review
                                   </Button>
                                   <Button
-                                    onClick={() => {
-                                      const reason = prompt('Enter rejection reason:')
-                                      if (reason) handleRejectApplicant(application.id, reason)
-                                    }}
+                                    onClick={() => openRejectModal(application.id)}
                                     variant="secondary"
                                     className="btn-secondary text-xs px-2 py-1 text-red-600 hover:text-red-700"
                                   >
@@ -1504,6 +1514,42 @@ export default function AdminOversightPage() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reject Reason Modal */}
+      {showRejectModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-bg-850 rounded-lg p-6 w-full max-w-lg">
+            <h3 className="text-xl font-semibold text-text-high mb-4">Reject Application</h3>
+            <p className="text-text-mid mb-4">Please provide a brief reason for rejection. This will be visible to the applicant in Recent Activity and to Admin in Application Information.</p>
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="Explain this decision briefly..."
+              className="w-full px-3 py-2 bg-bg-800 border border-border rounded-lg text-text-high focus:outline-none focus:ring-2 focus:ring-primary min-h-[120px]"
+            />
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <Button
+                onClick={() => {
+                  setShowRejectModal(false)
+                  setRejectReason('')
+                  setSelectedApplicationId(null)
+                }}
+                variant="secondary"
+                className="btn-secondary"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={submitReject}
+                disabled={!rejectReason.trim()}
+                className="btn-primary"
+              >
+                Submit Rejection
+              </Button>
+            </div>
           </div>
         </div>
       )}

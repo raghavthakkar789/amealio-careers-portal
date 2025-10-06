@@ -38,6 +38,7 @@ import {
   DashboardApplicant,
   DashboardHRUser
 } from '@/types/admin'
+import FinalApprovalModal from '@/components/application/FinalApprovalModal'
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession()
@@ -66,6 +67,8 @@ export default function AdminDashboard() {
     createdAt: string;
     isActive: boolean;
   }[]>([])
+  const [showFinalApprovalModal, setShowFinalApprovalModal] = useState(false)
+  const [selectedApplicantId, setSelectedApplicantId] = useState<string | null>(null)
   const [analytics, setAnalytics] = useState<DashboardStats>({
     totalUsers: 0,
     totalJobs: 0,
@@ -165,7 +168,7 @@ export default function AdminDashboard() {
             name: 'Arjun Sharma',
             email: 'john@example.com',
             position: 'Senior Software Engineer',
-            status: 'PENDING_REVIEW',
+            status: 'INTERVIEW_COMPLETED',
             applicationDate: '2024-01-15',
             interviewScore: 4.2,
             hrRecommendation: 'HIRE',
@@ -179,7 +182,7 @@ export default function AdminDashboard() {
             name: 'Priya Patel',
             email: 'jane@example.com',
             position: 'Product Manager',
-            status: 'APPROVED',
+            status: 'ACCEPTED',
             applicationDate: '2024-01-10',
             interviewScore: 4.8,
             hrRecommendation: 'HIRE',
@@ -187,6 +190,48 @@ export default function AdminDashboard() {
             referenceCheck: 'COMPLETED',
             experience: '7 years',
             skills: ['Product Strategy', 'Agile', 'User Research']
+          },
+          {
+            id: '3',
+            name: 'Rajesh Kumar',
+            email: 'rajesh@example.com',
+            position: 'Frontend Developer',
+            status: 'PENDING',
+            applicationDate: '2024-01-20',
+            interviewScore: 0,
+            hrRecommendation: 'PENDING',
+            backgroundCheck: 'PENDING',
+            referenceCheck: 'PENDING',
+            experience: '3 years',
+            skills: ['JavaScript', 'React', 'CSS']
+          },
+          {
+            id: '4',
+            name: 'Sneha Gupta',
+            email: 'sneha@example.com',
+            position: 'Backend Developer',
+            status: 'UNDER_REVIEW',
+            applicationDate: '2024-01-18',
+            interviewScore: 0,
+            hrRecommendation: 'PENDING',
+            backgroundCheck: 'PENDING',
+            referenceCheck: 'PENDING',
+            experience: '4 years',
+            skills: ['Node.js', 'Python', 'MongoDB']
+          },
+          {
+            id: '5',
+            name: 'Amit Singh',
+            email: 'amit@example.com',
+            position: 'DevOps Engineer',
+            status: 'INTERVIEW_SCHEDULED',
+            applicationDate: '2024-01-16',
+            interviewScore: 0,
+            hrRecommendation: 'HIRE',
+            backgroundCheck: 'PENDING',
+            referenceCheck: 'PENDING',
+            experience: '6 years',
+            skills: ['AWS', 'Docker', 'Kubernetes']
           }
         ])
 
@@ -209,6 +254,16 @@ export default function AdminDashboard() {
             'Sales': { applications: 28, hired: 7, pending: 3 },
             'HR': { applications: 15, hired: 4, pending: 2 },
             'Finance': { applications: 12, hired: 3, pending: 1 }
+          },
+          // New stage-specific analytics
+          stageStats: {
+            pending: 25,
+            underReview: 18,
+            interviewScheduled: 12,
+            interviewCompleted: 8,
+            accepted: 5,
+            hired: 45,
+            rejected: 88
           }
         })
       } catch (error) {
@@ -234,25 +289,55 @@ export default function AdminDashboard() {
     return null
   }
 
-  const handleFinalDecision = async (applicantId: string, decision: 'HIRE' | 'REJECT') => {
+  const handleFinalDecision = async (decision: 'HIRE' | 'REJECT', notes?: string) => {
+    if (!selectedApplicantId) return
+    
     setLoading(true)
     try {
       // API call to make final decision
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      toast.success(`Final decision: ${decision}`)
-      
-      // Update applicant status
-      setApplicants(prev => prev.map(applicant => 
-        applicant.id === applicantId 
-          ? { ...applicant, status: decision === 'HIRE' ? 'HIRED' : 'REJECTED' }
-          : applicant
-      ))
+      const response = await fetch(`/api/applications/${selectedApplicantId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: decision === 'HIRE' ? 'HIRED' : 'REJECTED',
+          action: 'FINAL_DECISION',
+          notes: notes || `Final decision: ${decision} by admin`
+        }),
+      })
+
+      if (response.ok) {
+        toast.success(`Final decision: ${decision}`)
+        
+        // Update applicant status
+        setApplicants(prev => prev.map(applicant => 
+          applicant.id === selectedApplicantId 
+            ? { ...applicant, status: decision === 'HIRE' ? 'HIRED' : 'REJECTED' }
+            : applicant
+        ))
+        
+        setShowFinalApprovalModal(false)
+        setSelectedApplicantId(null)
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to make final decision')
+      }
     } catch {
       toast.error('Failed to make final decision')
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleViewFullProfile = (applicantId: string) => {
+    setSelectedApplicantId(applicantId)
+    setShowFinalApprovalModal(true)
+  }
+
+  const handleCloseFinalApprovalModal = () => {
+    setShowFinalApprovalModal(false)
+    setSelectedApplicantId(null)
   }
 
   const handleCreateHRUser = async (formData: {
@@ -382,7 +467,7 @@ export default function AdminDashboard() {
             {[
               { id: 'overview', label: 'System Overview & Oversight', icon: ChartBarIcon, color: 'from-primary to-purple-600' },
               { id: 'applications', label: 'All Applications', icon: DocumentTextIcon, color: 'from-blue-500 to-blue-600' },
-              { id: 'applicants', label: 'Applicant Profiles', icon: UsersIcon, color: 'from-emerald-500 to-emerald-600' },
+              { id: 'applicants', label: 'Final Approval', icon: UsersIcon, color: 'from-emerald-500 to-emerald-600' },
               { id: 'hr-management', label: 'HR Management & Requests', icon: UserPlusIcon, color: 'from-amber-500 to-amber-600' },
               { id: 'admin-management', label: 'Admin Management', icon: ShieldCheckIcon, color: 'from-red-500 to-red-600' },
               { id: 'analytics', label: 'Analytics', icon: ArrowTrendingUpIcon, color: 'from-rose-500 to-rose-600' }
@@ -418,7 +503,7 @@ export default function AdminDashboard() {
                       <DocumentTextIcon className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <p className="text-3xl font-bold text-text-high">{analytics.totalApplications}</p>
+                      <p className="text-3xl font-bold text-text-high">{analytics?.totalApplications || 0}</p>
                       <p className="text-text-mid">Total Applications</p>
                       <p className="text-xs text-emerald-600">+15% this month</p>
                     </div>
@@ -431,7 +516,7 @@ export default function AdminDashboard() {
                       <ClockIcon className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <p className="text-3xl font-bold text-text-high">{analytics.pendingReviews}</p>
+                      <p className="text-3xl font-bold text-text-high">{analytics?.pendingReviews || 0}</p>
                       <p className="text-text-mid">Pending Reviews</p>
                       <p className="text-xs text-amber-600">Requires attention</p>
                     </div>
@@ -444,7 +529,7 @@ export default function AdminDashboard() {
                       <CheckCircleIcon className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <p className="text-3xl font-bold text-text-high">{analytics.hired}</p>
+                      <p className="text-3xl font-bold text-text-high">{analytics?.hired || 0}</p>
                       <p className="text-text-mid">Hired</p>
                       <p className="text-xs text-emerald-600">+8 this month</p>
                     </div>
@@ -457,7 +542,7 @@ export default function AdminDashboard() {
                       <XCircleIcon className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <p className="text-3xl font-bold text-text-high">{analytics.rejected}</p>
+                      <p className="text-3xl font-bold text-text-high">{analytics?.rejected || 0}</p>
                       <p className="text-text-mid">Rejected</p>
                       <p className="text-xs text-rose-600">-5% this month</p>
                     </div>
@@ -529,7 +614,7 @@ export default function AdminDashboard() {
                 <div className="card">
                   <h2 className="text-2xl font-bold text-text-high mb-6">Department Statistics</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {Object.entries(analytics.departmentStats || {}).map(([dept, stats]: [string, { applications: number; hired: number; pending: number }]) => (
+                    {Object.entries(analytics?.departmentStats || {}).map(([dept, stats]: [string, { applications: number; hired: number; pending: number }]) => (
                       <div key={dept} className="bg-bg-850 p-4 rounded-lg border border-border hover:shadow-medium transition-all duration-200">
                         <h3 className="font-semibold text-text-high mb-2">{dept}</h3>
                         <div className="space-y-1 text-sm">
@@ -584,7 +669,7 @@ export default function AdminDashboard() {
                         <DocumentTextIcon className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <p className="text-2xl font-bold text-text-high">{analytics.totalApplications}</p>
+                        <p className="text-2xl font-bold text-text-high">{analytics?.totalApplications || 0}</p>
                         <p className="text-text-mid text-sm">Total Applications</p>
                       </div>
                     </div>
@@ -596,7 +681,7 @@ export default function AdminDashboard() {
                         <ClockIcon className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <p className="text-2xl font-bold text-text-high">{analytics.pendingReviews}</p>
+                        <p className="text-2xl font-bold text-text-high">{analytics?.pendingReviews || 0}</p>
                         <p className="text-text-mid text-sm">Pending Reviews</p>
                       </div>
                     </div>
@@ -608,7 +693,7 @@ export default function AdminDashboard() {
                         <CheckCircleIcon className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <p className="text-2xl font-bold text-text-high">{analytics.hired}</p>
+                        <p className="text-2xl font-bold text-text-high">{analytics?.hired || 0}</p>
                         <p className="text-text-mid text-sm">Hired</p>
                       </div>
                     </div>
@@ -618,11 +703,11 @@ export default function AdminDashboard() {
             </motion.div>
           )}
 
-          {/* Applicant Profiles Tab */}
+          {/* Final Approval Tab */}
           {activeTab === 'applicants' && (
             <div className="space-y-6">
               <div className="card">
-                <h2 className="text-2xl font-bold text-text-primary mb-6">Applicant Profiles</h2>
+                <h2 className="text-2xl font-bold text-text-primary mb-6">Final Approval</h2>
                 <div className="space-y-4">
                   {applicants.map((applicant) => (
                     <div key={applicant.id} className="bg-bg-850 p-6 rounded-lg border border-border">
@@ -636,6 +721,11 @@ export default function AdminDashboard() {
                           <span className={`px-3 py-1 rounded-full text-sm ${
                             applicant.status === 'HIRED' ? 'bg-emerald-100 text-emerald-700' :
                             applicant.status === 'REJECTED' ? 'bg-rose-100 text-rose-700' :
+                            applicant.status === 'ACCEPTED' ? 'bg-green-100 text-green-700' :
+                            applicant.status === 'INTERVIEW_COMPLETED' ? 'bg-indigo-100 text-indigo-700' :
+                            applicant.status === 'INTERVIEW_SCHEDULED' ? 'bg-purple-100 text-purple-700' :
+                            applicant.status === 'UNDER_REVIEW' ? 'bg-yellow-100 text-yellow-700' :
+                            applicant.status === 'PENDING' ? 'bg-blue-100 text-blue-700' :
                             'bg-amber-100 text-amber-700'
                           }`}>
                             {applicant.status.replace('_', ' ')}
@@ -710,23 +800,32 @@ export default function AdminDashboard() {
                       </div>
 
                       {/* Final Decision Actions */}
-                      {applicant.status === 'PENDING_REVIEW' && (
+                      {(applicant.status === 'INTERVIEW_COMPLETED' || applicant.status === 'ACCEPTED') && (
                         <div className="flex gap-4 pt-4 border-t border-border">
                           <Button
-                            onClick={() => handleFinalDecision(applicant.id, 'HIRE')}
+                            onClick={() => {
+                              setSelectedApplicantId(applicant.id)
+                              handleFinalDecision('HIRE')
+                            }}
                             className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                           >
                             <CheckCircleIcon className="w-4 h-4 mr-2" />
                             Approve Hire
                           </Button>
                           <Button
-                            onClick={() => handleFinalDecision(applicant.id, 'REJECT')}
+                            onClick={() => {
+                              setSelectedApplicantId(applicant.id)
+                              handleFinalDecision('REJECT')
+                            }}
                             className="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                           >
                             <XCircleIcon className="w-4 h-4 mr-2" />
                             Reject
                           </Button>
-                          <Button className="bg-bg-800 hover:bg-bg-850 text-text-high px-4 py-2 rounded-lg font-medium transition-colors border border-border">
+                          <Button 
+                            onClick={() => handleViewFullProfile(applicant.id)}
+                            className="bg-bg-800 hover:bg-bg-850 text-text-high px-4 py-2 rounded-lg font-medium transition-colors border border-border"
+                          >
                             <EyeIcon className="w-4 h-4 mr-2" />
                             View Full Profile
                           </Button>
@@ -1144,6 +1243,16 @@ export default function AdminDashboard() {
           )}
         </motion.div>
       </div>
+
+      {/* Final Approval Modal */}
+      {selectedApplicantId && (
+        <FinalApprovalModal
+          isOpen={showFinalApprovalModal}
+          onClose={handleCloseFinalApprovalModal}
+          applicationId={selectedApplicantId}
+          onFinalDecision={handleFinalDecision}
+        />
+      )}
     </div>
   )
 }

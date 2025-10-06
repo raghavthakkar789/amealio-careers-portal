@@ -50,6 +50,28 @@ export async function GET(
               }
             }
           }
+        },
+        interviews: {
+          include: {
+            reviews: {
+              include: {
+                hrReviewer: {
+                  select: {
+                    firstName: true,
+                    lastName: true,
+                    email: true
+                  }
+                },
+                adminReviewer: {
+                  select: {
+                    firstName: true,
+                    lastName: true,
+                    email: true
+                  }
+                }
+              }
+            }
+          }
         }
       }
     })
@@ -101,7 +123,47 @@ export async function GET(
         id: application.job.id,
         title: application.job.title,
         department: application.job.department.name
-      }
+      },
+
+      // HR Recommendations (from interview reviews)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      hrRecommendations: application.interviews.flatMap((interview: any) => 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        interview.reviews.map((review: any) => ({
+          id: review.id,
+          hrName: `${review.hrReviewer.firstName} ${review.hrReviewer.lastName}`,
+          hrEmail: review.hrReviewer.email,
+          recommendation: review.recommendation as 'HIRE' | 'REJECT' | 'PENDING',
+          notes: review.comments || '',
+          rating: review.overallRating || 0,
+          strengths: [], // These would need to be added to the schema
+          concerns: [], // These would need to be added to the schema
+          createdAt: review.createdAt
+        }))
+      ),
+
+      // Interview Reviews
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      interviewReviews: application.interviews.map((interview: any) => ({
+        id: interview.id,
+        interviewerName: interview.reviews.length > 0 ? 
+          `${interview.reviews[0].hrReviewer.firstName} ${interview.reviews[0].hrReviewer.lastName}` : 
+          'Unknown',
+        interviewerRole: 'HR', // Default role
+        interviewType: interview.interviewType,
+        overallRating: interview.reviews.length > 0 ? interview.reviews[0].overallRating : 0,
+        technicalRating: interview.reviews.length > 0 ? interview.reviews[0].technicalSkills : 0,
+        communicationRating: interview.reviews.length > 0 ? interview.reviews[0].communication : 0,
+        culturalFitRating: interview.reviews.length > 0 ? interview.reviews[0].culturalFit : 0,
+        notes: interview.notes || '',
+        strengths: [], // These would need to be added to the schema
+        areasForImprovement: [], // These would need to be added to the schema
+        recommendation: interview.reviews.length > 0 ? 
+          (interview.reviews[0].recommendation as 'HIRE' | 'REJECT' | 'MAYBE' | 'PENDING') : 
+          'PENDING',
+        interviewDate: interview.scheduledAt,
+        duration: 60 // Default duration
+      }))
     }
 
     return NextResponse.json({ applicantDetails })

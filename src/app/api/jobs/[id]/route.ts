@@ -199,7 +199,8 @@ export async function PUT(
     }
 
     // Update job and description in a transaction
-    const result = await prisma.$transaction(async (tx) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = await prisma.$transaction(async (tx: any) => {
       // Update the job
       const updatedJob = await tx.job.update({
         where: { id: jobId },

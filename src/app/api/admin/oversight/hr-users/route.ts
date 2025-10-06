@@ -85,7 +85,8 @@ export async function GET() {
     })
 
     // Calculate performance metrics for each HR user
-    const hrUsersWithMetrics = hrUsers.map((hr) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const hrUsersWithMetrics = hrUsers.map((hr: any) => {
       // Calculate applications reviewed
       const applicationsReviewed = hr.hrJobs?.reduce((total: number, job: { applications: { length: number } }) => {
         return total + job.applications.length

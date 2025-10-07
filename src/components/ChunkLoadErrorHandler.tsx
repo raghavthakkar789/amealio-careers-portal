@@ -6,69 +6,100 @@ export function ChunkLoadErrorHandler() {
   useEffect(() => {
     // Handle chunk loading errors globally
     const handleChunkLoadError = (event: ErrorEvent) => {
-      const error = event.error
-      
-      // Check if it's a chunk loading error
       if (
-        error?.name === 'ChunkLoadError' ||
-        error?.message?.includes('Loading chunk') ||
-        error?.message?.includes('Loading CSS chunk') ||
-        error?.message?.includes('timeout')
+        event.message?.includes('Loading chunk') ||
+        event.message?.includes('Loading CSS chunk') ||
+        event.message?.includes('timeout') ||
+        event.filename?.includes('chunks') ||
+        event.message?.includes('ChunkLoadError')
       ) {
-        console.error('ChunkLoadError detected:', error)
+        console.error('Chunk load error detected:', event)
         
-        // Show user-friendly error message
-        const shouldReload = window.confirm(
-          'The application needs to reload to load the latest changes. Would you like to reload now?'
-        )
+        // Show user-friendly message
+        const toast = document.createElement('div')
+        toast.innerHTML = `
+          <div style="
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #40299B;
+            color: white;
+            padding: 16px 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 14px;
+            max-width: 300px;
+          ">
+            <div style="font-weight: 600; margin-bottom: 4px;">Loading Error</div>
+            <div>Retrying to load page...</div>
+          </div>
+        `
+        document.body.appendChild(toast)
         
-        if (shouldReload) {
-          // Clear caches and reload
-          if ('caches' in window) {
-            caches.keys().then(cacheNames => {
-              cacheNames.forEach(cacheName => {
-                caches.delete(cacheName)
-              })
+        // Clear caches and reload
+        if ('caches' in window) {
+          caches.keys().then(cacheNames => {
+            cacheNames.forEach(cacheName => {
+              caches.delete(cacheName)
             })
-          }
-          
-          window.location.reload()
+          })
         }
+        
+        // Reload the page after a short delay
+        setTimeout(() => {
+          window.location.reload()
+        }, 2000)
       }
     }
 
     // Handle unhandled promise rejections (common with chunk loading errors)
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      const reason = event.reason
-      
       if (
-        reason?.name === 'ChunkLoadError' ||
-        reason?.message?.includes('Loading chunk') ||
-        reason?.message?.includes('Loading CSS chunk') ||
-        reason?.message?.includes('timeout')
+        event.reason?.message?.includes('Loading chunk') ||
+        event.reason?.message?.includes('Loading CSS chunk') ||
+        event.reason?.message?.includes('timeout') ||
+        event.reason?.message?.includes('ChunkLoadError')
       ) {
-        console.error('ChunkLoadError promise rejection:', reason)
+        console.error('Chunk load promise rejection:', event.reason)
         
-        // Prevent the default browser behavior
-        event.preventDefault()
+        // Show user-friendly message
+        const toast = document.createElement('div')
+        toast.innerHTML = `
+          <div style="
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #40299B;
+            color: white;
+            padding: 16px 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 14px;
+            max-width: 300px;
+          ">
+            <div style="font-weight: 600; margin-bottom: 4px;">Loading Error</div>
+            <div>Retrying to load page...</div>
+          </div>
+        `
+        document.body.appendChild(toast)
         
-        // Show user-friendly error message
-        const shouldReload = window.confirm(
-          'The application needs to reload to load the latest changes. Would you like to reload now?'
-        )
-        
-        if (shouldReload) {
-          // Clear caches and reload
-          if ('caches' in window) {
-            caches.keys().then(cacheNames => {
-              cacheNames.forEach(cacheName => {
-                caches.delete(cacheName)
-              })
+        // Clear caches and reload
+        if ('caches' in window) {
+          caches.keys().then(cacheNames => {
+            cacheNames.forEach(cacheName => {
+              caches.delete(cacheName)
             })
-          }
-          
-          window.location.reload()
+          })
         }
+        
+        // Reload the page after a short delay
+        setTimeout(() => {
+          window.location.reload()
+        }, 2000)
       }
     }
 

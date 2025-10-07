@@ -12,25 +12,25 @@ const steps = [
   {
     icon: DocumentTextIcon,
     title: 'Submit Application',
-    description: 'Fill out our comprehensive application form with your details, resume, and cover letter.',
+    description: 'Submit your application with resume and cover letter.',
     step: '01'
   },
   {
     icon: MagnifyingGlassIcon,
     title: 'HR Review',
-    description: 'Our HR team reviews your application and assesses your fit for the position.',
+    description: 'Our HR team reviews your application and assesses your fit.',
     step: '02'
   },
   {
     icon: CalendarIcon,
     title: 'Interview Process',
-    description: 'Participate in interviews with our team members and showcase your skills.',
+    description: 'Participate in interviews and showcase your skills.',
     step: '03'
   },
   {
     icon: CheckCircleIcon,
     title: 'Final Decision',
-    description: 'Receive our decision and next steps for joining the amealio team.',
+    description: 'Receive our decision and next steps to join the team.',
     step: '04'
   }
 ]
@@ -64,7 +64,7 @@ export function ApplicationProcessSection() {
             >
               {/* Connection Line */}
               {index < steps.length - 1 && (
-                <div className="hidden lg:block absolute top-8 left-full w-full h-0.5 bg-purple-200 z-0" />
+                <div className="hidden lg:block absolute top-8 left-full w-full h-0.5 bg-[#40299B]/20 z-0" />
               )}
               
               <div className="relative z-10 text-center">
@@ -72,7 +72,7 @@ export function ApplicationProcessSection() {
                   <step.icon className="w-8 h-8" />
                 </div>
                 
-                <div className="absolute -top-2 -right-2 w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center border border-purple-200">
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-[#40299B]/10 rounded-full flex items-center justify-center border border-[#40299B]/20">
                   <span className="text-sm font-bold text-primary">
                     {step.step}
                   </span>
@@ -104,19 +104,19 @@ export function ApplicationProcessSection() {
               <div>
                 <h4 className="font-semibold text-text-high mb-2">Timeline</h4>
                 <p className="text-text-mid text-sm">
-                  Complete application process typically takes 2-4 weeks from initial submission to final decision.
+                  Application process takes 2-4 weeks from submission to final decision.
                 </p>
               </div>
               <div>
                 <h4 className="font-semibold text-text-high mb-2">Communication</h4>
                 <p className="text-text-mid text-sm">
-                  Regular updates via email and our portal. You&apos;ll always know where you stand in the process.
+                  Regular updates via email and portal. You&apos;ll always know your status.
                 </p>
               </div>
               <div>
                 <h4 className="font-semibold text-text-high mb-2">Support</h4>
                 <p className="text-text-mid text-sm">
-                  Our HR team is here to help. Don&apos;t hesitate to reach out with any questions or concerns.
+                  Our HR team is here to help with any questions or concerns.
                 </p>
               </div>
             </div>

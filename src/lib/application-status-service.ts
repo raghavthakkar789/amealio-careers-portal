@@ -1,6 +1,7 @@
 // Application Status Management Service
 import { prisma } from '@/lib/prisma'
-import { ApplicationStatus, UserRole } from '@prisma/client'
+import { ApplicationStatus, UserRole, Prisma } from '@prisma/client'
+import { emailService } from '@/lib/email-service'
 
 export interface StatusTransition {
   from: ApplicationStatus | null
@@ -63,21 +64,21 @@ class ApplicationStatusService {
   }
 
   private initializeStatusTransitions() {
-    // Define all possible status transitions according to the new workflow
+    // Define all possible status transitions according to the new comprehensive workflow
     const transitions: StatusTransition[] = [
       // PENDING stage transitions
       {
         from: 'PENDING',
         to: 'UNDER_REVIEW',
-        action: 'ACCEPT_FOR_REVIEW',
+        action: 'UNDER_REVIEW',
         allowedRoles: ['HR', 'ADMIN'],
         requiresConfirmation: false,
-        description: 'Accept application for detailed review'
+        description: 'Move application to under review'
       },
       {
         from: 'PENDING',
         to: 'REJECTED',
-        action: 'REJECT_APPLICATION',
+        action: 'REJECT',
         allowedRoles: ['HR', 'ADMIN'],
         requiresConfirmation: true,
         confirmationMessage: 'Are you sure you want to reject this application?',
@@ -96,7 +97,7 @@ class ApplicationStatusService {
       {
         from: 'UNDER_REVIEW',
         to: 'REJECTED',
-        action: 'REJECT_AFTER_REVIEW',
+        action: 'REJECT',
         allowedRoles: ['HR', 'ADMIN'],
         requiresConfirmation: true,
         confirmationMessage: 'Are you sure you want to reject this application after review?',
@@ -115,42 +116,50 @@ class ApplicationStatusService {
       {
         from: 'INTERVIEW_SCHEDULED',
         to: 'REJECTED',
-        action: 'CANCEL_INTERVIEW',
+        action: 'REJECT',
         allowedRoles: ['HR', 'ADMIN'],
         requiresConfirmation: true,
-        confirmationMessage: 'Are you sure you want to cancel this interview and reject the candidate?',
-        description: 'Cancel interview and reject candidate'
+        confirmationMessage: 'Are you sure you want to reject this candidate?',
+        description: 'Reject the candidate'
       },
       
-      // INTERVIEW_COMPLETED stage transitions (ADMIN ONLY)
+      // INTERVIEW_COMPLETED stage transitions
       {
         from: 'INTERVIEW_COMPLETED',
         to: 'ACCEPTED',
-        action: 'ACCEPT_CANDIDATE',
-        allowedRoles: ['ADMIN'], // Only Admin can make final decision
-        requiresConfirmation: true,
-        confirmationMessage: 'Are you sure you want to accept this candidate?',
-        description: 'Accept the candidate (Admin decision required)'
+        action: 'ACCEPT',
+        allowedRoles: ['HR', 'ADMIN'],
+        requiresConfirmation: false,
+        description: 'Accept the candidate after interview evaluation'
       },
       {
         from: 'INTERVIEW_COMPLETED',
         to: 'REJECTED',
-        action: 'REJECT_AFTER_INTERVIEW_COMPLETION',
-        allowedRoles: ['ADMIN'], // Only Admin can make final decision
+        action: 'REJECT',
+        allowedRoles: ['HR', 'ADMIN'],
         requiresConfirmation: true,
-        confirmationMessage: 'Are you sure you want to reject this candidate after interview completion?',
-        description: 'Reject the candidate after interview completion (Admin decision required)'
+        confirmationMessage: 'Are you sure you want to reject this candidate after interview?',
+        description: 'Reject the candidate after interview'
       },
       
-      // ACCEPTED stage transitions (ADMIN ONLY)
+      // ACCEPTED stage transitions (ADMIN ONLY for final decision)
       {
         from: 'ACCEPTED',
         to: 'HIRED',
-        action: 'HIRE_CANDIDATE',
-        allowedRoles: ['ADMIN'], // Only Admin can hire
+        action: 'HIRE',
+        allowedRoles: ['ADMIN'],
         requiresConfirmation: true,
         confirmationMessage: 'Are you sure you want to hire this candidate?',
-        description: 'Hire the candidate (Admin only)'
+        description: 'Hire the candidate (Admin final decision)'
+      },
+      {
+        from: 'ACCEPTED',
+        to: 'REJECTED',
+        action: 'FINAL_REJECT',
+        allowedRoles: ['ADMIN'],
+        requiresConfirmation: true,
+        confirmationMessage: 'Are you sure you want to reject this candidate at final stage?',
+        description: 'Final rejection by Admin'
       }
     ]
 
@@ -208,58 +217,19 @@ class ApplicationStatusService {
   async updateApplicationStatus(update: ApplicationStatusUpdate): Promise<ApplicationWithHistory> {
     const { applicationId, newStatus, action, performedBy, performedByName, performedByRole, notes } = update
 
-    // Get current application
-    const currentApplication = await prisma.application.findUnique({
-      where: { id: applicationId },
-      include: {
-        applicant: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true
-          }
-        },
-        job: {
-          select: {
-            id: true,
-            title: true,
-            department: {
-              select: {
-                name: true
-              }
-            }
-          }
-        }
-      }
+    console.log('Starting application status update:', {
+      applicationId,
+      newStatus,
+      action,
+      performedBy,
+      performedByName,
+      performedByRole
     })
 
-    if (!currentApplication) {
-      throw new Error('Application not found')
-    }
-
-    // Check if status is actually changing
-    if (currentApplication.status === newStatus) {
-      throw new Error(`Application is already in ${newStatus} status`)
-    }
-
-    // Validate transition with enhanced checks
-    const isValidTransition = this.validateTransition(currentApplication.status, newStatus, performedByRole, action)
-    
-    if (!isValidTransition) {
-      throw new Error(`Invalid status transition from ${currentApplication.status} to ${newStatus} for role ${performedByRole}. This transition is not allowed or violates the stage workflow.`)
-    }
-
-    // Update application status and create history record in a transaction
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = await prisma.$transaction(async (tx: any) => {
-      // Update application status
-      const updatedApplication = await tx.application.update({
+    try {
+      // Get current application
+      const currentApplication = await prisma.application.findUnique({
         where: { id: applicationId },
-        data: { 
-          status: newStatus,
-          updatedAt: new Date()
-        },
         include: {
           applicant: {
             select: {
@@ -283,41 +253,170 @@ class ApplicationStatusService {
         }
       })
 
-      // Create history record
-      await tx.applicationHistory.create({
-        data: {
-          applicationId,
-          fromStatus: currentApplication.status,
-          toStatus: newStatus,
-          action,
-          performedBy,
-          performedByName,
-          performedByRole,
-          notes
-        }
+      if (!currentApplication) {
+        throw new Error('Application not found')
+      }
+
+      console.log('Current application found:', {
+        id: currentApplication.id,
+        currentStatus: currentApplication.status,
+        applicantId: currentApplication.applicantId,
+        jobTitle: currentApplication.jobTitle
       })
 
-      // Create notification for the applicant
-      await tx.notification.create({
-        data: {
-          title: this.getNotificationTitle(newStatus, action),
-          message: this.getNotificationMessage(newStatus, action, updatedApplication.jobTitle),
-          type: 'in-app',
-          userId: updatedApplication.applicantId,
-          applicationId
+      // Check if status is actually changing
+      if (currentApplication.status === newStatus) {
+        throw new Error(`Application is already in ${newStatus} status`)
+      }
+
+      // Validate transition with enhanced checks
+      const isValidTransition = this.validateTransition(currentApplication.status, newStatus, performedByRole, action)
+      
+      if (!isValidTransition) {
+        throw new Error(`Invalid status transition from ${currentApplication.status} to ${newStatus} for role ${performedByRole}. This transition is not allowed or violates the stage workflow.`)
+      }
+
+      console.log('Transition validation passed, proceeding with update')
+
+      // Prepare update data based on the new status and action
+      const updateData: {
+        status: string
+        updatedAt: Date
+        rejectionReason?: string
+        rejectedBy?: string
+        rejectedAt?: Date
+        rejectionStage?: string
+        acceptedByHr?: string
+        acceptedByAdmin?: string
+        finalDecisionBy?: string
+        finalDecisionAt?: Date
+        finalComments?: string
+      } = {
+        status: newStatus,
+        updatedAt: new Date()
+      }
+
+      // Add specific fields based on the action
+      if (action === 'REJECT' || action === 'FINAL_REJECT') {
+        updateData.rejectionReason = notes || 'No reason provided'
+        updateData.rejectedBy = performedBy
+        updateData.rejectedAt = new Date()
+        updateData.rejectionStage = currentApplication.status
+      }
+
+      if (action === 'ACCEPT') {
+        if (performedByRole === 'HR') {
+          updateData.acceptedByHr = performedBy
+        } else if (performedByRole === 'ADMIN') {
+          updateData.acceptedByAdmin = performedBy
         }
+      }
+
+      if (action === 'HIRE') {
+        updateData.finalDecisionBy = performedBy
+        updateData.finalDecisionAt = new Date()
+        updateData.finalComments = notes
+      }
+
+      // Update application status and create history record in a transaction
+      const result = await prisma.$transaction(async (tx) => {
+        // Update application status
+        const updatedApplication = await tx.application.update({
+          where: { id: applicationId },
+          data: updateData as Prisma.ApplicationUpdateInput,
+          include: {
+            applicant: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true
+              }
+            },
+            job: {
+              select: {
+                id: true,
+                title: true,
+                department: {
+                  select: {
+                    name: true
+                  }
+                }
+              }
+            }
+          }
+        })
+
+        // Create history record
+        await tx.applicationHistory.create({
+          data: {
+            applicationId,
+            fromStatus: currentApplication.status,
+            toStatus: newStatus,
+            action,
+            performedBy,
+            performedByName,
+            performedByRole,
+            notes
+          }
+        })
+
+        // Create notification for the applicant
+        await tx.notification.create({
+          data: {
+            title: this.getNotificationTitle(newStatus, action),
+            message: this.getNotificationMessage(newStatus, action, updatedApplication.jobTitle),
+            type: 'in-app',
+            userId: updatedApplication.applicantId,
+            applicationId
+          }
+        })
+
+        return updatedApplication
       })
 
-      return updatedApplication
-    })
+      // Get updated application with history
+      const applicationWithHistory = await this.getApplicationWithHistory(applicationId)
 
-    // Get updated application with history
-    const applicationWithHistory = await this.getApplicationWithHistory(applicationId)
+      console.log('Application status update completed successfully:', {
+        applicationId,
+        newStatus,
+        action
+      })
 
-    // Notify all listeners
-    this.notifyListeners(applicationId, update)
+      // Send email notifications based on the action
+      try {
+        if (action === 'REJECT' || action === 'FINAL_REJECT') {
+          // Determine if candidate was interviewed
+          const wasInterviewed = currentApplication.status === 'INTERVIEW_SCHEDULED' || 
+                                currentApplication.status === 'INTERVIEW_COMPLETED' ||
+                                currentApplication.status === 'ACCEPTED'
+          
+          await emailService.sendRejectionEmail(applicationId, wasInterviewed)
+          console.log('Rejection email sent successfully')
+        } else if (action === 'HIRE') {
+          await emailService.sendHiredEmail(applicationId, performedBy)
+          console.log('Hired email sent successfully')
+        }
+      } catch (emailError) {
+        console.error('Email sending failed:', emailError)
+        // Don't throw error - email failure shouldn't block workflow
+      }
 
-    return applicationWithHistory
+      // Notify all listeners
+      this.notifyListeners(applicationId, update)
+
+      return applicationWithHistory
+    } catch (error) {
+      console.error('Error in updateApplicationStatus:', {
+        applicationId,
+        newStatus,
+        action,
+        error: error instanceof Error ? error.message : error,
+        stack: error instanceof Error ? error.stack : undefined
+      })
+      throw error
+    }
   }
 
   // Get application with complete history
@@ -532,12 +631,12 @@ class ApplicationStatusService {
   private getNotificationMessage(status: ApplicationStatus, action: string, jobTitle: string): string {
     const messageMap: Record<ApplicationStatus, string> = {
       PENDING: `Your application for ${jobTitle} has been received and is being processed.`,
-      UNDER_REVIEW: `Your application for ${jobTitle} is now under review by our HR team. We'll get back to you soon!`,
+      UNDER_REVIEW: `Your application for ${jobTitle} is now under review by our HR team. We&apos;ll get back to you soon!`,
       INTERVIEW_SCHEDULED: `Great news! We'd like to schedule an interview for your ${jobTitle} application. Check your email for details and add it to your calendar.`,
-      INTERVIEW_COMPLETED: `Your interview for ${jobTitle} has been completed. We're now reviewing the results and will make a final decision soon.`,
-      ACCEPTED: `Congratulations! Your application for ${jobTitle} has been accepted. We'll be in touch with next steps and onboarding details.`,
-      REJECTED: `Thank you for your interest in ${jobTitle}. Unfortunately, we've decided to move forward with other candidates at this time.`,
-      HIRED: `Welcome to the team! You've been hired for the ${jobTitle} position. We're excited to have you on board and will begin the onboarding process soon!`
+      INTERVIEW_COMPLETED: `Your interview for ${jobTitle} has been completed. We&apos;re now reviewing the results and will make a final decision soon.`,
+      ACCEPTED: `Congratulations! Your application for ${jobTitle} has been accepted. We&apos;ll be in touch with next steps and onboarding details.`,
+      REJECTED: `Thank you for your interest in ${jobTitle}. Unfortunately, we&apos;ve decided to move forward with other candidates at this time.`,
+      HIRED: `Welcome to the team! You&apos;ve been hired for the ${jobTitle} position. We&apos;re excited to have you on board and will begin the onboarding process soon!`
     }
 
     return messageMap[status] || `Your application status for ${jobTitle} has been updated.`

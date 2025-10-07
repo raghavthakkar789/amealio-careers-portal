@@ -15,37 +15,37 @@ const values = [
   {
     icon: LightBulbIcon,
     title: 'Innovation',
-    description: 'We constantly push boundaries and embrace new ideas to create groundbreaking solutions.',
+    description: 'We innovate fearlessly, turning bold ideas into breakthrough solutions.',
     color: 'text-yellow-500'
   },
   {
     icon: HeartIcon,
     title: 'Passion',
-    description: 'We\'re passionate about our work and committed to making a positive impact in everything we do.',
+    description: 'We\'re driven by purpose, committed to making a meaningful impact in everything we do.',
     color: 'text-red-500'
   },
   {
     icon: ShieldCheckIcon,
     title: 'Integrity',
-    description: 'We operate with honesty, transparency, and ethical practices in all our business dealings.',
+    description: 'We operate with transparency, honesty, and ethical practices in all our work.',
     color: 'text-green-500'
   },
   {
     icon: UsersIcon,
     title: 'Collaboration',
-    description: 'We believe in the power of teamwork and diverse perspectives to achieve extraordinary results.',
+    description: 'We believe in the power of diverse teams to achieve extraordinary results.',
     color: 'text-blue-500'
   },
   {
     icon: RocketLaunchIcon,
     title: 'Excellence',
-    description: 'We strive for excellence in every project, product, and interaction with our customers.',
-    color: 'text-purple-500'
+    description: 'We pursue excellence in every project, product, and customer interaction.',
+    color: 'text-[#40299B]'
   },
   {
     icon: SparklesIcon,
     title: 'Growth',
-    description: 'We foster continuous learning and personal development for all our team members.',
+    description: 'We foster continuous learning and personal development for every team member.',
     color: 'text-pink-500'
   }
 ]
@@ -79,7 +79,7 @@ export function CompanyValuesSection() {
               transition={{ duration: 0.6, delay: index * 0.1 }}
               className="text-center group"
             >
-              <div className="inline-flex items-center justify-center w-16 h-16 mb-6 rounded-full bg-purple-50 group-hover:bg-purple-100 transition-all duration-300 hover:scale-110">
+              <div className="inline-flex items-center justify-center w-16 h-16 mb-6 rounded-full bg-[#40299B]/10 group-hover:bg-[#40299B]/20 transition-all duration-300 hover:scale-110">
                 <value.icon className={`w-8 h-8 ${value.color}`} />
               </div>
               <h3 className="text-xl font-semibold text-text-primary mb-3">
@@ -103,8 +103,8 @@ export function CompanyValuesSection() {
               Join Our Mission
             </h3>
             <p className="text-lg text-text-mid mb-6">
-              We&apos;re not just building products – we&apos;re building the future. 
-              Join a team that values your unique perspective and supports your growth.
+              We&apos;re building the future, not just products. 
+              Join a team that values your perspective and supports your growth.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button 

@@ -91,61 +91,65 @@ export default function HRAnalytics() {
     const fetchAnalytics = async () => {
       setLoading(true)
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1500))
-        
-        const mockData: AnalyticsData = {
-          totalApplications: 1247,
-          applicationsThisMonth: 156,
-          applicationsLastMonth: 134,
-          totalInterviews: 89,
-          interviewsThisMonth: 12,
-          totalHires: 45,
-          hiresThisMonth: 8,
-          rejectionRate: 68.5,
-          averageTimeToHire: 18,
-          averageInterviewScore: 4.2,
-          topPerformingJobs: [
-            { id: '1', title: 'Senior Software Engineer', applications: 89, hires: 12, conversionRate: 13.5 },
-            { id: '2', title: 'Product Manager', applications: 67, hires: 8, conversionRate: 11.9 },
-            { id: '3', title: 'UX Designer', applications: 45, hires: 6, conversionRate: 13.3 },
-            { id: '4', title: 'Data Scientist', applications: 34, hires: 4, conversionRate: 11.8 },
-            { id: '5', title: 'Marketing Specialist', applications: 28, hires: 3, conversionRate: 10.7 }
-          ],
-          monthlyTrends: [
-            { month: 'Jan', applications: 89, interviews: 12, hires: 3 },
-            { month: 'Feb', applications: 112, interviews: 15, hires: 5 },
-            { month: 'Mar', applications: 134, interviews: 18, hires: 6 },
-            { month: 'Apr', applications: 156, interviews: 12, hires: 8 },
-            { month: 'May', applications: 98, interviews: 14, hires: 4 },
-            { month: 'Jun', applications: 145, interviews: 16, hires: 7 }
-          ],
-          departmentStats: [
-            { department: 'Engineering', applications: 456, interviews: 34, hires: 18, avgTimeToHire: 16 },
-            { department: 'Product', applications: 234, interviews: 18, hires: 8, avgTimeToHire: 20 },
-            { department: 'Design', applications: 189, interviews: 15, hires: 6, avgTimeToHire: 22 },
-            { department: 'Marketing', applications: 156, interviews: 12, hires: 5, avgTimeToHire: 18 },
-            { department: 'Sales', applications: 123, interviews: 8, hires: 4, avgTimeToHire: 15 },
-            { department: 'Operations', applications: 89, interviews: 2, hires: 4, avgTimeToHire: 25 }
-          ],
-          sourcePerformance: [
-            { source: 'LinkedIn', applications: 456, hires: 18, conversionRate: 3.9 },
-            { source: 'Company Website', applications: 234, hires: 12, conversionRate: 5.1 },
-            { source: 'Employee Referrals', applications: 189, hires: 8, conversionRate: 4.2 },
-            { source: 'Job Boards', applications: 156, hires: 4, conversionRate: 2.6 },
-            { source: 'University Recruiting', applications: 123, hires: 2, conversionRate: 1.6 },
-            { source: 'Other', applications: 89, hires: 1, conversionRate: 1.1 }
-          ],
-          hrPerformance: {
-            totalJobsPosted: 24,
-            activeJobs: 18,
-            closedJobs: 6,
-            averageResponseTime: 2.5,
-            candidateSatisfactionScore: 4.6
+        // Fetch analytics from API
+        try {
+          const response = await fetch('/api/hr/analytics')
+          if (response.ok) {
+            const data = await response.json()
+            setAnalytics(data)
+          } else {
+            // Fallback to empty analytics if API fails
+            setAnalytics({
+              totalApplications: 0,
+              applicationsThisMonth: 0,
+              applicationsLastMonth: 0,
+              totalInterviews: 0,
+              interviewsThisMonth: 0,
+              totalHires: 0,
+              hiresThisMonth: 0,
+              rejectionRate: 0,
+              averageTimeToHire: 0,
+              averageInterviewScore: 0,
+              topPerformingJobs: [],
+              monthlyTrends: [],
+              departmentStats: [],
+              sourcePerformance: [],
+              hrPerformance: {
+                totalJobsPosted: 0,
+                activeJobs: 0,
+                closedJobs: 0,
+                averageResponseTime: 0,
+                candidateSatisfactionScore: 0
+              }
+            })
           }
+        } catch (error) {
+          console.error('Error fetching analytics:', error)
+          // Fallback analytics
+          setAnalytics({
+            totalApplications: 0,
+            applicationsThisMonth: 0,
+            applicationsLastMonth: 0,
+            totalInterviews: 0,
+            interviewsThisMonth: 0,
+            totalHires: 0,
+            hiresThisMonth: 0,
+            rejectionRate: 0,
+            averageTimeToHire: 0,
+            averageInterviewScore: 0,
+            topPerformingJobs: [],
+            monthlyTrends: [],
+            departmentStats: [],
+            sourcePerformance: [],
+            hrPerformance: {
+              totalJobsPosted: 0,
+              activeJobs: 0,
+              closedJobs: 0,
+              averageResponseTime: 0,
+              candidateSatisfactionScore: 0
+            }
+          })
         }
-        
-        setAnalytics(mockData)
       } catch (error) {
         toast.error('Failed to load analytics data')
         console.error('Error loading analytics:', error)
@@ -186,7 +190,7 @@ export default function HRAnalytics() {
     <div className="min-h-screen bg-gradient-to-br from-bg-850 via-bg-900 to-bg-850">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-5">
-        <div className="absolute top-0 left-0 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl animate-float"></div>
+        <div className="absolute top-0 left-0 w-72 h-72 bg-[#40299B]/20 rounded-full mix-blend-multiply filter blur-xl animate-float"></div>
         <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-300 rounded-full mix-blend-multiply filter blur-xl animate-float animation-delay-2000"></div>
         <div className="absolute bottom-0 left-0 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl animate-float animation-delay-4000"></div>
       </div>
@@ -217,10 +221,10 @@ export default function HRAnalytics() {
                   transition={{ duration: 0.8, delay: 0.2 }}
                   className="mb-4"
                 >
-                  <div className="w-20 h-20 bg-gradient-to-r from-primary to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-large">
+                  <div className="w-20 h-20 bg-gradient-to-r from-primary to-[#40299B] rounded-full flex items-center justify-center mx-auto mb-4 shadow-large">
                     <ChartBarIcon className="w-10 h-10 text-white" />
                   </div>
-                  <h1 className="text-5xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent mb-4">
+                  <h1 className="text-5xl font-bold bg-gradient-to-r from-primary to-[#40299B] bg-clip-text text-transparent mb-4">
                     HR Analytics
                   </h1>
                   <p className="text-xl text-text-mid max-w-2xl mx-auto">
@@ -242,7 +246,7 @@ export default function HRAnalytics() {
             className="flex gap-2 mb-8 border-b border-border"
           >
             {[
-              { id: 'overview', label: 'Overview', icon: ChartBarIcon, color: 'from-primary to-purple-600' },
+              { id: 'overview', label: 'Overview', icon: ChartBarIcon, color: 'from-primary to-[#40299B]' },
               { id: 'performance', label: 'Performance', icon: StarIcon, color: 'from-emerald-500 to-emerald-600' },
               { id: 'trends', label: 'Trends', icon: ArrowTrendingUpIcon, color: 'from-amber-500 to-amber-600' },
               { id: 'sources', label: 'Sources', icon: UsersIcon, color: 'from-rose-500 to-rose-600' }
@@ -274,7 +278,7 @@ export default function HRAnalytics() {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div className="card hover-lift">
                   <div className="flex items-center">
-                    <div className="w-12 h-12 bg-gradient-to-r from-primary to-purple-600 rounded-lg flex items-center justify-center mr-4">
+                    <div className="w-12 h-12 bg-gradient-to-r from-primary to-[#40299B] rounded-lg flex items-center justify-center mr-4">
                       <DocumentTextIcon className="w-6 h-6 text-white" />
                     </div>
                     <div>
@@ -407,7 +411,7 @@ export default function HRAnalytics() {
                     <div key={job.id} className="bg-bg-850 p-6 rounded-lg border border-border hover:shadow-medium transition-all duration-200">
                       <div className="flex justify-between items-start mb-4">
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 bg-gradient-to-r from-primary to-purple-600 rounded-lg flex items-center justify-center">
+                          <div className="w-10 h-10 bg-gradient-to-r from-primary to-[#40299B] rounded-lg flex items-center justify-center">
                             <span className="text-white font-bold text-sm">#{index + 1}</span>
                           </div>
                           <div>

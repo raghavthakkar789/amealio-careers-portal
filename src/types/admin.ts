@@ -141,34 +141,34 @@ export interface Job {
 // Interview types
 export interface Interview {
   id: string
-  scheduledAt: Date
-  interviewType: InterviewType
-  meetingLink: string | null
-  location: string | null
-  status: InterviewStatus
-  notes: string | null
-  createdAt: Date
-  updatedAt: Date
-  applicationId: string
-  candidateId: string
   candidate: {
     id: string
-    firstName: string
-    lastName: string
+    name: string
     email: string
+    phone: string | null
   }
   application: {
     id: string
     jobTitle: string
-    job: {
-      id: string
-      title: string
-      department: {
-        name: string
-      }
-    }
+    status: ApplicationStatus
+    submittedAt: Date
+    department: string
   }
+  interviewDetails: {
+    scheduledAt: Date
+    interviewType: InterviewType
+    location: string | null
+    meetingLink: string | null
+    status: InterviewStatus
+    notes: string | null
+  }
+  hrInterviewer: {
+    name: string
+    email: string | null
+  } | null
   reviews: InterviewReview[]
+  createdAt: Date
+  updatedAt: Date
 }
 
 export interface InterviewReview {

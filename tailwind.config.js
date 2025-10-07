@@ -70,8 +70,8 @@ module.exports = {
         'text-primary': '#1E293B',
         'text-secondary': '#475569',
         'text-muted': '#64748B',
-        'primary': '#A855F7',
-        'primary-hover': '#9333EA',
+        'primary': '#40299B',
+        'primary-hover': '#3A2588',
         'primary-foreground': '#FFFFFF',
         'link': '#7C3AED',
         'link-hover': '#6D28D9',
@@ -90,7 +90,7 @@ module.exports = {
         'destructive-foreground': '#FFFFFF',
         'accent': '#F1F5F9',
         'accent-foreground': '#1E293B',
-        'ring': '#A855F7',
+        'ring': '#40299B',
       },
       fontFamily: {
         sans: ['Mulish', 'sans-serif'],
@@ -116,7 +116,7 @@ module.exports = {
         'primary-gradient': 'linear-gradient(135deg, #A855F7 0%, #7C3AED 100%)',
         'light-gradient': 'linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%)',
         'card-gradient': 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%)',
-        'hero-gradient': 'linear-gradient(135deg, #A855F7 0%, #7C3AED 50%, #6D28D9 100%)',
+        'hero-gradient': 'linear-gradient(135deg, #40299B 0%, #3A2588 50%, #2D1B6B 100%)',
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',

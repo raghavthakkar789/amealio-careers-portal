@@ -105,7 +105,7 @@ export function JobListingsSection() {
             Open Positions
           </h2>
           <p className="text-xl text-text-mid max-w-2xl mx-auto">
-            Discover opportunities that match your skills and passion. Join our team and help us build the future.
+            Discover opportunities that match your skills and passion. Join our team and build the future.
           </p>
         </motion.div>
 

@@ -42,6 +42,11 @@ model User {
   interviews         Interview[]
   hrJobs             Job[]                @relation("HRCreator")
   notifications      Notification[]
+  // New relations for comprehensive workflow
+  rejectedApplications Application[]      @relation("ApplicationRejectedBy")
+  acceptedByHrApplications Application[] @relation("ApplicationAcceptedByHr")
+  acceptedByAdminApplications Application[] @relation("ApplicationAcceptedByAdmin")
+  finalDecisionApplications Application[] @relation("ApplicationFinalDecisionBy")
 
   @@map("users")
 }
@@ -101,11 +106,26 @@ model Application {
   experience      String?
   references      String?
   skills          String?
+  // New fields for comprehensive workflow
+  rejectionReason String?
+  rejectedBy      String?
+  rejectedAt      DateTime?
+  rejectionStage  String?
+  acceptedByHr    String?
+  acceptedByAdmin String?
+  finalDecisionBy String?
+  finalDecisionAt DateTime?
+  finalComments   String?
   history         ApplicationHistory[]
   applicant       User                 @relation(fields: [applicantId], references: [id])
   job             Job                  @relation(fields: [jobId], references: [id])
   interviews      Interview[]
   notifications   Notification[]
+  emailLogs       EmailLog[]
+  rejectedByUser  User?                @relation("ApplicationRejectedBy", fields: [rejectedBy], references: [id])
+  acceptedByHrUser User?               @relation("ApplicationAcceptedByHr", fields: [acceptedByHr], references: [id])
+  acceptedByAdminUser User?            @relation("ApplicationAcceptedByAdmin", fields: [acceptedByAdmin], references: [id])
+  finalDecisionByUser User?            @relation("ApplicationFinalDecisionBy", fields: [finalDecisionBy], references: [id])
 
   @@map("applications")
 }
@@ -268,4 +288,33 @@ enum HRRequestStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+enum EmailType {
+  SUBMISSION
+  INTERVIEW
+  HIRED
+  REJECTED
+}
+
+enum EmailStatus {
+  SENT
+  FAILED
+  PENDING
+}
+
+model EmailLog {
+  id            String      @id @default(cuid())
+  applicationId String
+  emailType     EmailType
+  recipientEmail String
+  ccEmails      String?     // JSON string of CC emails
+  subject       String
+  body          String
+  sentAt        DateTime    @default(now())
+  status        EmailStatus @default(PENDING)
+  errorMessage  String?
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@map("email_logs")
 }

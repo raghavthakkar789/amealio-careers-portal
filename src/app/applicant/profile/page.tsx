@@ -22,8 +22,16 @@ import {
   XMarkIcon,
   DocumentArrowUpIcon,
   DocumentIcon,
-  TrashIcon
+  TrashIcon,
+  ClockIcon,
+  CalendarIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  EyeIcon,
+  ClipboardDocumentListIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
+import { formatDate } from '@/lib/utils'
 
 interface UserProfile {
   id: string
@@ -45,10 +53,46 @@ interface UserProfile {
   portfolioUrl?: string
 }
 
+interface ApplicationInfo {
+  id: string
+  status: string
+  jobTitle: string
+  department: string
+  expectedSalary?: string
+  submittedAt: string
+  history?: Array<{
+    id: string
+    fromStatus?: string
+    toStatus: string
+    performedByName: string
+    performedByRole: string
+    createdAt: string
+    notes?: string
+  }>
+  interviewDetails?: {
+    scheduledDate?: string
+    scheduledTime?: string
+    location?: string
+    meetingLink?: string
+    interviewer?: string
+  }
+  evaluationReport?: {
+    overallRating?: number
+    technicalSkills?: number
+    communicationSkills?: number
+    culturalFit?: number
+    recommendation?: string
+    feedback?: string
+    interviewer?: string
+    completedAt?: string
+  }
+}
+
 export default function ProfilePage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [applications, setApplications] = useState<ApplicationInfo[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
@@ -70,12 +114,16 @@ export default function ProfilePage() {
       router.push('/hr/dashboard')
     }
 
-    // Fetch user profile from API
+    // Fetch user profile and applications from API
     const fetchProfile = async () => {
       try {
-        const response = await fetch('/api/user/profile')
-        if (response.ok) {
-          const data = await response.json()
+        const [profileResponse, applicationsResponse] = await Promise.all([
+          fetch('/api/user/profile'),
+          fetch('/api/applications')
+        ])
+
+        if (profileResponse.ok) {
+          const data = await profileResponse.json()
           const user = data.user
           const profileData = {
             id: user.id,
@@ -83,13 +131,13 @@ export default function ProfilePage() {
             email: user.email,
             phone: user.phoneNumber || '',
             countryCode: user.countryCode || '+1',
-            location: user.address || 'Bangalore, India', // Use address from database
-            currentPosition: 'Software Engineer', // Default position
-            company: 'Tech Corp', // Default company
-            experience: '3 years', // Default experience
-            education: 'B.Tech Computer Science', // Default education
-            skills: ['React', 'Node.js', 'TypeScript', 'PostgreSQL'], // Default skills
-            bio: 'Passionate software engineer with experience in full-stack development.', // Default bio
+            location: user.address || 'Bangalore, India',
+            currentPosition: 'Software Engineer',
+            company: 'Tech Corp',
+            experience: '3 years',
+            education: 'B.Tech Computer Science',
+            skills: ['React', 'Node.js', 'TypeScript', 'PostgreSQL'],
+            bio: 'Passionate software engineer with experience in full-stack development.',
             resumeUrl: user.profileImage || '/resumes/default-resume.pdf',
             resumeFileName: 'resume.pdf',
             linkedinUrl: user.linkedinProfile || '',
@@ -100,8 +148,15 @@ export default function ProfilePage() {
         } else {
           toast.error('Failed to fetch profile')
         }
+
+        if (applicationsResponse.ok) {
+          const applicationsData = await applicationsResponse.json()
+          setApplications(applicationsData.applications || [])
+        } else {
+          console.error('Failed to fetch applications')
+        }
       } catch (error) {
-        console.error('Error fetching profile:', error)
+        console.error('Error fetching data:', error)
         toast.error('Failed to fetch profile')
       } finally {
         setLoading(false)
@@ -211,6 +266,38 @@ export default function ProfilePage() {
     setIsEditing(false)
   }
 
+  const getStatusDisplay = (status: string) => {
+    const statusMap: Record<string, { label: string; color: string; icon: string }> = {
+      'PENDING': { label: 'Application Submitted', color: 'bg-yellow-100 text-yellow-800', icon: 'ClockIcon' },
+      'UNDER_REVIEW': { label: 'Under Review', color: 'bg-blue-100 text-blue-800', icon: 'EyeIcon' },
+      'INTERVIEW_SCHEDULED': { label: 'Interview Scheduled', color: 'bg-purple-100 text-purple-800', icon: 'CalendarIcon' },
+      'INTERVIEW_COMPLETED': { label: 'Interview Completed', color: 'bg-indigo-100 text-indigo-800', icon: 'CheckCircleIcon' },
+      'ACCEPTED': { label: 'Offer Extended', color: 'bg-green-100 text-green-800', icon: 'CheckCircleIcon' },
+      'REJECTED': { label: 'Application Not Successful', color: 'bg-red-100 text-red-800', icon: 'XCircleIcon' },
+      'HIRED': { label: 'Hired - Welcome to the Team!', color: 'bg-emerald-100 text-emerald-800', icon: 'CheckCircleIcon' }
+    }
+    return statusMap[status] || { label: status, color: 'bg-gray-100 text-gray-800', icon: 'DocumentIcon' }
+  }
+
+  const getStatusIcon = (iconName: string) => {
+    switch (iconName) {
+      case 'ClockIcon': return <ClockIcon className="w-4 h-4" />
+      case 'EyeIcon': return <EyeIcon className="w-4 h-4" />
+      case 'CalendarIcon': return <CalendarIcon className="w-4 h-4" />
+      case 'CheckCircleIcon': return <CheckCircleIcon className="w-4 h-4" />
+      case 'XCircleIcon': return <XCircleIcon className="w-4 h-4" />
+      default: return <DocumentIcon className="w-4 h-4" />
+    }
+  }
+
+  const getLatestHistoryForStatus = (app: ApplicationInfo, status: string) => {
+    if (!app.history || app.history.length === 0) return null
+    const matches = app.history.filter(h => h.toStatus === status)
+    if (matches.length === 0) return null
+    // History is assumed chronological; take the last
+    return matches[matches.length - 1]
+  }
+
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-bg-850">
@@ -284,6 +371,265 @@ export default function ProfilePage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Application Progress Section */}
+            {applications.length > 0 && (
+              <div className="lg:col-span-3 mb-6">
+                <div className="card">
+                  <h3 className="text-xl font-semibold text-text-high mb-4 flex items-center gap-2">
+                    <ClipboardDocumentListIcon className="w-5 h-5 text-primary" />
+                    Application Progress
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    {applications.map((application) => {
+                      const statusDisplay = getStatusDisplay(application.status)
+                      return (
+                        <div key={application.id} className="border border-border rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div>
+                              <h4 className="text-lg font-semibold text-text-high">{application.jobTitle}</h4>
+                              <p className="text-text-mid">{application.department}</p>
+                            </div>
+                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusDisplay.color}`}>
+                              <span className="flex items-center gap-1">
+                                {getStatusIcon(statusDisplay.icon)}
+                                {statusDisplay.label}
+                              </span>
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div>
+                              <p className="text-sm text-text-mid">Expected Salary</p>
+                              <p className="font-medium text-text-high">{application.expectedSalary || 'Not specified'}</p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-text-mid">Applied Date</p>
+                              <p className="font-medium text-text-high">
+                                {formatDate(application.submittedAt)}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-text-mid">Application ID</p>
+                              <p className="font-medium text-text-high font-mono text-sm">{application.id.slice(0, 8)}...</p>
+                            </div>
+                          </div>
+
+                          {/* Interview Details for INTERVIEW_SCHEDULED */}
+                          {application.status === 'INTERVIEW_SCHEDULED' && application.interviewDetails && (
+                            <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-4">
+                              <h5 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
+                                <CalendarIcon className="w-4 h-4" />
+                                Interview Details
+                              </h5>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                <div>
+                                  <span className="text-blue-700 font-medium">Date:</span>
+                                  <span className="text-blue-800 ml-2">
+                                    {application.interviewDetails.scheduledDate ? 
+                                      formatDate(application.interviewDetails.scheduledDate) : 
+                                      'TBD'
+                                    }
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-blue-700 font-medium">Time:</span>
+                                  <span className="text-blue-800 ml-2">
+                                    {application.interviewDetails.scheduledTime || 'TBD'}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-blue-700 font-medium">Location:</span>
+                                  <span className="text-blue-800 ml-2">
+                                    {application.interviewDetails.location || 'TBD'}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-blue-700 font-medium">Interviewer:</span>
+                                  <span className="text-blue-800 ml-2">
+                                    {application.interviewDetails.interviewer || 'TBD'}
+                                  </span>
+                                </div>
+                              </div>
+                              {application.interviewDetails.meetingLink && (
+                                <div className="mt-2">
+                                  <a 
+                                    href={application.interviewDetails.meetingLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:text-blue-800 underline"
+                                  >
+                                    Join Meeting Link
+                                  </a>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Interview Evaluation Report for INTERVIEW_COMPLETED and beyond (including REJECTED) */}
+                          {(application.status === 'INTERVIEW_COMPLETED' || 
+                            application.status === 'ACCEPTED' || 
+                            application.status === 'HIRED' ||
+                            application.status === 'REJECTED') && 
+                            application.evaluationReport && (
+                            <div className="bg-green-50 border border-green-200 p-4 rounded-lg mb-4">
+                              <h5 className="font-semibold text-green-800 mb-2 flex items-center gap-2">
+                                <ClipboardDocumentListIcon className="w-4 h-4" />
+                                Interview Evaluation Report
+                              </h5>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm mb-3">
+                                <div>
+                                  <span className="text-green-700 font-medium">Overall Rating:</span>
+                                  <span className="text-green-800 ml-2">
+                                    {application.evaluationReport.overallRating ? 
+                                      `${application.evaluationReport.overallRating}/5` : 
+                                      'Not rated'
+                                    }
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-green-700 font-medium">Recommendation:</span>
+                                  <span className="text-green-800 ml-2">
+                                    {application.evaluationReport.recommendation || 'Pending'}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-green-700 font-medium">Interviewer:</span>
+                                  <span className="text-green-800 ml-2">
+                                    {application.evaluationReport.interviewer || 'Unknown'}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-green-700 font-medium">Completed:</span>
+                                  <span className="text-green-800 ml-2">
+                                    {application.evaluationReport.completedAt ? 
+                                      formatDate(application.evaluationReport.completedAt) : 
+                                      'Unknown'
+                                    }
+                                  </span>
+                                </div>
+                              </div>
+                              {application.evaluationReport.feedback && (
+                                <div>
+                                  <span className="text-green-700 font-medium">Feedback:</span>
+                                  <p className="text-green-800 mt-1">{application.evaluationReport.feedback}</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Accepted by (Admin/HR) details on ACCEPTED */}
+                          {application.status === 'ACCEPTED' && (() => {
+                            const acceptedHistory = getLatestHistoryForStatus(application, 'ACCEPTED')
+                            if (!acceptedHistory) return null
+                            return (
+                              <div className="bg-green-50 border border-green-200 p-3 rounded-lg mb-4">
+                                <p className="text-green-800 text-sm">
+                                  <CheckCircleIcon className="w-4 h-4 inline mr-1" />
+                                  Accepted by {acceptedHistory.performedByName} ({acceptedHistory.performedByRole}) on {formatDate(acceptedHistory.createdAt)}
+                                </p>
+                              </div>
+                            )
+                          })()}
+
+                          {/* Status-specific messages */}
+                          {application.status === 'PENDING' && (
+                            <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg">
+                              <p className="text-yellow-800 text-sm">
+                                <ClockIcon className="w-4 h-4 inline mr-1" />
+                                Your application has been submitted and is awaiting review by our HR team.
+                              </p>
+                            </div>
+                          )}
+
+                          {application.status === 'UNDER_REVIEW' && (
+                            <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
+                              <p className="text-blue-800 text-sm">
+                                <EyeIcon className="w-4 h-4 inline mr-1" />
+                                Your application is being reviewed by our HR team. We&apos;ll contact you soon with next steps.
+                              </p>
+                            </div>
+                          )}
+
+                          {application.status === 'INTERVIEW_COMPLETED' && (
+                            <div className="bg-indigo-50 border border-indigo-200 p-3 rounded-lg">
+                              <p className="text-indigo-800 text-sm">
+                                <CheckCircleIcon className="w-4 h-4 inline mr-1" />
+                                Your interview has been completed. We&apos;re reviewing the evaluation and will notify you of the final decision.
+                              </p>
+                            </div>
+                          )}
+
+                          {application.status === 'ACCEPTED' && (
+                            <div className="bg-green-50 border border-green-200 p-3 rounded-lg">
+                              <p className="text-green-800 text-sm">
+                                <CheckCircleIcon className="w-4 h-4 inline mr-1" />
+                                Congratulations! Your application has been accepted. You&apos;ll receive an offer letter soon.
+                              </p>
+                            </div>
+                          )}
+
+                          {application.status === 'REJECTED' && (() => {
+                            const rejectedHistory = getLatestHistoryForStatus(application, 'REJECTED')
+                            return (
+                              <>
+                                <div className="bg-red-50 border border-red-200 p-3 rounded-lg">
+                                  <p className="text-red-800 text-sm">
+                                    <XCircleIcon className="w-4 h-4 inline mr-1" />
+                                    Unfortunately, your application was not successful this time.
+                                  </p>
+                                </div>
+                                {/* Rejection reason under Application Information */}
+                                {rejectedHistory?.notes && (
+                                  <div className="mt-3 border border-red-200 bg-red-50 p-3 rounded-lg">
+                                    <p className="text-red-800 text-sm font-medium">Rejection Reason</p>
+                                    <p className="text-red-700 text-sm mt-1">{rejectedHistory.notes}</p>
+                                  </div>
+                                )}
+                              </>
+                            )
+                          })()}
+
+                          {application.status === 'HIRED' && (
+                            <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-lg">
+                              <p className="text-emerald-800 text-sm">
+                                <CheckCircleIcon className="w-4 h-4 inline mr-1" />
+                                Welcome to the team! You&apos;ve been successfully hired. Check your email for onboarding details.
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Recent Activity */}
+                          {application.history && application.history.length > 0 && (
+                            <div className="mt-4">
+                              <h6 className="text-sm font-medium text-text-mid mb-2">Recent Activity</h6>
+                              <div className="bg-bg-800 p-3 rounded border border-border">
+                                <div className="space-y-2">
+                                  {application.history.slice(0, 3).map((historyItem) => (
+                                    <div key={historyItem.id} className="flex items-center gap-2 text-sm">
+                                      <span className="text-text-mid">
+                                        {formatDate(historyItem.createdAt)}
+                                      </span>
+                                      <span className="text-text-high">
+                                        {historyItem.performedByName} ({historyItem.performedByRole}) moved application from {historyItem.fromStatus || 'N/A'} to {historyItem.toStatus}
+                                      </span>
+                                      {historyItem.notes && (
+                                        <span className="text-text-mid">- {historyItem.notes}</span>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Profile Overview */}
             <div className="lg:col-span-1">
               <div className="card">

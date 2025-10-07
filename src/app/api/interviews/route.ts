@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { applicationStatusService } from '@/lib/application-status-service'
+import { emailService } from '@/lib/email-service'
 
 // GET /api/interviews - Get interviews based on user role
 export async function GET() {
@@ -118,6 +120,8 @@ export async function POST(request: NextRequest) {
       location,
       meetingLink,
       interviewer,
+      interviewerId,
+      interviewerName,
       notes
     } = body
 
@@ -153,61 +157,105 @@ export async function POST(request: NextRequest) {
     // Create scheduled date
     const scheduledAt = new Date(`${interviewDate}T${interviewTime}`)
 
-    // Create new interview
-    const newInterview = await prisma.interview.create({
-      data: {
-        applicationId: application.id,
-        candidateId: candidate.id,
-        scheduledAt,
-        interviewType: type || 'VIDEO',
-        location: location || null,
-        meetingLink: meetingLink || null,
-        notes: notes || null,
-        status: 'SCHEDULED'
-      },
-      include: {
-        candidate: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true
-          }
+    // Prepare interviewer information
+    let interviewerInfo = interviewer || interviewerName
+    if (interviewerId && session.user?.role === 'ADMIN') {
+      // If admin selected an HR user, get their details
+      const selectedHr = await prisma.user.findUnique({
+        where: { id: interviewerId },
+        select: { firstName: true, lastName: true, email: true }
+      })
+      if (selectedHr) {
+        interviewerInfo = `${selectedHr.firstName} ${selectedHr.lastName} (${selectedHr.email})`
+      }
+    }
+
+    // Combine notes with interviewer information
+    const combinedNotes = [
+      notes,
+      `Interviewer: ${interviewerInfo}`
+    ].filter(Boolean).join('\n\n')
+
+    // Create new interview and update application status in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Create new interview
+      const newInterview = await tx.interview.create({
+        data: {
+          applicationId: application.id,
+          candidateId: candidate.id,
+          scheduledAt,
+          interviewType: type || 'VIDEO',
+          location: location || null,
+          meetingLink: meetingLink || null,
+          notes: combinedNotes,
+          status: 'SCHEDULED'
         },
-        application: {
-          select: {
-            id: true,
-            jobTitle: true,
-            job: {
-              select: {
-                id: true,
-                title: true,
-                department: {
-                  select: {
-                    name: true
+        include: {
+          candidate: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true
+            }
+          },
+          application: {
+            select: {
+              id: true,
+              jobTitle: true,
+              job: {
+                select: {
+                  id: true,
+                  title: true,
+                  department: {
+                    select: {
+                      name: true
+                    }
                   }
                 }
               }
             }
-          }
-        },
-        reviews: {
-          include: {
-            hrReviewer: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                email: true
+          },
+          reviews: {
+            include: {
+              hrReviewer: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  email: true
+                }
               }
             }
           }
         }
-      }
+      })
+
+      // Update application status to INTERVIEW_SCHEDULED
+      await applicationStatusService.updateApplicationStatus({
+        applicationId: application.id,
+        newStatus: 'INTERVIEW_SCHEDULED',
+        action: 'SCHEDULE_INTERVIEW',
+        performedBy: session.user.id,
+        performedByName: session.user.name || 'Unknown User',
+        performedByRole: session.user.role as 'HR' | 'ADMIN',
+        notes: `Interview scheduled for ${interviewDate} at ${interviewTime}`
+      })
+
+      return newInterview
     })
 
+    // Send interview scheduled email notification
+    try {
+      await emailService.sendInterviewScheduledEmail(application.id, result.id)
+      console.log('Interview scheduled email sent successfully')
+    } catch (emailError) {
+      console.error('Failed to send interview scheduled email:', emailError)
+      // Don't fail the request if email fails
+    }
+
     return NextResponse.json({ 
-      interview: newInterview,
+      interview: result,
       message: 'Interview scheduled successfully' 
     }, { status: 201 })
 

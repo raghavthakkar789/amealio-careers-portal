@@ -26,7 +26,8 @@ import {
   ShieldCheckIcon,
   UserGroupIcon,
   KeyIcon,
-  BriefcaseIcon
+  BriefcaseIcon,
+  ArrowPathIcon
 } from '@heroicons/react/24/outline'
 import { 
   Applicant, 
@@ -58,6 +59,7 @@ export default function AdminDashboard() {
     }
   }
   const [applicants, setApplicants] = useState<DashboardApplicant[]>([])
+  const [acceptedApplications, setAcceptedApplications] = useState<Application[]>([])
   const [hrUsers, setHrUsers] = useState<DashboardHRUser[]>([])
   const [pendingHRRequests, setPendingHRRequests] = useState<number>(0)
   const [adminUsers, setAdminUsers] = useState<{
@@ -69,6 +71,7 @@ export default function AdminDashboard() {
   }[]>([])
   const [showFinalApprovalModal, setShowFinalApprovalModal] = useState(false)
   const [selectedApplicantId, setSelectedApplicantId] = useState<string | null>(null)
+  const [loadingFinalApproval, setLoadingFinalApproval] = useState(false)
   const [analytics, setAnalytics] = useState<DashboardStats>({
     totalUsers: 0,
     totalJobs: 0,
@@ -94,6 +97,83 @@ export default function AdminDashboard() {
       return
     }
   }, [session, status, router])
+
+  // Fetch accepted applications for final approval
+  const fetchAcceptedApplications = async () => {
+    setLoadingFinalApproval(true)
+    try {
+      const response = await fetch('/api/admin/oversight/applications?status=ACCEPTED')
+      if (response.ok) {
+        const data = await response.json()
+        setAcceptedApplications(data.applications || [])
+      }
+    } catch (error) {
+      console.error('Error fetching accepted applications:', error)
+      toast.error('Failed to fetch accepted applications')
+    } finally {
+      setLoadingFinalApproval(false)
+    }
+  }
+
+  // Handle final hiring decision
+  const handleFinalHire = async (applicationId: string) => {
+    if (!session?.user?.id) return
+
+    try {
+      const response = await fetch(`/api/applications/${applicationId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: 'HIRED',
+          action: 'HIRE',
+          notes: 'Final hiring decision by Admin'
+        })
+      })
+
+      if (response.ok) {
+        toast.success('Candidate hired successfully!')
+        await fetchAcceptedApplications() // Refresh the list
+      } else {
+        const errorData = await response.json()
+        toast.error(errorData.error || 'Failed to hire candidate')
+      }
+    } catch (error) {
+      console.error('Error hiring candidate:', error)
+      toast.error('Failed to hire candidate')
+    }
+  }
+
+  // Handle final rejection
+  const handleFinalReject = async (applicationId: string, rejectionReason: string) => {
+    if (!session?.user?.id) return
+
+    try {
+      const response = await fetch(`/api/applications/${applicationId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: 'REJECTED',
+          action: 'FINAL_REJECT',
+          notes: rejectionReason
+        })
+      })
+
+      if (response.ok) {
+        toast.success('Application rejected successfully')
+        await fetchAcceptedApplications() // Refresh the list
+      } else {
+        const errorData = await response.json()
+        toast.error(errorData.error || 'Failed to reject application')
+      }
+    } catch (error) {
+      console.error('Error rejecting application:', error)
+      toast.error('Failed to reject application')
+    }
+  }
 
   // Fetch real data from database
   useEffect(() => {
@@ -161,111 +241,81 @@ export default function AdminDashboard() {
           }
         }
 
-        // Keep mock data for applicants for now
-        setApplicants([
-          {
-            id: '1',
-            name: 'Arjun Sharma',
-            email: 'john@example.com',
-            position: 'Senior Software Engineer',
-            status: 'INTERVIEW_COMPLETED',
-            applicationDate: '2024-01-15',
-            interviewScore: 4.2,
-            hrRecommendation: 'HIRE',
-            backgroundCheck: 'PENDING',
-            referenceCheck: 'COMPLETED',
-            experience: '5 years',
-            skills: ['React', 'Node.js', 'TypeScript']
-          },
-          {
-            id: '2',
-            name: 'Priya Patel',
-            email: 'jane@example.com',
-            position: 'Product Manager',
-            status: 'ACCEPTED',
-            applicationDate: '2024-01-10',
-            interviewScore: 4.8,
-            hrRecommendation: 'HIRE',
-            backgroundCheck: 'COMPLETED',
-            referenceCheck: 'COMPLETED',
-            experience: '7 years',
-            skills: ['Product Strategy', 'Agile', 'User Research']
-          },
-          {
-            id: '3',
-            name: 'Rajesh Kumar',
-            email: 'rajesh@example.com',
-            position: 'Frontend Developer',
-            status: 'PENDING',
-            applicationDate: '2024-01-20',
-            interviewScore: 0,
-            hrRecommendation: 'PENDING',
-            backgroundCheck: 'PENDING',
-            referenceCheck: 'PENDING',
-            experience: '3 years',
-            skills: ['JavaScript', 'React', 'CSS']
-          },
-          {
-            id: '4',
-            name: 'Sneha Gupta',
-            email: 'sneha@example.com',
-            position: 'Backend Developer',
-            status: 'UNDER_REVIEW',
-            applicationDate: '2024-01-18',
-            interviewScore: 0,
-            hrRecommendation: 'PENDING',
-            backgroundCheck: 'PENDING',
-            referenceCheck: 'PENDING',
-            experience: '4 years',
-            skills: ['Node.js', 'Python', 'MongoDB']
-          },
-          {
-            id: '5',
-            name: 'Amit Singh',
-            email: 'amit@example.com',
-            position: 'DevOps Engineer',
-            status: 'INTERVIEW_SCHEDULED',
-            applicationDate: '2024-01-16',
-            interviewScore: 0,
-            hrRecommendation: 'HIRE',
-            backgroundCheck: 'PENDING',
-            referenceCheck: 'PENDING',
-            experience: '6 years',
-            skills: ['AWS', 'Docker', 'Kubernetes']
+        // Fetch applicants from API
+        try {
+          const applicantsResponse = await fetch('/api/admin/oversight/applicants')
+          if (applicantsResponse.ok) {
+            const applicantsData = await applicantsResponse.json()
+            setApplicants(applicantsData.applicants || [])
           }
-        ])
+        } catch (error) {
+          console.error('Error fetching applicants:', error)
+        }
 
-        setAnalytics({
-          totalUsers: 200,
-          totalJobs: 25,
-          totalApplications: 156,
-          totalInterviews: 80,
-          pendingHRRequests: 5,
-          activeJobs: 20,
-          recentApplications: 15,
-          upcomingInterviews: 8,
-          pendingReviews: 23,
-          hired: 45,
-          rejected: 88,
-          averageTimeToHire: 18,
-          departmentStats: {
-            'Engineering': { applications: 67, hired: 23, pending: 12 },
-            'Marketing': { applications: 34, hired: 8, pending: 5 },
-            'Sales': { applications: 28, hired: 7, pending: 3 },
-            'HR': { applications: 15, hired: 4, pending: 2 },
-            'Finance': { applications: 12, hired: 3, pending: 1 }
-          },
-          // New stage-specific analytics
-          stageStats: {
-            pending: 25,
-            underReview: 18,
-            interviewScheduled: 12,
-            interviewCompleted: 8,
-            accepted: 5,
-            hired: 45,
-            rejected: 88
+        // Fetch analytics from API
+        try {
+          const analyticsResponse = await fetch('/api/admin/oversight/analytics')
+          if (analyticsResponse.ok) {
+            const analyticsData = await analyticsResponse.json()
+            setAnalytics(analyticsData)
+          } else {
+            // Fallback to basic analytics if API fails
+            setAnalytics({
+              totalUsers: 0,
+              totalJobs: 0,
+              totalApplications: 0,
+              totalInterviews: 0,
+              pendingHRRequests: 0,
+              activeJobs: 0,
+              recentApplications: 0,
+              upcomingInterviews: 0,
+              pendingReviews: 0,
+              hired: 0,
+              rejected: 0,
+              averageTimeToHire: 0,
+              departmentStats: {},
+              stageStats: {
+                pending: 0,
+                underReview: 0,
+                interviewScheduled: 0,
+                interviewCompleted: 0,
+                accepted: 0,
+                hired: 0,
+                rejected: 0
+              }
+            })
           }
-        })
+        } catch (error) {
+          console.error('Error fetching analytics:', error)
+          // Fallback analytics
+          setAnalytics({
+            totalUsers: 0,
+            totalJobs: 0,
+            totalApplications: 0,
+            totalInterviews: 0,
+            pendingHRRequests: 0,
+            activeJobs: 0,
+            recentApplications: 0,
+            upcomingInterviews: 0,
+            pendingReviews: 0,
+            hired: 0,
+            rejected: 0,
+            averageTimeToHire: 0,
+            departmentStats: {},
+            stageStats: {
+              pending: 0,
+              underReview: 0,
+              interviewScheduled: 0,
+              interviewCompleted: 0,
+              accepted: 0,
+              hired: 0,
+              rejected: 0
+            }
+          })
+        }
+
+        // Fetch accepted applications for final approval
+        await fetchAcceptedApplications()
       } catch (error) {
         toast.error('Failed to load dashboard data')
         console.error('Error:', error)
@@ -707,133 +757,150 @@ export default function AdminDashboard() {
           {activeTab === 'applicants' && (
             <div className="space-y-6">
               <div className="card">
-                <h2 className="text-2xl font-bold text-text-primary mb-6">Final Approval</h2>
-                <div className="space-y-4">
-                  {applicants.map((applicant) => (
-                    <div key={applicant.id} className="bg-bg-850 p-6 rounded-lg border border-border">
-                      <div className="flex justify-between items-start mb-4">
-                        <div>
-                          <h3 className="text-xl font-semibold text-text-primary">{applicant.name}</h3>
-                          <p className="text-text-secondary">{applicant.position}</p>
-                          <p className="text-text-secondary text-sm">{applicant.email}</p>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-text-primary">Final Approval</h2>
+                  <Button
+                    onClick={fetchAcceptedApplications}
+                    variant="secondary"
+                    className="btn-secondary"
+                    disabled={loadingFinalApproval}
+                  >
+                    <ArrowPathIcon className="w-4 h-4 mr-2" />
+                    Refresh
+                  </Button>
+                </div>
+                
+                {loadingFinalApproval ? (
+                  <div className="flex justify-center py-8">
+                    <LoadingSpinner size="lg" />
+                  </div>
+                ) : acceptedApplications.length === 0 ? (
+                  <div className="text-center py-12">
+                    <CheckCircleIcon className="w-16 h-16 text-text-mid mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-text-primary mb-2">No Applications Pending Final Approval</h3>
+                    <p className="text-text-secondary">All accepted applications have been processed.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {acceptedApplications.map((application) => (
+                      <div key={application.id} className="bg-bg-850 p-6 rounded-lg border border-border">
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <h3 className="text-xl font-semibold text-text-primary">
+                              {application.applicant.firstName} {application.applicant.lastName}
+                            </h3>
+                            <p className="text-text-secondary">{application.jobTitle}</p>
+                            <p className="text-text-secondary text-sm">{application.applicant.email}</p>
+                          </div>
+                          <div className="flex gap-2">
+                            <span className="px-3 py-1 rounded-full text-sm bg-green-100 text-green-700">
+                              {application.status.replace('_', ' ')}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex gap-2">
-                          <span className={`px-3 py-1 rounded-full text-sm ${
-                            applicant.status === 'HIRED' ? 'bg-emerald-100 text-emerald-700' :
-                            applicant.status === 'REJECTED' ? 'bg-rose-100 text-rose-700' :
-                            applicant.status === 'ACCEPTED' ? 'bg-green-100 text-green-700' :
-                            applicant.status === 'INTERVIEW_COMPLETED' ? 'bg-indigo-100 text-indigo-700' :
-                            applicant.status === 'INTERVIEW_SCHEDULED' ? 'bg-purple-100 text-purple-700' :
-                            applicant.status === 'UNDER_REVIEW' ? 'bg-yellow-100 text-yellow-700' :
-                            applicant.status === 'PENDING' ? 'bg-blue-100 text-blue-700' :
-                            'bg-amber-100 text-amber-700'
-                          }`}>
-                            {applicant.status.replace('_', ' ')}
-                          </span>
-                        </div>
-                      </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <div>
-                          <h4 className="font-medium text-text-primary mb-2">Application Details</h4>
-                          <div className="space-y-1 text-sm">
-                            <div className="flex justify-between">
-                              <span className="text-text-secondary">Applied:</span>
-                              <span className="text-text-primary">{new Date(applicant.applicationDate).toLocaleDateString()}</span>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                          <div>
+                            <h4 className="font-medium text-text-primary mb-2">Application Details</h4>
+                            <div className="space-y-1 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-text-secondary">Applied:</span>
+                                <span className="text-text-primary">
+                                  {new Date(application.submittedAt).toLocaleDateString()}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-text-secondary">Department:</span>
+                                <span className="text-text-primary">{application.job.department.name}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-text-secondary">Expected Salary:</span>
+                                <span className="text-text-primary">{application.expectedSalary || 'Not specified'}</span>
+                              </div>
                             </div>
-                            <div className="flex justify-between">
-                              <span className="text-text-secondary">Experience:</span>
-                              <span className="text-text-primary">{applicant.experience}</span>
+                          </div>
+
+                          <div>
+                            <h4 className="font-medium text-text-primary mb-2">Interview Information</h4>
+                            <div className="space-y-1 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-text-secondary">Status:</span>
+                                <span className="text-emerald-600">Interview Completed</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-text-secondary">HR Recommendation:</span>
+                                <span className="text-emerald-600">Accepted</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-text-secondary">Ready for:</span>
+                                <span className="text-text-primary">Final Decision</span>
+                              </div>
                             </div>
-                            <div className="flex justify-between">
-                              <span className="text-text-secondary">Interview Score:</span>
-                              <span className="text-text-primary">{applicant.interviewScore}/5</span>
+                          </div>
+
+                          <div>
+                            <h4 className="font-medium text-text-primary mb-2">Skills & Experience</h4>
+                            <div className="space-y-1 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-text-secondary">Experience:</span>
+                                <span className="text-text-primary">{application.experience || 'Not specified'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-text-secondary">Education:</span>
+                                <span className="text-text-primary">{application.education || 'Not specified'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-text-secondary">Skills:</span>
+                                <span className="text-text-primary">{application.skills || 'Not specified'}</span>
+                              </div>
                             </div>
                           </div>
                         </div>
 
-                        <div>
-                          <h4 className="font-medium text-text-primary mb-2">Background Checks</h4>
-                          <div className="space-y-1 text-sm">
-                            <div className="flex justify-between">
-                              <span className="text-text-secondary">Background:</span>
-                              <span className={`${
-                                applicant.backgroundCheck === 'COMPLETED' ? 'text-emerald-600' :
-                                applicant.backgroundCheck === 'PENDING' ? 'text-amber-600' :
-                                'text-rose-600'
-                              }`}>
-                                {applicant.backgroundCheck}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-text-secondary">References:</span>
-                              <span className={`${
-                                applicant.referenceCheck === 'COMPLETED' ? 'text-emerald-600' :
-                                applicant.referenceCheck === 'PENDING' ? 'text-amber-600' :
-                                'text-rose-600'
-                              }`}>
-                                {applicant.referenceCheck}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-text-secondary">HR Recommendation:</span>
-                              <span className={`${
-                                applicant.hrRecommendation === 'HIRE' ? 'text-emerald-600' :
-                                'text-rose-600'
-                              }`}>
-                                {applicant.hrRecommendation}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div>
-                          <h4 className="font-medium text-text-primary mb-2">Skills</h4>
-                          <div className="flex flex-wrap gap-2">
-                            {applicant.skills.map((skill: string, index: number) => (
-                              <span key={index} className="px-2 py-1 bg-primary-800 text-primary-200 text-xs rounded">
-                                {skill}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Final Decision Actions */}
-                      {(applicant.status === 'INTERVIEW_COMPLETED' || applicant.status === 'ACCEPTED') && (
-                        <div className="flex gap-4 pt-4 border-t border-border">
+                        <div className="flex justify-end gap-3">
                           <Button
                             onClick={() => {
-                              setSelectedApplicantId(applicant.id)
-                              handleFinalDecision('HIRE')
+                              setSelectedApplicantId(application.id)
+                              setShowFinalApprovalModal(true)
                             }}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                          >
-                            <CheckCircleIcon className="w-4 h-4 mr-2" />
-                            Approve Hire
-                          </Button>
-                          <Button
-                            onClick={() => {
-                              setSelectedApplicantId(applicant.id)
-                              handleFinalDecision('REJECT')
-                            }}
-                            className="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                          >
-                            <XCircleIcon className="w-4 h-4 mr-2" />
-                            Reject
-                          </Button>
-                          <Button 
-                            onClick={() => handleViewFullProfile(applicant.id)}
-                            className="bg-bg-800 hover:bg-bg-850 text-text-high px-4 py-2 rounded-lg font-medium transition-colors border border-border"
+                            className="btn-secondary"
                           >
                             <EyeIcon className="w-4 h-4 mr-2" />
                             View Full Profile
                           </Button>
+                          <Button
+                            onClick={() => {
+                              if (confirm('Are you sure you want to hire this candidate?')) {
+                                handleFinalHire(application.id)
+                              }
+                            }}
+                            className="btn-primary"
+                          >
+                            <CheckCircleIcon className="w-4 h-4 mr-2" />
+                            Hire Candidate
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              const defaultReason = 'This information is kept confidential and is not shared with the candidate.'
+                              const reason = prompt('Please provide a reason for final rejection:', defaultReason)
+                              if (reason && reason.trim()) {
+                                if (confirm('Are you sure you want to reject this candidate at the final stage?')) {
+                                  handleFinalReject(application.id, reason.trim())
+                                }
+                              } else if (reason !== null) {
+                                toast.error('Rejection reason is required')
+                              }
+                            }}
+                            className="btn-danger"
+                          >
+                            <XCircleIcon className="w-4 h-4 mr-2" />
+                            Final Reject
+                          </Button>
                         </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}

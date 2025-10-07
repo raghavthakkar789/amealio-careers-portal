@@ -550,7 +550,7 @@ export default function CulturePage() {
                 >
                   <Button
                     onClick={() => router.push('/jobs')}
-                    className="bg-white text-purple-500 hover:bg-purple-500 hover:text-white text-lg px-8 py-4 rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
+                    className="bg-white text-[#40299B] hover:bg-[#40299B] hover:text-white text-lg px-8 py-4 rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
                   >
                     Explore Opportunities
                   </Button>
@@ -567,7 +567,7 @@ export default function CulturePage() {
                 >
                   <Button
                     onClick={() => router.push('/register')}
-                    className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-purple-500 text-lg px-8 py-4 rounded-lg font-medium transition-all duration-300 hover:shadow-lg hover:scale-105"
+                    className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-[#40299B] text-lg px-8 py-4 rounded-lg font-medium transition-all duration-300 hover:shadow-lg hover:scale-105"
                   >
                     Join Our Community
                   </Button>

@@ -10,17 +10,23 @@ export async function GET(
   try {
     const resolvedParams = await params
     const { id: applicationId } = resolvedParams
+    console.log('Fetching applicant details for applicationId:', applicationId)
+    
     const session = await auth()
+    console.log('Session user:', session?.user ? { id: session.user.id, role: session.user.role } : 'null')
     
     if (!session) {
+      console.log('No session found')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Only HR and ADMIN can view applicant details
     if (session.user?.role !== 'HR' && session.user?.role !== 'ADMIN') {
+      console.log('Access denied for role:', session.user?.role)
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    console.log('Querying database for application...')
     const application = await prisma.application.findUnique({
       where: { id: applicationId },
       include: {
@@ -75,10 +81,14 @@ export async function GET(
         }
       }
     })
+    console.log('Database query completed')
 
     if (!application) {
+      console.log('Application not found for ID:', applicationId)
       return NextResponse.json({ error: 'Application not found' }, { status: 404 })
     }
+    
+    console.log('Application found:', { id: application.id, applicantId: application.applicantId, status: application.status })
 
     // Format the response with all applicant and application details
     const applicantDetails = {
@@ -166,10 +176,15 @@ export async function GET(
       }))
     }
 
+    console.log('Successfully formatted applicant details, returning response')
     return NextResponse.json({ applicantDetails })
 
   } catch (error) {
     console.error('Error fetching applicant details:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }

@@ -27,6 +27,7 @@ import {
 } from '@/lib/application-status-service'
 import { useApplicationUpdates } from '@/hooks/useApplicationUpdates'
 import ApplicantProfileModal from './ApplicantProfileModal'
+import { formatDate } from '@/lib/utils'
 
 interface ApplicationManagementProps {
   userRole: 'APPLICANT' | 'HR' | 'ADMIN'
@@ -68,9 +69,24 @@ export default function ApplicationManagement({
         const data = await response.json()
         setApplications(data.applications || [])
       } else {
-        const errorData = await response.json().catch(() => ({}))
-        console.error('API Error:', response.status, errorData)
-        toast.error(errorData.error || 'Failed to fetch applications')
+        let errorMessage = 'Failed to fetch applications'
+        try {
+          const errorData = await response.json()
+          console.error('API Error Response:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorData
+          })
+          errorMessage = errorData.error || errorMessage
+        } catch (parseError) {
+          console.error('Failed to parse error response:', {
+            status: response.status,
+            statusText: response.statusText,
+            parseError
+          })
+          errorMessage = `Server error (${response.status}): ${response.statusText}`
+        }
+        toast.error(errorMessage)
       }
     } catch (error) {
       console.error('Error fetching applications:', error)
@@ -121,9 +137,24 @@ export default function ApplicationManagement({
         toast.success(`Application moved to ${transition.to.replace('_', ' ')}`)
         // Real-time updates will handle the refresh
       } else {
-        const error = await response.json()
-        console.error('API Error:', error)
-        toast.error(error.error || 'Failed to update application stage')
+        let errorMessage = 'Failed to update application stage'
+        try {
+          const errorData = await response.json()
+          console.error('API Error Response:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorData
+          })
+          errorMessage = errorData.error || errorMessage
+        } catch (parseError) {
+          console.error('Failed to parse error response:', {
+            status: response.status,
+            statusText: response.statusText,
+            parseError
+          })
+          errorMessage = `Server error (${response.status}): ${response.statusText}`
+        }
+        toast.error(errorMessage)
       }
     } catch (error) {
       console.error('Error updating application:', error)
@@ -136,7 +167,7 @@ export default function ApplicationManagement({
   const openRejectModal = (applicationId: string, transition: StatusTransition) => {
     setSelectedApplicationId(applicationId)
     setRejectTransition(transition)
-    setRejectReason('')
+    setRejectReason('This information is kept confidential and is not shared with the candidate.')
     setShowRejectModal(true)
   }
 
@@ -146,6 +177,19 @@ export default function ApplicationManagement({
     setShowRejectModal(false)
     setRejectReason('')
     setRejectTransition(null)
+  }
+
+  // Workflow navigation helpers
+  const handleScheduleInterview = (applicationId: string) => {
+    router.push(`/hr/interviews?applicationId=${applicationId}`)
+  }
+
+  const handleInterviewEvaluation = (applicationId: string) => {
+    router.push(`/hr/interviews/${applicationId}/evaluation`)
+  }
+
+  const handleFinalApproval = (applicationId: string) => {
+    router.push(`/admin/dashboard?tab=applicants&applicationId=${applicationId}`)
   }
 
   const handleViewProfile = (applicationId: string) => {
@@ -284,7 +328,7 @@ export default function ApplicationManagement({
                           <div>
                             <p className="text-sm text-text-mid">Applied Date</p>
                             <p className="font-medium text-text-high">
-                              {new Date(application.submittedAt).toLocaleDateString()}
+                              {formatDate(application.submittedAt)}
                             </p>
                           </div>
                         </div>
@@ -298,7 +342,7 @@ export default function ApplicationManagement({
                                 {application.history.slice(0, 3).map((historyItem) => (
                                   <div key={historyItem.id} className="flex items-center gap-2 text-sm">
                                     <span className="text-text-mid">
-                                      {new Date(historyItem.createdAt).toLocaleDateString()}
+                                      {formatDate(historyItem.createdAt)}
                                     </span>
                                     <span className="text-text-high">
                                       {historyItem.performedByName} ({historyItem.performedByRole}) moved application from {historyItem.fromStatus || 'N/A'} to {historyItem.toStatus}
@@ -329,44 +373,95 @@ export default function ApplicationManagement({
                         )}
                         
                         <Button
-                          onClick={() => window.open(`/jobs/${application.job.id}`, '_blank')}
+                          onClick={() => {
+                            if (application.status === 'INTERVIEW_COMPLETED') {
+                              handleInterviewEvaluation(application.id)
+                              return
+                            }
+                            window.open(`/jobs/${application.job.id}`, '_blank')
+                          }}
                           variant="secondary"
                           className="btn-secondary"
                         >
                           <EyeIcon className="w-4 h-4 mr-2" />
                           View Job
                         </Button>
-                        
-                        {validTransitions.map((transition) => (
+
+                        {/* Strict workflow buttons per stage and role */}
+                        {application.status === 'PENDING' && (userRole === 'HR' || userRole === 'ADMIN') && (
+                          <>
+                            <Button
+                              onClick={() => handleStageUpdate(application.id, {
+                                from: 'PENDING',
+                                to: 'UNDER_REVIEW',
+                                action: 'UNDER_REVIEW',
+                                description: 'Move application to under review',
+                                allowedRoles: ['HR', 'ADMIN'],
+                                requiresConfirmation: false
+                              })}
+                              disabled={actionLoading === application.id}
+                              className="btn-primary text-sm"
+                            >
+                              {actionLoading === application.id ? <LoadingSpinner size="sm" /> : (<><ArrowPathIcon className="w-4 h-4 mr-2" />Under Review</>)}
+                            </Button>
+                            <Button
+                              onClick={() => openRejectModal(application.id, {
+                                from: 'PENDING',
+                                to: 'REJECTED',
+                                action: 'REJECT',
+                                description: 'Reject the application',
+                                allowedRoles: ['HR', 'ADMIN'],
+                                requiresConfirmation: true
+                              })}
+                              variant="secondary"
+                              className="btn-secondary text-sm text-red-600 hover:text-red-700"
+                            >
+                              <XCircleIcon className="w-4 h-4 mr-2" />Reject
+                            </Button>
+                          </>
+                        )}
+
+                        {application.status === 'UNDER_REVIEW' && (userRole === 'HR' || userRole === 'ADMIN') && (
+                          <>
+                            <Button
+                              onClick={() => handleScheduleInterview(application.id)}
+                              className="btn-primary text-sm"
+                            >
+                              <CalendarIcon className="w-4 h-4 mr-2" />Schedule Interview
+                            </Button>
+                            <Button
+                              onClick={() => openRejectModal(application.id, {
+                                from: 'UNDER_REVIEW',
+                                to: 'REJECTED',
+                                action: 'REJECT',
+                                description: 'Reject the application after review',
+                                allowedRoles: ['HR', 'ADMIN'],
+                                requiresConfirmation: true
+                              })}
+                              variant="secondary"
+                              className="btn-secondary text-sm text-red-600 hover:text-red-700"
+                            >
+                              <XCircleIcon className="w-4 h-4 mr-2" />Reject
+                            </Button>
+                          </>
+                        )}
+
+                        {/* INTERVIEW_SCHEDULED: no extra buttons beyond View Profile and View Job */}
+
+                        {/* INTERVIEW_COMPLETED: View Job routes to evaluation; no accept/reject buttons here */}
+
+                        {application.status === 'ACCEPTED' && userRole === 'ADMIN' && (
                           <Button
-                            key={transition.action}
-                            onClick={() => {
-                              // For rejection, open reason modal
-                              if (transition.to === 'REJECTED') {
-                                openRejectModal(application.id, transition)
-                                return
-                              }
-                              if (transition.requiresConfirmation) {
-                                if (confirm(transition.confirmationMessage || 'Are you sure?')) {
-                                  handleStageUpdate(application.id, transition)
-                                }
-                              } else {
-                                handleStageUpdate(application.id, transition)
-                              }
-                            }}
-                            disabled={actionLoading === application.id}
+                            onClick={() => handleFinalApproval(application.id)}
                             className="btn-primary text-sm"
                           >
-                            {actionLoading === application.id ? (
-                              <LoadingSpinner size="sm" />
-                            ) : (
-                              <>
-                                <ArrowPathIcon className="w-4 h-4 mr-2" />
-                                {transition.description}
-                              </>
-                            )}
+                            <ArrowPathIcon className="w-4 h-4 mr-2" />Final Approval
                           </Button>
-                        ))}
+                        )}
+
+                        {application.status === 'ACCEPTED' && userRole === 'HR' && (
+                          <div className="text-sm text-text-mid bg-bg-800 p-2 rounded border">Pending Admin Approval</div>
+                        )}
                       </div>
                     </div>
                   </motion.div>
@@ -391,7 +486,7 @@ export default function ApplicationManagement({
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-bg-850 rounded-lg p-6 w-full max-w-lg">
             <h3 className="text-xl font-semibold text-text-high mb-4">Reject Application</h3>
-            <p className="text-text-mid mb-4">Please provide a brief reason for rejection. This will be visible to the applicant in Recent Activity and to Admin.</p>
+            <p className="text-text-mid mb-4">Please provide a brief reason for rejection. The default text can be modified as needed. This will be visible to the applicant in Recent Activity and to Admin.</p>
             <textarea
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}

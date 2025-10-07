@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -26,6 +26,7 @@ import {
   BriefcaseIcon,
   BuildingOfficeIcon
 } from '@heroicons/react/24/outline'
+import { formatDate } from '@/lib/utils'
 
 interface Interview {
   id: string
@@ -46,10 +47,22 @@ interface Interview {
   rating?: number
 }
 
-export default function HRInterviewsPage() {
+interface HRUser {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  phoneNumber: string | null
+  role: string
+  createdAt: string
+}
+
+function HRInterviewsContent() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [interviews, setInterviews] = useState<Interview[]>([])
+  const [hrUsers, setHrUsers] = useState<HRUser[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL')
   const [selectedType, setSelectedType] = useState<string>('ALL')
@@ -70,7 +83,8 @@ export default function HRInterviewsPage() {
     type: 'VIDEO' as 'PHONE' | 'VIDEO' | 'IN_PERSON',
     location: '',
     meetingLink: '',
-    interviewer: '',
+    interviewerId: '',
+    interviewerName: '',
     notes: ''
   })
 
@@ -87,88 +101,81 @@ export default function HRInterviewsPage() {
     type: 'VIDEO' as 'PHONE' | 'VIDEO' | 'IN_PERSON',
     location: '',
     meetingLink: '',
-    interviewer: '',
+    interviewerId: '',
+    interviewerName: '',
     notes: ''
   })
+
+  const fetchHrUsers = async () => {
+    try {
+      const response = await fetch('/api/admin/hr-users')
+      if (response.ok) {
+        const data = await response.json()
+        setHrUsers(data.users || [])
+      }
+    } catch (error) {
+      console.error('Error fetching HR users:', error)
+    }
+  }
 
   useEffect(() => {
     if (status === 'loading') return
 
-    if (!session || session.user?.role !== 'HR') {
+    // Allow both HR and ADMIN to access scheduling page
+    if (!session || (session.user?.role !== 'HR' && session.user?.role !== 'ADMIN')) {
       router.push('/login')
       return
     }
 
-    // Mock data - replace with actual API call
-    setTimeout(() => {
-      setInterviews([
-        {
-          id: '1',
-          applicantName: 'Arjun Sharma',
-          applicantEmail: 'john.doe@example.com',
-          jobTitle: 'Senior Software Engineer',
-          department: 'Engineering',
-          interviewDate: '2024-01-25',
-          interviewTime: '10:00',
-          duration: 60,
-          type: 'VIDEO',
-          meetingLink: 'https://meet.google.com/abc-defg-hij',
-          interviewer: 'Sneha Gupta',
-          status: 'SCHEDULED',
-          notes: 'Technical interview focusing on React and Node.js'
-        },
-        {
-          id: '2',
-          applicantName: 'Priya Patel',
-          applicantEmail: 'jane.smith@example.com',
-          jobTitle: 'Product Manager',
-          department: 'Product',
-          interviewDate: '2024-01-20',
-          interviewTime: '14:00',
-          duration: 90,
-          type: 'IN_PERSON',
-          location: 'Conference Room A',
-          interviewer: 'Rajesh Kumar',
-          status: 'COMPLETED',
-          notes: 'Product strategy and leadership discussion',
-          feedback: 'Strong analytical skills, good communication',
-          rating: 4
-        },
-        {
-          id: '3',
-          applicantName: 'Rahul Kumar',
-          applicantEmail: 'mike.johnson@example.com',
-          jobTitle: 'UX Designer',
-          department: 'Design',
-          interviewDate: '2024-01-18',
-          interviewTime: '11:30',
-          duration: 45,
-          type: 'PHONE',
-          interviewer: 'Lisa Wang',
-          status: 'COMPLETED',
-          notes: 'Portfolio review and design process discussion',
-          feedback: 'Excellent design thinking, great cultural fit',
-          rating: 5
-        },
-        {
-          id: '4',
-          applicantName: 'Sarah Wilson',
-          applicantEmail: 'sarah.wilson@example.com',
-          jobTitle: 'Marketing Specialist',
-          department: 'Marketing',
-          interviewDate: '2024-01-15',
-          interviewTime: '15:30',
-          duration: 60,
-          type: 'VIDEO',
-          meetingLink: 'https://zoom.us/j/123456789',
-          interviewer: 'David Kim',
-          status: 'CANCELLED',
-          notes: 'Cancelled by applicant due to scheduling conflict'
+    // Fetch HR users for admin
+    if (session.user?.role === 'ADMIN') {
+      fetchHrUsers()
+    }
+
+    // Fetch interviews from API
+    const fetchInterviews = async () => {
+      try {
+        const response = await fetch('/api/interviews')
+        if (response.ok) {
+          const data = await response.json()
+          setInterviews(data.interviews || [])
+        } else {
+          console.error('Failed to fetch interviews')
+          setInterviews([])
         }
-      ])
-      setLoading(false)
-    }, 1000)
-  }, [session, status, router])
+      } catch (error) {
+        console.error('Error fetching interviews:', error)
+        setInterviews([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchInterviews()
+
+    // If navigated with applicationId, open schedule modal and prefill basic details
+    const applicationId = searchParams?.get('applicationId')
+    if (applicationId) {
+      setShowScheduleModal(true)
+      ;(async () => {
+        try {
+          const res = await fetch(`/api/applications/${applicationId}`)
+          if (res.ok) {
+            const { application } = await res.json()
+            setScheduleForm(prev => ({
+              ...prev,
+              applicantName: `${application.applicant?.firstName ?? ''} ${application.applicant?.lastName ?? ''}`.trim(),
+              applicantEmail: application.applicant?.email ?? '',
+              jobTitle: application.jobTitle ?? application.job?.title ?? '',
+              department: application.job?.department?.name ?? ''
+            }))
+          }
+        } catch (_) {
+          // ignore
+        }
+      })()
+    }
+  }, [session, status, router, searchParams])
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -203,7 +210,7 @@ export default function HRInterviewsPage() {
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'VIDEO':
-        return <VideoCameraIcon className="w-5 h-5 text-purple-500" />
+        return <VideoCameraIcon className="w-5 h-5 text-[#40299B]" />
       case 'PHONE':
         return <PhoneIcon className="w-5 h-5 text-blue-500" />
       case 'IN_PERSON':
@@ -216,18 +223,28 @@ export default function HRInterviewsPage() {
   const handleScheduleInterview = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
+      // Prepare the data to send
+      const interviewData = {
+        ...scheduleForm,
+        interviewer: scheduleForm.interviewerName || scheduleForm.interviewerId
+      }
+      
       const response = await fetch('/api/interviews', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(scheduleForm),
+        body: JSON.stringify(interviewData),
       })
 
       if (response.ok) {
         const data = await response.json()
         setInterviews(prev => [...prev, data.interview])
         setShowScheduleModal(false)
+        
+        // Show success message with email notification info
+        toast.success('Interview scheduled successfully! Email notification sent to candidate.')
+        
         setScheduleForm({
           applicantName: '',
           applicantEmail: '',
@@ -239,7 +256,8 @@ export default function HRInterviewsPage() {
           type: 'VIDEO',
           location: '',
           meetingLink: '',
-          interviewer: '',
+          interviewerId: '',
+          interviewerName: '',
           notes: ''
         })
         toast.success('Interview scheduled successfully!')
@@ -303,7 +321,7 @@ export default function HRInterviewsPage() {
                 type: rescheduleForm.type,
                 location: rescheduleForm.location,
                 meetingLink: rescheduleForm.meetingLink,
-                interviewer: rescheduleForm.interviewer,
+                interviewer: rescheduleForm.interviewerName,
                 notes: rescheduleForm.notes,
                 status: 'RESCHEDULED'
               }
@@ -320,7 +338,8 @@ export default function HRInterviewsPage() {
         type: 'VIDEO',
         location: '',
         meetingLink: '',
-        interviewer: '',
+        interviewerId: '',
+        interviewerName: '',
         notes: ''
       })
       
@@ -336,7 +355,7 @@ export default function HRInterviewsPage() {
     const matchesSearch = searchTerm === '' || 
       interview.applicantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       interview.jobTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      interview.interviewer.toLowerCase().includes(searchTerm.toLowerCase())
+      (interview.interviewer || '').toLowerCase().includes(searchTerm.toLowerCase())
     
     return matchesStatus && matchesType && matchesSearch
   })
@@ -383,7 +402,7 @@ export default function HRInterviewsPage() {
                   Back to Dashboard
                 </Button>
                 <div>
-                  <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                  <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-[#40299B] bg-clip-text text-transparent">
                     Interview Management
                   </h1>
                   <p className="text-text-mid mt-2">
@@ -528,7 +547,7 @@ export default function HRInterviewsPage() {
                         <div>
                           <p className="text-sm text-text-mid">Date & Time</p>
                           <p className="font-medium text-text-high">
-                            {new Date(interview.interviewDate).toLocaleDateString()} at {interview.interviewTime}
+                            {formatDate(interview.interviewDate)} at {interview.interviewTime}
                           </p>
                         </div>
                         <div>
@@ -614,7 +633,8 @@ export default function HRInterviewsPage() {
                                 type: interview.type,
                                 location: interview.location || '',
                                 meetingLink: interview.meetingLink || '',
-                                interviewer: interview.interviewer,
+                                interviewerId: '', // Will need to find HR user ID by name
+                                interviewerName: interview.interviewer,
                                 notes: interview.notes || ''
                               })
                               setShowRescheduleModal(true)
@@ -654,7 +674,7 @@ export default function HRInterviewsPage() {
         <div className="modal-overlay">
           <div className="modal-content max-w-5xl">
             {/* Professional Header Section */}
-            <div className="bg-gradient-to-r from-primary to-purple-600 rounded-t-lg p-6 text-white">
+            <div className="bg-gradient-to-r from-primary to-[#40299B] rounded-t-lg p-6 text-white">
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
                   <CalendarIcon className="w-6 h-6 text-white" />
@@ -850,13 +870,36 @@ export default function HRInterviewsPage() {
                         <UserIcon className="w-4 h-4" />
                         Interviewer
                       </label>
-                      <Input
-                        value={scheduleForm.interviewer}
-                        onChange={(e) => setScheduleForm(prev => ({ ...prev, interviewer: e.target.value }))}
-                        className="focus:ring-2 focus:ring-primary/20"
-                        placeholder="Interviewer's name"
-                        required
-                      />
+                      {(session?.user?.role as string) === 'ADMIN' && hrUsers.length > 0 ? (
+                        <select
+                          value={scheduleForm.interviewerId}
+                          onChange={(e) => {
+                            const selectedHr = hrUsers.find(hr => hr.id === e.target.value)
+                            setScheduleForm(prev => ({ 
+                              ...prev, 
+                              interviewerId: e.target.value,
+                              interviewerName: selectedHr ? `${selectedHr.firstName} ${selectedHr.lastName}` : ''
+                            }))
+                          }}
+                          className="w-full px-3 py-2 border border-border rounded-lg bg-bg-800 text-text-high focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                          required
+                        >
+                          <option value="">Select HR Interviewer</option>
+                          {hrUsers.map((hr) => (
+                            <option key={hr.id} value={hr.id}>
+                              {hr.firstName} {hr.lastName} ({hr.email})
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <Input
+                          value={scheduleForm.interviewerName}
+                          onChange={(e) => setScheduleForm(prev => ({ ...prev, interviewerName: e.target.value }))}
+                          className="focus:ring-2 focus:ring-primary/20"
+                          placeholder="Interviewer's name"
+                          required
+                        />
+                      )}
                     </div>
                   </div>
                   
@@ -949,7 +992,7 @@ export default function HRInterviewsPage() {
         <div className="modal-overlay">
           <div className="modal-content max-w-4xl">
             {/* Professional Header Section */}
-            <div className="bg-gradient-to-r from-primary to-purple-600 rounded-t-lg p-6 text-white">
+            <div className="bg-gradient-to-r from-primary to-[#40299B] rounded-t-lg p-6 text-white">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
@@ -965,7 +1008,7 @@ export default function HRInterviewsPage() {
                   </div>
                 </div>
                 <div className="text-right text-sm text-purple-100">
-                  <div>Interview Date: {new Date(selectedInterview.interviewDate).toLocaleDateString()}</div>
+                  <div>Interview Date: {formatDate(selectedInterview.interviewDate)}</div>
                   <div>Position: {selectedInterview.jobTitle}</div>
                 </div>
               </div>
@@ -975,7 +1018,7 @@ export default function HRInterviewsPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div className="flex items-center gap-2">
                     <CalendarIcon className="w-4 h-4" />
-                    <span>{new Date(selectedInterview.interviewDate).toLocaleDateString()}</span>
+                    <span>{formatDate(selectedInterview.interviewDate)}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <ClockIcon className="w-4 h-4" />
@@ -1220,7 +1263,7 @@ Please be specific, objective, and constructive in your evaluation..."
         <div className="modal-overlay">
           <div className="modal-content max-w-4xl">
             {/* Header Section */}
-            <div className="bg-gradient-to-r from-primary to-purple-600 rounded-t-lg p-6 text-white">
+            <div className="bg-gradient-to-r from-primary to-[#40299B] rounded-t-lg p-6 text-white">
               <div className="flex items-center gap-4 mb-4">
                 <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
                   <CalendarIcon className="w-8 h-8 text-white" />
@@ -1241,7 +1284,7 @@ Please be specific, objective, and constructive in your evaluation..."
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                   <div className="flex items-center gap-2">
                     <CalendarIcon className="w-4 h-4" />
-                    <span>{new Date(selectedInterview.interviewDate).toLocaleDateString()}</span>
+                    <span>{formatDate(selectedInterview.interviewDate)}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <ClockIcon className="w-4 h-4" />
@@ -1348,13 +1391,36 @@ Please be specific, objective, and constructive in your evaluation..."
                         <UserIcon className="w-4 h-4" />
                         Interviewer
                       </label>
-                      <Input
-                        value={rescheduleForm.interviewer}
-                        onChange={(e) => setRescheduleForm(prev => ({ ...prev, interviewer: e.target.value }))}
-                        className="focus:ring-2 focus:ring-primary/20"
-                        placeholder="Enter interviewer name"
-                        required
-                      />
+                      {(session?.user?.role as string) === 'ADMIN' && hrUsers.length > 0 ? (
+                        <select
+                          value={rescheduleForm.interviewerId}
+                          onChange={(e) => {
+                            const selectedHr = hrUsers.find(hr => hr.id === e.target.value)
+                            setRescheduleForm(prev => ({ 
+                              ...prev, 
+                              interviewerId: e.target.value,
+                              interviewerName: selectedHr ? `${selectedHr.firstName} ${selectedHr.lastName}` : ''
+                            }))
+                          }}
+                          className="w-full px-3 py-2 border border-border rounded-lg bg-bg-800 text-text-high focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                          required
+                        >
+                          <option value="">Select HR Interviewer</option>
+                          {hrUsers.map((hr) => (
+                            <option key={hr.id} value={hr.id}>
+                              {hr.firstName} {hr.lastName} ({hr.email})
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <Input
+                          value={rescheduleForm.interviewerName}
+                          onChange={(e) => setRescheduleForm(prev => ({ ...prev, interviewerName: e.target.value }))}
+                          className="focus:ring-2 focus:ring-primary/20"
+                          placeholder="Enter interviewer name"
+                          required
+                        />
+                      )}
                     </div>
                   </div>
                   
@@ -1442,5 +1508,13 @@ Please be specific, objective, and constructive in your evaluation..."
         </div>
       )}
     </div>
+  )
+}
+
+export default function HRInterviewsPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner size="lg" />}>
+      <HRInterviewsContent />
+    </Suspense>
   )
 }

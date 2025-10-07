@@ -29,6 +29,7 @@ import {
    HandThumbUpIcon,
    HandThumbDownIcon
 } from '@heroicons/react/24/outline'
+import { formatDate, formatDateTime } from '@/lib/utils'
 
 interface HRRecommendation {
   id: string
@@ -144,23 +145,7 @@ export default function FinalApprovalModal({
     }
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
-  }
-
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
+  // Using utility functions from @/lib/utils for consistent formatting
 
   const getRecommendationColor = (recommendation: string) => {
     switch (recommendation) {

@@ -20,8 +20,11 @@ import {
   CurrencyDollarIcon,
   LinkIcon,
   EyeIcon,
-  ArrowDownTrayIcon
+  ArrowDownTrayIcon,
+  ClipboardDocumentListIcon,
+  CheckCircleIcon
 } from '@heroicons/react/24/outline'
+import { formatDate, formatDateTime } from '@/lib/utils'
 
 interface ApplicantDetails {
   personalInfo: {
@@ -61,6 +64,33 @@ interface ApplicantDetails {
     title: string
     department: string
   }
+  hrRecommendations?: Array<{
+    id: string
+    hrName: string
+    hrEmail: string
+    recommendation: 'HIRE' | 'REJECT' | 'PENDING'
+    notes: string
+    rating: number
+    strengths: string[]
+    concerns: string[]
+    createdAt: string
+  }>
+  interviewReviews?: Array<{
+    id: string
+    interviewerName: string
+    interviewerRole: string
+    interviewType: string
+    overallRating: number
+    technicalRating: number
+    communicationRating: number
+    culturalFitRating: number
+    notes: string
+    strengths: string[]
+    areasForImprovement: string[]
+    recommendation: 'HIRE' | 'REJECT' | 'MAYBE' | 'PENDING'
+    interviewDate: string
+    duration: number
+  }>
 }
 
 interface ApplicantProfileModalProps {
@@ -78,21 +108,43 @@ export default function ApplicantProfileModal({
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
+    console.log('ApplicantProfileModal useEffect triggered:', { isOpen, applicationId })
     if (isOpen && applicationId) {
+      console.log('Conditions met, fetching applicant details...')
       fetchApplicantDetails()
+    } else {
+      console.log('Conditions not met:', { isOpen, applicationId })
     }
   }, [isOpen, applicationId])
 
   const fetchApplicantDetails = async () => {
     setLoading(true)
     try {
+      console.log('Fetching applicant details for applicationId:', applicationId)
       const response = await fetch(`/api/applications/${applicationId}/applicant`)
+      console.log('API response status:', response.status)
+      
       if (response.ok) {
         const data = await response.json()
-        setApplicantDetails(data.applicantDetails)
+        console.log('API response data:', data)
+        if (data.applicantDetails) {
+          setApplicantDetails(data.applicantDetails)
+          toast.success('Applicant details loaded successfully')
+        } else {
+          console.error('No applicantDetails in response:', data)
+          toast.error('Invalid response format from server')
+        }
       } else {
-        const error = await response.json()
-        toast.error(error.error || 'Failed to fetch applicant details')
+        let errorMessage = 'Failed to fetch applicant details'
+        try {
+          const error = await response.json()
+          console.error('API error response:', error)
+          errorMessage = error.error || errorMessage
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError)
+          errorMessage = `Server error (${response.status}): ${response.statusText}`
+        }
+        toast.error(errorMessage)
       }
     } catch (error) {
       console.error('Error fetching applicant details:', error)
@@ -102,23 +154,7 @@ export default function ApplicantProfileModal({
     }
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
-  }
-
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
+  // Using utility functions from @/lib/utils for consistent formatting
 
   const downloadFile = (url: string, filename: string) => {
     const link = document.createElement('a')
@@ -128,6 +164,45 @@ export default function ApplicantProfileModal({
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+  }
+
+  // Helper functions to determine what sections to show based on application status
+  const shouldShowInterviewDetails = () => {
+    const status = applicantDetails?.applicationInfo.status
+    return status === 'INTERVIEW_SCHEDULED' || 
+           status === 'INTERVIEW_COMPLETED' || 
+           status === 'ACCEPTED' || 
+           status === 'HIRED' || 
+           status === 'REJECTED'
+  }
+
+  const shouldShowEvaluationReport = () => {
+    const status = applicantDetails?.applicationInfo.status
+    return status === 'ACCEPTED' || 
+           status === 'HIRED' || 
+           status === 'REJECTED'
+  }
+
+  const shouldShowAdminDecision = () => {
+    const status = applicantDetails?.applicationInfo.status
+    return status === 'HIRED' || status === 'REJECTED'
+  }
+
+  const isRejected = () => {
+    return applicantDetails?.applicationInfo.status === 'REJECTED'
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'PENDING': return 'bg-blue-100 text-blue-800'
+      case 'UNDER_REVIEW': return 'bg-yellow-100 text-yellow-800'
+      case 'INTERVIEW_SCHEDULED': return 'bg-purple-100 text-purple-800'
+      case 'INTERVIEW_COMPLETED': return 'bg-indigo-100 text-indigo-800'
+      case 'ACCEPTED': return 'bg-green-100 text-green-800'
+      case 'HIRED': return 'bg-emerald-100 text-emerald-800'
+      case 'REJECTED': return 'bg-red-100 text-red-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
   }
 
   if (!isOpen) return null
@@ -443,10 +518,190 @@ export default function ApplicantProfileModal({
                           <span className="text-text-mid">Last Updated:</span>
                           <span className="text-text-high">{formatDateTime(applicantDetails.applicationInfo.updatedAt)}</span>
                         </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-text-mid">Current Status:</span>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(applicantDetails.applicationInfo.status)}`}>
+                            {applicantDetails.applicationInfo.status.replace('_', ' ')}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
+
+                {/* Interview Details Section - Visible from INTERVIEW_SCHEDULED onwards */}
+                {shouldShowInterviewDetails() && applicantDetails.interviewReviews && applicantDetails.interviewReviews.length > 0 && (
+                  <div className="card">
+                    <div className="flex items-center gap-2 mb-6">
+                      <CalendarIcon className="w-6 h-6 text-primary" />
+                      <h3 className="text-xl font-semibold text-text-high">Interview Details</h3>
+                    </div>
+                    
+                    <div className="space-y-6">
+                      {applicantDetails.interviewReviews.map((interview, index) => (
+                        <div key={interview.id} className="bg-bg-850 p-4 rounded-lg border border-border">
+                          <div className="flex items-center justify-between mb-4">
+                            <h4 className="text-lg font-semibold text-text-high">Interview #{index + 1}</h4>
+                            <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">
+                              {interview.interviewType.replace('_', ' ')}
+                            </span>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-text-mid mb-1">Interview Date</label>
+                              <p className="text-text-high">{formatDateTime(interview.interviewDate)}</p>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-text-mid mb-1">Interviewer</label>
+                              <p className="text-text-high">{interview.interviewerName}</p>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-text-mid mb-1">Duration</label>
+                              <p className="text-text-high">{interview.duration} minutes</p>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-text-mid mb-1">Status</label>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                interview.recommendation === 'HIRE' ? 'bg-green-100 text-green-800' :
+                                interview.recommendation === 'REJECT' ? 'bg-red-100 text-red-800' :
+                                'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {interview.recommendation}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          {interview.notes && (
+                            <div className="mt-4">
+                              <label className="block text-sm font-medium text-text-mid mb-1">Interview Notes</label>
+                              <div className="bg-bg-800 p-3 rounded border border-border">
+                                <p className="text-text-high text-sm">{interview.notes}</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Interview Evaluation Report Section - Visible from ACCEPTED onwards */}
+                {shouldShowEvaluationReport() && applicantDetails.interviewReviews && applicantDetails.interviewReviews.length > 0 && (
+                  <div className="card">
+                    <div className="flex items-center gap-2 mb-6">
+                      <ClipboardDocumentListIcon className="w-6 h-6 text-primary" />
+                      <h3 className="text-xl font-semibold text-text-high">Interview Evaluation Report</h3>
+                    </div>
+                    
+                    <div className="space-y-6">
+                      {applicantDetails.interviewReviews.map((interview, index) => (
+                        <div key={interview.id} className="bg-bg-850 p-4 rounded-lg border border-border">
+                          <div className="flex items-center justify-between mb-4">
+                            <h4 className="text-lg font-semibold text-text-high">Evaluation #{index + 1}</h4>
+                            <span className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">
+                              By {interview.interviewerName}
+                            </span>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                            <div>
+                              <label className="block text-sm font-medium text-text-mid mb-1">Overall Rating</label>
+                              <div className="flex items-center gap-1">
+                                <span className="text-lg font-semibold text-text-high">{interview.overallRating}/5</span>
+                                <div className="flex">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <StarIcon 
+                                      key={star} 
+                                      className={`w-4 h-4 ${star <= interview.overallRating ? 'text-yellow-400' : 'text-gray-300'}`} 
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-text-mid mb-1">Technical Skills</label>
+                              <p className="text-text-high">{interview.technicalRating}/5</p>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-text-mid mb-1">Communication</label>
+                              <p className="text-text-high">{interview.communicationRating}/5</p>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-text-mid mb-1">Cultural Fit</label>
+                              <p className="text-text-high">{interview.culturalFitRating}/5</p>
+                            </div>
+                          </div>
+                          
+                          <div className="mb-4">
+                            <label className="block text-sm font-medium text-text-mid mb-1">Final Recommendation</label>
+                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                              interview.recommendation === 'HIRE' ? 'bg-green-100 text-green-800' :
+                              interview.recommendation === 'REJECT' ? 'bg-red-100 text-red-800' :
+                              'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {interview.recommendation}
+                            </span>
+                          </div>
+                          
+                          {interview.notes && (
+                            <div>
+                              <label className="block text-sm font-medium text-text-mid mb-1">Detailed Comments</label>
+                              <div className="bg-bg-800 p-3 rounded border border-border">
+                                <p className="text-text-high text-sm whitespace-pre-wrap">{interview.notes}</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Admin Final Decision Section - Visible for HIRED/REJECTED */}
+                {shouldShowAdminDecision() && (
+                  <div className="card">
+                    <div className="flex items-center gap-2 mb-6">
+                      <CheckCircleIcon className={`w-6 h-6 ${isRejected() ? 'text-red-500' : 'text-green-500'}`} />
+                      <h3 className="text-xl font-semibold text-text-high">Final Decision</h3>
+                    </div>
+                    
+                    <div className="bg-bg-850 p-4 rounded-lg border border-border">
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="text-lg font-semibold text-text-high">
+                          {isRejected() ? 'Application Rejected' : 'Candidate Hired'}
+                        </h4>
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          isRejected() ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                        }`}>
+                          {applicantDetails.applicationInfo.status.replace('_', ' ')}
+                        </span>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-text-mid mb-1">Decision Date</label>
+                          <p className="text-text-high">{formatDateTime(applicantDetails.applicationInfo.updatedAt)}</p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-text-mid mb-1">Decision Made By</label>
+                          <p className="text-text-high">Admin</p>
+                        </div>
+                      </div>
+                      
+                      {isRejected() && (
+                        <div className="mt-4">
+                          <label className="block text-sm font-medium text-text-mid mb-1">Rejection Reason</label>
+                          <div className="bg-bg-800 p-3 rounded border border-border">
+                            <p className="text-text-high text-sm">
+                              This information is kept confidential and is not shared with the candidate.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex items-center justify-center py-12">

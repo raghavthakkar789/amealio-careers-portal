@@ -32,15 +32,22 @@ import {
   ArrowDownTrayIcon,
   DocumentIcon,
   ExclamationTriangleIcon,
-  UserIcon
+  UserIcon,
+  CalendarIcon,
+  CheckCircleIcon,
+  MagnifyingGlassIcon,
+  XMarkIcon,
+  ArrowPathIcon
 } from '@heroicons/react/24/outline'
 import ApplicantProfileModal from '@/components/application/ApplicantProfileModal'
+import { formatDate, formatDateTime } from '@/lib/utils'
 import { 
   Applicant, 
   Application, 
   ApplicationHistory, 
   HRUser, 
   Job, 
+  Interview,
   InterviewReview,
   HRPerformanceMetrics 
 } from '@/types/admin'
@@ -54,12 +61,19 @@ export default function AdminOversightPage() {
   const [applications, setApplications] = useState<Application[]>([])
   const [hrUsers, setHrUsers] = useState<HRUser[]>([])
   const [jobs, setJobs] = useState<Job[]>([])
+  const [interviews, setInterviews] = useState<Interview[]>([])
   const [selectedApplicationId, setSelectedApplicationId] = useState<string | null>(null)
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [showJobModal, setShowJobModal] = useState(false)
   const [showRejectModal, setShowRejectModal] = useState(false)
   const [rejectReason, setRejectReason] = useState('')
   const [editingJob, setEditingJob] = useState<Job | null>(null)
+  const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null)
+  const [showInterviewModal, setShowInterviewModal] = useState(false)
+  const [interviewStatusFilter, setInterviewStatusFilter] = useState('all')
+  const [interviewTypeFilter, setInterviewTypeFilter] = useState('all')
+  const [interviewHrFilter, setInterviewHrFilter] = useState('all')
+  const [interviewSearchTerm, setInterviewSearchTerm] = useState('')
   const [newJobData, setNewJobData] = useState({
     title: '',
     departmentId: '',
@@ -107,7 +121,8 @@ export default function AdminOversightPage() {
         fetchApplicants(),
         fetchApplications(),
         fetchHRUsers(),
-        fetchJobs()
+        fetchJobs(),
+        fetchInterviews()
       ])
     } catch (error) {
       console.error('Error fetching data:', error)
@@ -163,6 +178,107 @@ export default function AdminOversightPage() {
     } catch (error) {
       console.error('Error fetching jobs:', error)
     }
+  }
+
+  const fetchInterviews = async () => {
+    try {
+      const response = await fetch('/api/admin/oversight/interviews')
+      if (response.ok) {
+        const data = await response.json()
+        setInterviews(data.interviews)
+      }
+    } catch (error) {
+      console.error('Error fetching interviews:', error)
+    }
+  }
+
+  // Interview management functions
+  const handleViewInterview = (interview: Interview) => {
+    setSelectedInterview(interview)
+    setShowInterviewModal(true)
+  }
+
+  const handleEditInterview = (interviewId: string) => {
+    router.push(`/hr/interviews?edit=${interviewId}`)
+  }
+
+  const handleCancelInterview = async (interviewId: string) => {
+    if (!confirm('Are you sure you want to cancel this interview?')) return
+    
+    try {
+      const response = await fetch(`/api/interviews/${interviewId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'CANCELLED' })
+      })
+      
+      if (response.ok) {
+        toast.success('Interview cancelled successfully')
+        fetchInterviews() // Refresh data
+      } else {
+        toast.error('Failed to cancel interview')
+      }
+    } catch (error) {
+      console.error('Error cancelling interview:', error)
+      toast.error('Failed to cancel interview')
+    }
+  }
+
+  const getInterviewStatusColor = (status: string) => {
+    switch (status) {
+      case 'SCHEDULED': return 'bg-blue-100 text-blue-800'
+      case 'COMPLETED': return 'bg-green-100 text-green-800'
+      case 'CANCELLED': return 'bg-red-100 text-red-800'
+      case 'NO_SHOW': return 'bg-yellow-100 text-yellow-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getInterviewTypeIcon = (type: string) => {
+    switch (type) {
+      case 'VIDEO': return '📹'
+      case 'PHONE': return '📞'
+      case 'IN_PERSON': return '🏢'
+      default: return '📅'
+    }
+  }
+
+  // Get unique HR names from interviews for filter dropdown
+  const getUniqueHrNames = () => {
+    const hrNames = interviews
+      .map(interview => interview.hrInterviewer?.name)
+      .filter((name): name is string => !!name)
+      .filter((name, index, array) => array.indexOf(name) === index)
+      .sort()
+    
+    return hrNames
+  }
+
+  // Filter interviews based on search and filters
+  const filteredInterviews = interviews.filter(interview => {
+    const matchesStatus = interviewStatusFilter === 'all' || interview.interviewDetails.status === interviewStatusFilter
+    const matchesType = interviewTypeFilter === 'all' || interview.interviewDetails.interviewType === interviewTypeFilter
+    const matchesHr = interviewHrFilter === 'all' || interview.hrInterviewer?.name === interviewHrFilter
+    const matchesSearch = interviewSearchTerm === '' || 
+      interview.candidate.name.toLowerCase().includes(interviewSearchTerm.toLowerCase()) ||
+      interview.candidate.email.toLowerCase().includes(interviewSearchTerm.toLowerCase()) ||
+      interview.application.jobTitle.toLowerCase().includes(interviewSearchTerm.toLowerCase()) ||
+      (interview.hrInterviewer?.name || '').toLowerCase().includes(interviewSearchTerm.toLowerCase())
+    
+    return matchesStatus && matchesType && matchesHr && matchesSearch
+  })
+
+  // Refresh interviews data
+  const handleRefreshInterviews = async () => {
+    await fetchInterviews()
+  }
+
+  // Clear all filters
+  const handleClearFilters = () => {
+    setInterviewSearchTerm('')
+    setInterviewStatusFilter('all')
+    setInterviewTypeFilter('all')
+    setInterviewHrFilter('all')
   }
 
   const handleViewProfile = (applicationId: string) => {
@@ -225,7 +341,7 @@ export default function AdminOversightPage() {
 
   const openRejectModal = (applicationId: string) => {
     setSelectedApplicationId(applicationId)
-    setRejectReason('')
+    setRejectReason('This information is kept confidential and is not shared with the candidate.')
     setShowRejectModal(true)
   }
 
@@ -498,6 +614,7 @@ export default function AdminOversightPage() {
               { id: 'overview', label: 'Overview', icon: ChartBarIcon },
               { id: 'applicants', label: 'All Applicants', icon: UsersIcon },
               { id: 'applications', label: 'Total Applications', icon: DocumentTextIcon },
+              { id: 'interviews', label: 'Interview Management', icon: CalendarIcon },
               { id: 'pending', label: 'Pending Reviews', icon: ClockIcon },
               { id: 'hired', label: 'Hired Reviews', icon: UserIcon },
               { id: 'rejected', label: 'Rejected Reviews', icon: XCircleIcon },
@@ -838,6 +955,400 @@ export default function AdminOversightPage() {
                         </div>
                       </div>
                     )}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Interview Management Tab */}
+          {activeTab === 'interviews' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="space-y-6"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-semibold text-text-high">Interview Management</h3>
+                  <p className="text-text-mid">Manage all interviews across the organization</p>
+                </div>
+                <Button
+                  onClick={() => router.push('/hr/interviews')}
+                  className="btn-primary"
+                >
+                  <PlusIcon className="w-4 h-4 mr-2" />
+                  Schedule New Interview
+                </Button>
+              </div>
+              
+              {/* Interview Statistics */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="card">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-text-mid">Total Interviews</p>
+                      <p className="text-2xl font-bold text-text-high">{interviews.length}</p>
+                    </div>
+                    <CalendarIcon className="w-8 h-8 text-primary" />
+                  </div>
+                </div>
+                <div className="card">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-text-mid">Scheduled</p>
+                      <p className="text-2xl font-bold text-blue-600">
+                        {interviews.filter(i => i.interviewDetails.status === 'SCHEDULED').length}
+                      </p>
+                    </div>
+                    <ClockIcon className="w-8 h-8 text-blue-600" />
+                  </div>
+                </div>
+                <div className="card">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-text-mid">Completed</p>
+                      <p className="text-2xl font-bold text-green-600">
+                        {interviews.filter(i => i.interviewDetails.status === 'COMPLETED').length}
+                      </p>
+                    </div>
+                    <CheckCircleIcon className="w-8 h-8 text-green-600" />
+                  </div>
+                </div>
+                <div className="card">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-text-mid">Cancelled</p>
+                      <p className="text-2xl font-bold text-red-600">
+                        {interviews.filter(i => i.interviewDetails.status === 'CANCELLED').length}
+                      </p>
+                    </div>
+                    <XCircleIcon className="w-8 h-8 text-red-600" />
+                  </div>
+                </div>
+              </div>
+              
+              {/* Interview Filters and Search */}
+              <div className="card">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+                  <h4 className="text-lg font-semibold text-text-high">All Interviews</h4>
+                  
+                  {/* Search and Filters Row */}
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                    {/* Search Input */}
+                    <div className="relative">
+                      <MagnifyingGlassIcon className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-text-mid" />
+                      <input
+                        type="text"
+                        placeholder="Search interviews..."
+                        value={interviewSearchTerm}
+                        onChange={(e) => setInterviewSearchTerm(e.target.value)}
+                        className="pl-10 pr-4 py-2 border border-border rounded-lg bg-bg-800 text-text-high focus:ring-2 focus:ring-primary/20 focus:border-primary w-full sm:w-64"
+                      />
+                    </div>
+                    
+                    {/* Filter Dropdowns */}
+                    <div className="flex flex-wrap gap-2">
+                      <select 
+                        value={interviewStatusFilter}
+                        onChange={(e) => setInterviewStatusFilter(e.target.value)}
+                        className="px-3 py-2 border border-border rounded-lg bg-bg-800 text-text-high min-w-[120px] flex-1 sm:flex-none"
+                      >
+                        <option value="all">All Status</option>
+                        <option value="SCHEDULED">Scheduled</option>
+                        <option value="COMPLETED">Completed</option>
+                        <option value="CANCELLED">Cancelled</option>
+                        <option value="NO_SHOW">No Show</option>
+                      </select>
+                      
+                      <select 
+                        value={interviewTypeFilter}
+                        onChange={(e) => setInterviewTypeFilter(e.target.value)}
+                        className="px-3 py-2 border border-border rounded-lg bg-bg-800 text-text-high min-w-[120px] flex-1 sm:flex-none"
+                      >
+                        <option value="all">All Types</option>
+                        <option value="VIDEO">Video</option>
+                        <option value="PHONE">Phone</option>
+                        <option value="IN_PERSON">In-Person</option>
+                      </select>
+                      
+                      <select 
+                        value={interviewHrFilter}
+                        onChange={(e) => setInterviewHrFilter(e.target.value)}
+                        className="px-3 py-2 border border-border rounded-lg bg-bg-800 text-text-high min-w-[140px] flex-1 sm:flex-none"
+                      >
+                        <option value="all">All HR Interviewers</option>
+                        {getUniqueHrNames().map((hrName) => (
+                          <option key={hrName} value={hrName}>
+                            {hrName}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={handleRefreshInterviews}
+                        variant="secondary"
+                        className="btn-secondary px-3 py-2"
+                        title="Refresh interviews data"
+                      >
+                        <ArrowPathIcon className="w-4 h-4" />
+                      </Button>
+                      
+                      <Button
+                        onClick={handleClearFilters}
+                        variant="secondary"
+                        className="btn-secondary px-3 py-2 text-text-mid hover:text-text-high"
+                        title="Clear all filters"
+                      >
+                        <XMarkIcon className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Active Filters Display */}
+                {(interviewSearchTerm || interviewStatusFilter !== 'all' || interviewTypeFilter !== 'all' || interviewHrFilter !== 'all') && (
+                  <div className="mb-4 p-3 bg-bg-800 rounded-lg border border-border">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm text-text-mid">Active filters:</span>
+                      {interviewSearchTerm && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">
+                          Search: &quot;{interviewSearchTerm}&quot;
+                          <button
+                            onClick={() => setInterviewSearchTerm('')}
+                            className="hover:text-primary/80"
+                          >
+                            <XMarkIcon className="w-3 h-3" />
+                          </button>
+                        </span>
+                      )}
+                      {interviewStatusFilter !== 'all' && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                          Status: {interviewStatusFilter}
+                          <button
+                            onClick={() => setInterviewStatusFilter('all')}
+                            className="hover:text-blue-600"
+                          >
+                            <XMarkIcon className="w-3 h-3" />
+                          </button>
+                        </span>
+                      )}
+                      {interviewTypeFilter !== 'all' && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                          Type: {interviewTypeFilter}
+                          <button
+                            onClick={() => setInterviewTypeFilter('all')}
+                            className="hover:text-green-600"
+                          >
+                            <XMarkIcon className="w-3 h-3" />
+                          </button>
+                        </span>
+                      )}
+                      {interviewHrFilter !== 'all' && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
+                          HR: {interviewHrFilter}
+                          <button
+                            onClick={() => setInterviewHrFilter('all')}
+                            className="hover:text-purple-600"
+                          >
+                            <XMarkIcon className="w-3 h-3" />
+                          </button>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Interview List */}
+                {filteredInterviews.length === 0 ? (
+                  <div className="text-center py-12">
+                    <CalendarIcon className="w-16 h-16 text-text-mid mx-auto mb-4" />
+                    <h4 className="text-lg font-semibold text-text-high mb-2">No Interviews Found</h4>
+                    <p className="text-text-mid mb-4">
+                      {interviews.length === 0 
+                        ? "No interviews have been scheduled yet." 
+                        : "No interviews match your current filters."
+                      }
+                    </p>
+                    {interviews.length === 0 && (
+                      <Button
+                        onClick={() => router.push('/hr/interviews')}
+                        className="btn-primary"
+                      >
+                        <PlusIcon className="w-4 h-4 mr-2" />
+                        Schedule First Interview
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {filteredInterviews.map((interview) => (
+                      <div key={interview.id} className="border border-border rounded-lg p-6 hover:shadow-card-hover transition-all duration-300">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-4">
+                              <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
+                                <UserIcon className="w-6 h-6 text-white" />
+                              </div>
+                              <div>
+                                <h4 className="text-lg font-semibold text-text-high">
+                                  {interview.candidate.name}
+                                </h4>
+                                <p className="text-text-mid">{interview.candidate.email}</p>
+                                {interview.candidate.phone && (
+                                  <p className="text-sm text-text-mid">{interview.candidate.phone}</p>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getInterviewStatusColor(interview.interviewDetails.status)}`}>
+                                  {interview.interviewDetails.status.replace('_', ' ')}
+                                </span>
+                                <span className="text-2xl">
+                                  {getInterviewTypeIcon(interview.interviewDetails.interviewType)}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                              <div>
+                                <p className="text-sm text-text-mid">Position</p>
+                                <p className="font-medium text-text-high">{interview.application.jobTitle}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-text-mid">Department</p>
+                                <p className="font-medium text-text-high">{interview.application.department}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-text-mid">Scheduled Date & Time</p>
+                                <p className="font-medium text-text-high">
+                                  {formatDateTime(interview.interviewDetails.scheduledAt)}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-text-mid">HR Interviewer</p>
+                                <p className="font-medium text-text-high">
+                                  {interview.hrInterviewer?.name || 'Not assigned'}
+                                </p>
+                                {interview.hrInterviewer?.email && (
+                                  <p className="text-sm text-text-mid">{interview.hrInterviewer.email}</p>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Interview Details */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                              {interview.interviewDetails.location && (
+                                <div>
+                                  <p className="text-sm text-text-mid">Location</p>
+                                  <p className="font-medium text-text-high">{interview.interviewDetails.location}</p>
+                                </div>
+                              )}
+                              {interview.interviewDetails.meetingLink && (
+                                <div>
+                                  <p className="text-sm text-text-mid">Meeting Link</p>
+                                  <a 
+                                    href={interview.interviewDetails.meetingLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-medium text-primary hover:text-primary/80 underline"
+                                  >
+                                    Join Meeting
+                                  </a>
+                                </div>
+                              )}
+                              <div>
+                                <p className="text-sm text-text-mid">Application Status</p>
+                                <p className="font-medium text-text-high">{interview.application.status.replace('_', ' ')}</p>
+                              </div>
+                            </div>
+
+                            {/* Interview Reviews */}
+                            {interview.reviews.length > 0 && (
+                              <div className="mb-4">
+                                <p className="text-sm text-text-mid mb-2">Interview Reviews</p>
+                                <div className="bg-bg-800 p-3 rounded border border-border">
+                                  {interview.reviews.map((review) => (
+                                    <div key={review.id} className="flex items-center justify-between text-sm">
+                                      <div>
+                                        <span className="text-text-high">
+                                          {review.hrReviewer.firstName} {review.hrReviewer.lastName}
+                                        </span>
+                                        <span className="text-text-mid ml-2">
+                                          - Overall: {review.overallRating}/5
+                                        </span>
+                                        <span className="text-text-mid ml-2">
+                                          - {review.recommendation}
+                                        </span>
+                                      </div>
+                                      <span className="text-text-mid">
+                                        {formatDate(review.createdAt)}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Interview Notes */}
+                            {interview.interviewDetails.notes && (
+                              <div className="mb-4">
+                                <p className="text-sm text-text-mid mb-2">Notes</p>
+                                <div className="bg-bg-800 p-3 rounded border border-border">
+                                  <p className="text-sm text-text-high">{interview.interviewDetails.notes}</p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex flex-col gap-2 ml-4">
+                            <Button
+                              onClick={() => handleViewInterview(interview)}
+                              variant="secondary"
+                              className="btn-secondary text-sm"
+                            >
+                              <EyeIcon className="w-4 h-4 mr-2" />
+                              View Details
+                            </Button>
+                            
+                            {interview.interviewDetails.status === 'SCHEDULED' && (
+                              <>
+                                <Button
+                                  onClick={() => handleEditInterview(interview.id)}
+                                  variant="secondary"
+                                  className="btn-secondary text-sm"
+                                >
+                                  <PencilIcon className="w-4 h-4 mr-2" />
+                                  Edit
+                                </Button>
+                                <Button
+                                  onClick={() => handleCancelInterview(interview.id)}
+                                  variant="secondary"
+                                  className="btn-secondary text-sm text-red-600 hover:text-red-700"
+                                >
+                                  <XCircleIcon className="w-4 h-4 mr-2" />
+                                  Cancel
+                                </Button>
+                              </>
+                            )}
+                            
+                            {interview.interviewDetails.status === 'COMPLETED' && (
+                              <Button
+                                onClick={() => router.push(`/hr/interviews/${interview.id}/evaluation`)}
+                                variant="secondary"
+                                className="btn-secondary text-sm"
+                              >
+                                <DocumentTextIcon className="w-4 h-4 mr-2" />
+                                View Evaluation
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
@@ -1523,7 +2034,7 @@ export default function AdminOversightPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-bg-850 rounded-lg p-6 w-full max-w-lg">
             <h3 className="text-xl font-semibold text-text-high mb-4">Reject Application</h3>
-            <p className="text-text-mid mb-4">Please provide a brief reason for rejection. This will be visible to the applicant in Recent Activity and to Admin in Application Information.</p>
+            <p className="text-text-mid mb-4">Please provide a brief reason for rejection. The default text can be modified as needed. This will be visible to the applicant in Recent Activity and to Admin in Application Information.</p>
             <textarea
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
@@ -1549,6 +2060,235 @@ export default function AdminOversightPage() {
               >
                 Submit Rejection
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Interview Detail Modal */}
+      {selectedInterview && showInterviewModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-bg-850 rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-text-high">Interview Details</h3>
+              <Button
+                onClick={() => {
+                  setShowInterviewModal(false)
+                  setSelectedInterview(null)
+                }}
+                variant="secondary"
+                className="btn-secondary"
+              >
+                <XMarkIcon className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            <div className="space-y-6">
+              {/* Candidate Information */}
+              <div className="card">
+                <h4 className="text-lg font-semibold text-text-high mb-4">Candidate Information</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-text-mid">Name</p>
+                    <p className="font-medium text-text-high">{selectedInterview.candidate.name}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-text-mid">Email</p>
+                    <p className="font-medium text-text-high">{selectedInterview.candidate.email}</p>
+                  </div>
+                  {selectedInterview.candidate.phone && (
+                    <div>
+                      <p className="text-sm text-text-mid">Phone</p>
+                      <p className="font-medium text-text-high">{selectedInterview.candidate.phone}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Application Information */}
+              <div className="card">
+                <h4 className="text-lg font-semibold text-text-high mb-4">Application Information</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-text-mid">Position</p>
+                    <p className="font-medium text-text-high">{selectedInterview.application.jobTitle}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-text-mid">Department</p>
+                    <p className="font-medium text-text-high">{selectedInterview.application.department}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-text-mid">Application Status</p>
+                    <p className="font-medium text-text-high">{selectedInterview.application.status.replace('_', ' ')}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-text-mid">Applied Date</p>
+                    <p className="font-medium text-text-high">{formatDate(selectedInterview.application.submittedAt)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Interview Details */}
+              <div className="card">
+                <h4 className="text-lg font-semibold text-text-high mb-4">Interview Details</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-text-mid">Scheduled Date & Time</p>
+                    <p className="font-medium text-text-high">
+                      {formatDateTime(selectedInterview.interviewDetails.scheduledAt)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-text-mid">Interview Type</p>
+                    <p className="font-medium text-text-high">
+                      {getInterviewTypeIcon(selectedInterview.interviewDetails.interviewType)} {selectedInterview.interviewDetails.interviewType.replace('_', ' ')}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-text-mid">Status</p>
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getInterviewStatusColor(selectedInterview.interviewDetails.status)}`}>
+                      {selectedInterview.interviewDetails.status.replace('_', ' ')}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-sm text-text-mid">HR Interviewer</p>
+                    <p className="font-medium text-text-high">
+                      {selectedInterview.hrInterviewer?.name || 'Not assigned'}
+                    </p>
+                    {selectedInterview.hrInterviewer?.email && (
+                      <p className="text-sm text-text-mid">{selectedInterview.hrInterviewer.email}</p>
+                    )}
+                  </div>
+                  {selectedInterview.interviewDetails.location && (
+                    <div>
+                      <p className="text-sm text-text-mid">Location</p>
+                      <p className="font-medium text-text-high">{selectedInterview.interviewDetails.location}</p>
+                    </div>
+                  )}
+                  {selectedInterview.interviewDetails.meetingLink && (
+                    <div>
+                      <p className="text-sm text-text-mid">Meeting Link</p>
+                      <a 
+                        href={selectedInterview.interviewDetails.meetingLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium text-primary hover:text-primary/80 underline"
+                      >
+                        Join Meeting
+                      </a>
+                    </div>
+                  )}
+                </div>
+                
+                {selectedInterview.interviewDetails.notes && (
+                  <div className="mt-4">
+                    <p className="text-sm text-text-mid mb-2">Notes</p>
+                    <div className="bg-bg-800 p-3 rounded border border-border">
+                      <p className="text-sm text-text-high">{selectedInterview.interviewDetails.notes}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Interview Reviews */}
+              {selectedInterview.reviews.length > 0 && (
+                <div className="card">
+                  <h4 className="text-lg font-semibold text-text-high mb-4">Interview Reviews</h4>
+                  <div className="space-y-4">
+                    {selectedInterview.reviews.map((review) => (
+                      <div key={review.id} className="bg-bg-800 p-4 rounded border border-border">
+                        <div className="flex items-center justify-between mb-3">
+                          <div>
+                            <p className="font-medium text-text-high">
+                              {review.hrReviewer.firstName} {review.hrReviewer.lastName}
+                            </p>
+                            <p className="text-sm text-text-mid">{review.hrReviewer.email}</p>
+                          </div>
+                          <span className="text-sm text-text-mid">
+                            {formatDate(review.createdAt)}
+                          </span>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-3">
+                          <div>
+                            <p className="text-sm text-text-mid">Technical Skills</p>
+                            <p className="font-medium text-text-high">{review.technicalSkills}/5</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-text-mid">Communication</p>
+                            <p className="font-medium text-text-high">{review.communication}/5</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-text-mid">Cultural Fit</p>
+                            <p className="font-medium text-text-high">{review.culturalFit}/5</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-text-mid">Overall Rating</p>
+                            <p className="font-medium text-text-high">{review.overallRating}/5</p>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <p className="text-sm text-text-mid mb-1">Recommendation</p>
+                          <p className="font-medium text-text-high">{review.recommendation}</p>
+                        </div>
+                        
+                        {review.comments && (
+                          <div className="mt-3">
+                            <p className="text-sm text-text-mid mb-1">Comments</p>
+                            <p className="text-sm text-text-high">{review.comments}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-3">
+                {selectedInterview.interviewDetails.status === 'SCHEDULED' && (
+                  <>
+                    <Button
+                      onClick={() => handleEditInterview(selectedInterview.id)}
+                      variant="secondary"
+                      className="btn-secondary"
+                    >
+                      <PencilIcon className="w-4 h-4 mr-2" />
+                      Edit Interview
+                    </Button>
+                    <Button
+                      onClick={() => handleCancelInterview(selectedInterview.id)}
+                      variant="secondary"
+                      className="btn-secondary text-red-600 hover:text-red-700"
+                    >
+                      <XCircleIcon className="w-4 h-4 mr-2" />
+                      Cancel Interview
+                    </Button>
+                  </>
+                )}
+                
+                {selectedInterview.interviewDetails.status === 'COMPLETED' && (
+                  <Button
+                    onClick={() => router.push(`/hr/interviews/${selectedInterview.id}/evaluation`)}
+                    className="btn-primary"
+                  >
+                    <DocumentTextIcon className="w-4 h-4 mr-2" />
+                    View Full Evaluation
+                  </Button>
+                )}
+                
+                <Button
+                  onClick={() => {
+                    setShowInterviewModal(false)
+                    setSelectedInterview(null)
+                  }}
+                  variant="secondary"
+                  className="btn-secondary"
+                >
+                  Close
+                </Button>
+              </div>
             </div>
           </div>
         </div>

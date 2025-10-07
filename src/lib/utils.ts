@@ -8,25 +8,38 @@ export function cn(...inputs: ClassValue[]) {
 export function formatDate(date: Date | string): string {
   // Ensure consistent formatting between server and client
   const dateObj = new Date(date)
-  return dateObj.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    timeZone: 'UTC' // Use UTC to avoid timezone differences
-  })
+  // Use a consistent format that doesn't depend on locale
+  const year = dateObj.getFullYear()
+  const month = dateObj.getMonth() + 1
+  const day = dateObj.getDate()
+  return `${month}/${day}/${year}`
 }
 
 export function formatDateTime(date: Date | string): string {
   // Ensure consistent formatting between server and client
   const dateObj = new Date(date)
-  return dateObj.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: 'UTC' // Use UTC to avoid timezone differences
-  })
+  const year = dateObj.getFullYear()
+  const month = dateObj.getMonth() + 1
+  const day = dateObj.getDate()
+  const hours = dateObj.getHours()
+  const minutes = dateObj.getMinutes()
+  const ampm = hours >= 12 ? 'PM' : 'AM'
+  const displayHours = hours % 12 || 12
+  const displayMinutes = minutes.toString().padStart(2, '0')
+  return `${month}/${day}/${year} at ${displayHours}:${displayMinutes} ${ampm}`
+}
+
+export function formatDateLong(date: Date | string): string {
+  // For longer format like "January 15, 2024"
+  const dateObj = new Date(date)
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ]
+  const year = dateObj.getFullYear()
+  const month = months[dateObj.getMonth()]
+  const day = dateObj.getDate()
+  return `${month} ${day}, ${year}`
 }
 
 export function truncateText(text: string, maxLength: number): string {

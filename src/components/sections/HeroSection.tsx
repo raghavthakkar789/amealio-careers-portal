@@ -24,7 +24,7 @@ export function HeroSection() {
   }
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center bg-hero-gradient overflow-hidden">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden" style={{ backgroundColor: '#050F33' }}>
       {/* User Info and Logout Button - Top Right */}
       {session && (
         <motion.div
@@ -60,7 +60,7 @@ export function HeroSection() {
 
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-5">
-        <div className="absolute top-0 left-0 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl animate-float"></div>
+        <div className="absolute top-0 left-0 w-72 h-72 bg-[#40299B]/20 rounded-full mix-blend-multiply filter blur-xl animate-float"></div>
         <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-300 rounded-full mix-blend-multiply filter blur-xl animate-float animation-delay-2000"></div>
         <div className="absolute bottom-0 left-0 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl animate-float animation-delay-4000"></div>
       </div>
@@ -94,14 +94,14 @@ export function HeroSection() {
             Team
           </h1>
           
-          <p className="text-xl sm:text-2xl mb-8 max-w-3xl mx-auto text-purple-100">
-            Build the future with us. We&apos;re looking for passionate individuals who want to make a difference in the world through innovative technology.
+          <p className="text-xl sm:text-2xl mb-8 max-w-3xl mx-auto text-white/90">
+            Join our mission to revolutionize technology. We&apos;re seeking passionate innovators ready to make an impact.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button
               onClick={() => router.push('/jobs')}
-              className="btn-primary text-lg px-8 py-4 bg-white text-primary hover:bg-purple-50 hover:text-primary-hover shadow-large hover:shadow-xl"
+              className="btn-primary text-lg px-8 py-4 bg-white text-primary hover:bg-[#40299B]/10 hover:text-primary-hover shadow-large hover:shadow-xl"
             >
               Browse Open Positions
             </Button>
@@ -143,7 +143,7 @@ export function HeroSection() {
               className="text-center"
             >
               <div className="text-3xl font-bold text-white mb-2">50+</div>
-              <div className="text-purple-200">Open Positions</div>
+              <div className="text-white/80">Open Positions</div>
             </motion.div>
             
             <motion.div
@@ -153,7 +153,7 @@ export function HeroSection() {
               className="text-center"
             >
               <div className="text-3xl font-bold text-white mb-2">6</div>
-              <div className="text-purple-200">Departments</div>
+              <div className="text-white/80">Departments</div>
             </motion.div>
             
             <motion.div
@@ -163,7 +163,7 @@ export function HeroSection() {
               className="text-center"
             >
               <div className="text-3xl font-bold text-white mb-2">1000+</div>
-              <div className="text-purple-200">Happy Employees</div>
+              <div className="text-white/80">Happy Employees</div>
             </motion.div>
           </div>
         </motion.div>

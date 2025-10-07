@@ -105,22 +105,64 @@ export async function PUT(
       const body = await request.json()
       const { status, action, notes } = body
 
-      if (status && action) {
-        // Update application status using the new service
-        const updatedApplication = await applicationStatusService.updateApplicationStatus({
-          applicationId: id,
-          newStatus: status,
-          action,
-          performedBy: session.user.id,
-          performedByName: session.user.name || 'Unknown User',
-          performedByRole: session.user.role as 'APPLICANT' | 'HR' | 'ADMIN',
-          notes
-        })
+      console.log('Status update request:', {
+        applicationId: id,
+        status,
+        action,
+        notes,
+        performedBy: session.user.id,
+        performedByName: session.user.name,
+        performedByRole: session.user.role
+      })
 
-        return NextResponse.json({ 
-          application: updatedApplication,
-          message: 'Application status updated successfully' 
+      if (status && action) {
+        try {
+          // Update application status using the new service
+          const updatedApplication = await applicationStatusService.updateApplicationStatus({
+            applicationId: id,
+            newStatus: status,
+            action,
+            performedBy: session.user.id,
+            performedByName: session.user.name || 'Unknown User',
+            performedByRole: session.user.role as 'APPLICANT' | 'HR' | 'ADMIN',
+            notes
+          })
+
+          console.log('Status update successful:', {
+            applicationId: id,
+            newStatus: status,
+            action
+          })
+
+          return NextResponse.json({ 
+            application: updatedApplication,
+            message: 'Application status updated successfully' 
+          })
+        } catch (statusUpdateError) {
+          console.error('Status update failed:', {
+            applicationId: id,
+            status,
+            action,
+            error: statusUpdateError instanceof Error ? statusUpdateError.message : statusUpdateError,
+            stack: statusUpdateError instanceof Error ? statusUpdateError.stack : undefined
+          })
+          
+          return NextResponse.json({ 
+            error: statusUpdateError instanceof Error ? statusUpdateError.message : 'Failed to update application status'
+          }, { status: 400 })
+        }
+      } else {
+        console.error('Missing required fields for status update:', {
+          applicationId: id,
+          status,
+          action,
+          hasStatus: !!status,
+          hasAction: !!action
         })
+        
+        return NextResponse.json({ 
+          error: 'Missing required fields: status and action are required' 
+        }, { status: 400 })
       }
     }
 

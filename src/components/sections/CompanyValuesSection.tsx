@@ -40,7 +40,7 @@ const values = [
     icon: RocketLaunchIcon,
     title: 'Excellence',
     description: 'We pursue excellence in every project, product, and customer interaction.',
-    color: 'text-[#40299B]'
+    color: 'text-purple-500'
   },
   {
     icon: SparklesIcon,
